@@ -1,9 +1,9 @@
 # Custom Environments
 Members:
-Tyler "Kode" Brown
-Kerianne Hobbs
-Nate Hamilton
-Umberto Ravaioli
+Tyler "Kode" Brown, 
+Kerianne Hobbs, 
+Nate Hamilton, 
+Umberto Ravaioli, 
 
 ## Installation
 To install the custom environments, clone with SSH. If you need an SSH key, follow the following steps:  
