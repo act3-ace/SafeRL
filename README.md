@@ -32,7 +32,6 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 `cd have-deepsky`  
 `pip install -e .`  
 
-```
 
 ## Pulling an update from Gitlab
 If someone else has updated their files, and you want to pull the most recent changes without erasing your progress:  
@@ -49,7 +48,7 @@ If you want to pull the latest changes and overwrite any changes you made:
 These files assume that you have Anaconda or equivalent and standard Python packages installed.
 1. To run from the command line, open a terminal
 2. To run using the standard Anaconda packages, type `conda activate base`. This should make (base) show up before you username.
-3. Navigate to the 'spacecraftdockingrl/RL_algorithms' folder.
+3. Navigate to the correct folder.
 4. Decide what algorithm you'd like to run, e.g. run the vanilla policy gradient RL algorithm `python VPG.py`
 
 ## Uploading to GitLab
