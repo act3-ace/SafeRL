@@ -16,7 +16,7 @@ def plot_trajectories(trajectory_data, output_filename, colormap='jet'):
 
     plt.savefig(output_filename)
 
-def animate_trajectories(trajectory_data, output_filename, colormap='jet', anim_rate=4, trail_length=40):
+def animate_trajectories(trajectory_data, output_filename, colormap='jet', anim_rate=4, trail_length=40, plot_rejoin_region=False, sq_axis=False):
     ims = []
 
     # Set up formatting for the movie files
@@ -24,6 +24,10 @@ def animate_trajectories(trajectory_data, output_filename, colormap='jet', anim_
     writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
 
     fig = plt.figure()
+    ax = plt.axes()
+
+    if sq_axis:
+        ax.set_aspect('equal', adjustable='box')
 
     max_time = max([traj['wingman_pos'].shape[0] for traj in trajectory_data])
 
@@ -49,6 +53,22 @@ def animate_trajectories(trajectory_data, output_filename, colormap='jet', anim_
 
             wingman_trail_plot = plt.plot(wingman_trail[:,0], wingman_trail[:,1], color=fp_color)
 
+            if plot_rejoin_region:
+                death_radius = 25
+                rejoin_min_radius = 50
+                rejoin_max_radius = 150
+
+                rejoin_region_artists = []
+                rejoin_region_artists.append(plt.Circle((lead_pos[traj_time,0], lead_pos[traj_time,1]), rejoin_max_radius, color='g'))
+                
+                rejoin_region_artists.append(plt.Circle((lead_pos[traj_time,0], lead_pos[traj_time,1]), rejoin_min_radius, color='w'))
+                rejoin_region_artists.append(plt.Circle((lead_pos[traj_time,0], lead_pos[traj_time,1]), death_radius, color='r'))
+
+                for circle_artist in rejoin_region_artists:
+                    ax.add_patch(circle_artist)
+
+                time_artists += rejoin_region_artists
+
 
             time_artists += wingman_plot
             time_artists += lead_plot
@@ -63,8 +83,9 @@ def animate_trajectories(trajectory_data, output_filename, colormap='jet', anim_
 
 def main():
 
-    rollout_seq = pickle.load( open( "save.pickle", "rb" ) )
+    expr_data = pickle.load( open( "save_10.21.2020_19.25.pickle", "rb" ) )
 
+    rollout_seq = expr_data['rollout_history']
     num_rollouts = len(rollout_seq)
 
     cmap = cm.get_cmap('jet')
@@ -89,7 +110,7 @@ def main():
     # plot_trajectories(trajectory_data, 'rollouts.png')
 
     animate_trajectories(trajectory_data, 'all_trajectories.mp4')
-    animate_trajectories([trajectory_data[-1]], 'last_trajectory.mp4', anim_rate=1)
+    animate_trajectories([trajectory_data[-1]], 'last_trajectory.mp4', anim_rate=1, plot_rejoin_region=True, sq_axis=True)
 
 if __name__ == '__main__':
     main()
