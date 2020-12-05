@@ -3,7 +3,9 @@ import gym
 from gym.spaces import Discrete, Box
 import numpy as np
 import os
+os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
 import yaml
+import math
 
 from datetime import datetime
 
@@ -24,6 +26,8 @@ parser.add_argument('--output_dir', type=str, default='./output')
 args = parser.parse_args()
 
 output_dir = os.path.join(args.output_dir, datetime.now().strftime("expr_%Y%m%d_%H%M%S") )
+log_dir = os.path.join(output_dir, 'logs')
+ckpt_dir = os.path.join(output_dir, 'ckpt')
 
 config={
     'env': DubinsRejoin,
@@ -70,11 +74,13 @@ def run_rollout(agent, env_config):
 
 # results = tune.run("PPO", config=config, stop=stop)
 
-ray.init()
+ray.init(num_gpus=0)
 config = ppo.DEFAULT_CONFIG.copy()
 config["num_gpus"] = 0
 config["num_workers"] = 1
+config["output"] = log_dir
 # config["eager"] = False
+config['_fake_gpus'] = True
 
 rollout_history = []
 
@@ -89,14 +95,38 @@ reward_config = {
     'dist_change': -1/100,
 }
 
-config['env_config'] = {'reward_config':reward_config}
+rejoin_config = {
+    'init': {
+        'wingman': {
+            'x': [-4000, 4000],
+            'y': [-4000, 4000],
+            'theta': [0, 2*math.pi],
+            'velocity': [10, 100]
+        },
+        'lead': {
+            'x': [-4000, 4000],
+            'y': [-4000, 4000],
+            'theta': [0, 2*math.pi],
+            'velocity': [40, 60]
+        },
+    },
+    'obs' : {
+        # 'mode': 'rect',
+        # 'reference': 'global',
+        'mode': 'polar',
+        'reference': 'wingman',
+    },
+    'rejoin_point_aspect_angle': -60,
+    'rejoin_point_range':500,
+    'rejoin_point_radius':100
+}
+
+config['env_config'] = {'reward_config':reward_config, 'rejoin_config':rejoin_config, 'verbose':False}
 
 trainer = ppo.PPOTrainer(config=config, env=DubinsRejoin)
 
-eixt()
-
 # create output dir and save experiment params
-os.makedirs(output_dir)
+os.makedirs(output_dir, exist_ok=True)
 args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
 ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
 with open(args_yaml_filepath, 'w') as args_yaml_file:
@@ -106,10 +136,14 @@ with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
     yaml.dump(config, ray_config_yaml_file)
 
 rollout_history.append(run_rollout(trainer, config['env_config']))
-for i in range(200):
+num_iter = 200
+for i in range(num_iter):
     result = trainer.train()
     rollout_history.append(run_rollout(trainer, config['env_config']))
     print(pretty_print(result))
+    if i % 25 == 0  or i == (num_iter-1):
+        ckpt_path = trainer.save(ckpt_dir)
+        print('ckpt saved @{}'.format(ckpt_path))
 
 save_data = {
     'config':config,
