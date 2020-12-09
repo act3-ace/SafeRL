@@ -129,9 +129,9 @@ def process_rollout_data(rollout_seq):
         failure_list = []
 
         for t_idx, info in enumerate(rollout_data['info_history']):
-            wingman_pos[t_idx,:] = [-1*info['wingman']['y'], info['wingman']['x']]
-            lead_pos[t_idx,:] = [-1*info['lead']['y'], info['lead']['x']]
-            rejoin_point_pos[t_idx, :] = [-1*info['rejoin_point_pos'][1], info['rejoin_point_pos'][0]]
+            wingman_pos[t_idx,:] = [info['wingman']['y'], info['wingman']['x']]
+            lead_pos[t_idx,:] = [info['lead']['y'], info['lead']['x']]
+            rejoin_point_pos[t_idx, :] = [info['rejoin_region']['y'], info['rejoin_region']['x']]
 
             success_list.append(info['success'])
             failure_list.append(info['failure'])

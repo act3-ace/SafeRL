@@ -95,11 +95,11 @@ class DubinsAircraft:
     
     @property
     def position(self) -> np.ndarray:
-        return np.array([self.x, self.y], dtype=np.float64)
+        return state[0:2]
 
     @property
     def orientation(self) -> np.ndarray:
-        return np.array([self.theta], dtype=np.float64)
+        return self.theta
 
     @property
     def velocity_rect(self) -> np.ndarray:
@@ -107,7 +107,7 @@ class DubinsAircraft:
 
     @property
     def velocity_polar(self) -> np.ndarray:
-        return np.array([self.vel, self.theta])
+        return np.array([self.vel, self.theta], dtype=np.float64)
 
     @property
     def acceleration_rect(self) -> np.ndarray:

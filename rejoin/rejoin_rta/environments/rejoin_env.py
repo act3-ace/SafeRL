@@ -7,22 +7,12 @@ from gym.spaces import Discrete, Box
 
 from ..aero_models.dubins import DubinsAircraft, DubinsAgent
 from ..utils.util import draw_from_rand_bounds_dict
+from ..utils.geometry import RelativeCircle2D, distance2d
 
 class DubinsRejoin(gym.Env):
 
     def __init__(self, config):
-
-        self.env_objs = {
-            'wingman':DubinsAgent(),
-            'lead': DubinsAircraft()
-        }
-
-        self.action_space = self.env_objs['wingman'].action_space
-
-        self.reward_time_decay = -.01
-
-        self.death_radius = 100
-
+        # save config
         self.reward_config = config["reward_config"]
         self.rejoin_config = config['rejoin_config']
 
@@ -31,8 +21,32 @@ class DubinsRejoin(gym.Env):
         else:
             self.verbose = False
 
-        self._obs_space_init()
+        self._setup_env_objs()
+        self._setup_action_space()
+        self._setup_obs_space()
+
+        self.reward_time_decay = -.01
+        self.death_radius = 100
+
         self.reset()
+
+    def _setup_env_objs(self):
+        wingman = DubinsAgent()
+        lead = DubinsAircraft()
+
+        if self.rejoin_config['rejoin_region']['type'] == 'circle':
+            r_offset = self.rejoin_config['rejoin_region']['range']
+            radius = self.rejoin_config['rejoin_region']['radius']
+            aspect_angle = np.radians(self.rejoin_config['rejoin_region']['aspect_angle'])
+            rejoin_region = RelativeCircle2D(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
+        else:
+            raise ValueError('Invalid rejoin region type {} not supported'.format(self.rejoin_config['rejoin_region']['type']))
+
+        self.env_objs = {
+            'wingman': wingman,
+            'lead': lead,
+            'rejoin_region': rejoin_region,
+        }
 
     def reset(self):
 
@@ -70,6 +84,7 @@ class DubinsRejoin(gym.Env):
 
         self.env_objs['wingman'].step(timestep, action)
         self.env_objs['lead'].step(timestep)
+        self.env_objs['rejoin_region'].step()
 
         # check rejoin condition
         self.rejoin_failed = False
@@ -81,12 +96,12 @@ class DubinsRejoin(gym.Env):
             self.rejoin_failed = True
 
         # check success/failure conditions
-        distance =  np.linalg.norm(self.env_objs['wingman'].position - self.env_objs['lead'].position)
-        if distance >= 40000:
+        lead_distance =  distance2d(self.env_objs['wingman'], self.env_objs['lead'])
+        if lead_distance >= 40000:
             self.failure = 'failure_distance'
         if self.time_elapsed > 1000:
             self.failure = 'failure_timeout'
-        if distance < self.death_radius:
+        if lead_distance < self.death_radius:
             self.failure = 'failure_crash'
 
         if self.rejoin_time > 20:
@@ -105,9 +120,7 @@ class DubinsRejoin(gym.Env):
 
         return  obs, reward, done, info
 
-    def _obs_space_init(self):
-
-        
+    def _setup_obs_space(self):
         if self.rejoin_config['obs']['mode'] == 'rect':
             self.observation_space = Box(low=-1, high=1, shape=(8,))
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
@@ -115,14 +128,16 @@ class DubinsRejoin(gym.Env):
         elif self.rejoin_config['obs']['mode'] == 'polar':
             self.observation_space = Box(low=-1, high=1, shape=(12,))
             self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
-        
 
+    def _setup_action_space(self):
+        self.action_space = self.env_objs['wingman'].action_space
+        
     def _generate_obs(self):
         wingman_lead_r_x = self.env_objs['lead'].x - self.env_objs['wingman'].x
         wingman_lead_r_y = self.env_objs['lead'].y - self.env_objs['wingman'].y
 
-        wingman_rejoin_r_x = self.rejoin_point_pos[0] - self.env_objs['wingman'].x
-        wingman_rejoin_r_y = self.rejoin_point_pos[1] - self.env_objs['wingman'].y
+        wingman_rejoin_r_x = self.env_objs['rejoin_region'].x - self.env_objs['wingman'].x
+        wingman_rejoin_r_y = self.env_objs['rejoin_region'].y - self.env_objs['wingman'].y
 
         if self.rejoin_config['obs']['mode'] == 'rect':
 
@@ -183,24 +198,10 @@ class DubinsRejoin(gym.Env):
         return obs
 
     def _init_reward(self):
-        self.prev_distance = self.compute_rejoin_dist()
-
-    def compute_rejoin_dist(self):
-        # compute rejoin point location
-        lead_pos = self.env_objs['lead'].position
-        lead_orientation = self.env_objs['lead'].orientation
-        rejoin_point_angle_rad = (self.rejoin_config['rejoin_point_aspect_angle'] - 180) * math.pi/180 + lead_orientation
-
-        rejoin_point_range = self.rejoin_config['rejoin_point_range']
-        rejoin_point_pos = rejoin_point_range*np.array([math.cos(rejoin_point_angle_rad), math.sin(rejoin_point_angle_rad) ], dtype=np.float64) + lead_pos
-
-        self.rejoin_point_pos = rejoin_point_pos
-
-        distance = np.linalg.norm(self.env_objs['wingman'].position - rejoin_point_pos)
-        return distance
+        self.prev_distance = distance2d(self.env_objs['wingman'], self.env_objs['rejoin_region'])
 
     def _generate_reward(self, timestep):
-        cur_distance = self.compute_rejoin_dist()
+        cur_distance = distance2d(self.env_objs['wingman'], self.env_objs['rejoin_region'])
         dist_change = cur_distance - self.prev_distance
 
         reward = 0
@@ -237,8 +238,8 @@ class DubinsRejoin(gym.Env):
         info = {
             'wingman': self.env_objs['wingman']._generate_info(),
             'lead': self.env_objs['lead']._generate_info(),
-            'rejoin_time':self.rejoin_time,
-            'rejoin_point_pos': self.rejoin_point_pos.tolist(),
+            'rejoin_region': self.env_objs['rejoin_region']._generate_info(),
+            'rejoin_time': self.rejoin_time,            
             'failure': self.failure,
             'success': self.success,
         }
@@ -246,9 +247,5 @@ class DubinsRejoin(gym.Env):
         return info
 
     def rejoin_cond(self):
-        distance =  self.compute_rejoin_dist()
-
-        if distance <= self.rejoin_config['rejoin_point_radius']:
-            return True
-        else:
-            return False
+        wingman_coords = (self.env_objs['wingman'].x, self.env_objs['wingman'].y)
+        return self.env_objs['rejoin_region'].contains(wingman_coords)
