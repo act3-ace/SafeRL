@@ -116,9 +116,12 @@ rejoin_config = {
         'mode': 'polar',
         'reference': 'wingman',
     },
-    'rejoin_point_aspect_angle': -60,
-    'rejoin_point_range':500,
-    'rejoin_point_radius':100
+    'rejoin_region' : {
+        'type': 'circle',
+        'range':500,
+        'aspect_angle': 60,
+        'radius':150,
+    }
 }
 
 config['env_config'] = {'reward_config':reward_config, 'rejoin_config':rejoin_config, 'verbose':False}
