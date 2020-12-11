@@ -23,7 +23,7 @@ class DubinsAircraft:
 
     def step(self, timestep, control=np.array([0, 0], dtype=np.float64)):
        # Extract current state data
-        x, y, theta, vel, theta_dot, v_dot = self.state
+        x, y, theta, vel, theta_dot, vel_dot = self.state
 
         # unpack control vector
         thrust_control = control[0]
@@ -54,7 +54,7 @@ class DubinsAircraft:
         # theta:2
         # velocity: 3
         # theta_dot: 4
-        # v_dot: 5
+        # vel_dot: 5
         self.state = np.array([x, y, theta, vel, theta_dot, vel_dot], dtype=np.float64)
 
     def _generate_info(self):
@@ -95,7 +95,7 @@ class DubinsAircraft:
     
     @property
     def position(self) -> np.ndarray:
-        return state[0:2]
+        return self.state[0:2]
 
     @property
     def orientation(self) -> np.ndarray:
