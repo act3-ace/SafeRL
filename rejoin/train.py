@@ -85,14 +85,14 @@ config['_fake_gpus'] = True
 rollout_history = []
 
 reward_config = {
-    'time_decay': -0.1,
-    'failure_timeout': -10,
-    'failure_crash': -1000,
-    'failure_distance': -100,
-    'success': 1000,
-    'rejoin_timestep': 1,
-    'rejoin_first_time': 10,
-    'dist_change': -1/100,
+    'time_decay': -0.01,
+    'failure_timeout': -1,
+    'failure_crash': -1,
+    'failure_distance': -1,
+    'success': 1,
+    'rejoin_timestep': 0.1,
+    'rejoin_first_time': 0.25,
+    'dist_change': -0.00001,
 }
 
 rejoin_config = {
