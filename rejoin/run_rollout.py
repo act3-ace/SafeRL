@@ -60,8 +60,9 @@ def run_rollouts(agent, env_config, num_rollouts=1):
     return rollout_seq
 
 if __name__ == '__main__':
-    expr_dir = 'output/expr_20201202_155655'
+    expr_dir = 'output/expr_20201209_183223'
     ckpt_num = 200
+    only_failures = False
 
     ray_config_path = os.path.join(expr_dir, 'ray_config.yaml')
 
@@ -81,12 +82,15 @@ if __name__ == '__main__':
     agent.restore(ckpt_path)
 
     print('running rollouts')
-    rollout_seq = run_rollouts(agent, env_config, num_rollouts=20)
+    rollout_seq = run_rollouts(agent, env_config, num_rollouts=50)
     print('finished running rollouts')
 
     output_dir = os.path.join(expr_dir, 'rollouts', ckpt_dir_name)
     output_anim_dir = os.path.join(output_dir, 'animations')
-    output_anim_single_dir = os.path.join(output_anim_dir, 'single_rollouts')
+    if only_failures:
+        output_anim_single_dir = os.path.join(output_anim_dir, 'failures')
+    else:
+        output_anim_single_dir = os.path.join(output_anim_dir, 'single_rollouts')
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(output_anim_dir, exist_ok=True)
@@ -98,9 +102,24 @@ if __name__ == '__main__':
     print('processing rollout trajectories')
     trajectory_data = process_rollout_data(rollout_seq)
 
+    failure_trajectory_data = []
+
     print('animating individual rollouts')
     for i in tqdm.tqdm(range(len(trajectory_data))):
-        animate_trajectories([trajectory_data[i]], os.path.join(output_anim_single_dir,'rollout_{:03d}.mp4'.format(i)), anim_rate=1, plot_rejoin_region=True, plot_safety_region=True, sq_axis=True)
+        if trajectory_data[i]['failure'][-1]:
+            outcome_str = trajectory_data[i]['failure'][-1]
+            failure_trajectory_data.append(trajectory_data[i])
+        elif trajectory_data[i]['success'][-1]:
+            outcome_str = 'success'
+            if only_failures:
+                continue
+        
+        animate_trajectories([trajectory_data[i]], os.path.join(output_anim_single_dir,'rollout_{:03d}_{}.mp4'.format(i, outcome_str)), anim_rate=1, plot_rejoin_region=True, plot_safety_region=True, sq_axis=True)
 
     print('animating all rollouts')
-    animate_trajectories(trajectory_data, os.path.join(output_anim_dir,'all_trajectories.mp4'), plot_rejoin_region=True, rejoin_color_type='match')
+
+    if not only_failures:
+        animate_trajectories(trajectory_data, os.path.join(output_anim_dir,'all_trajectories.mp4'), plot_rejoin_region=True, rejoin_color_type='match')
+    
+    if len(failure_trajectory_data) > 0:
+        animate_trajectories(failure_trajectory_data, os.path.join(output_anim_dir,'all_failure_trajectories.mp4'), plot_rejoin_region=True, rejoin_color_type='match')
