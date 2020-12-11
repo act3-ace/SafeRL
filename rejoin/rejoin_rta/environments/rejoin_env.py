@@ -21,6 +21,9 @@ class DubinsRejoin(gym.Env):
         else:
             self.verbose = False
 
+        self.obs_integration = DubinsObservationIntegration(self.rejoin_config['obs'])
+        self.reward_integration = DubinsRewardIntegration(self.reward_config)
+
         self._setup_env_objs()
         self._setup_action_space()
         self._setup_obs_space()
@@ -62,16 +65,11 @@ class DubinsRejoin(gym.Env):
             successful_init = True
 
         self.time_elapsed = 0
-        self.success = False
-        self.failure = False
+        self.status_dict = {}
 
         self.rejoin_time = 0
-        self.in_rejoin = False
-        self.rejoin_failed = False
-        self.total_reward_rejoin = 0
-        self.rejoin_first_time_applied = False
-
-        self._init_reward()
+        self.reward_integration.reset(self.env_objs)
+        
         obs = self._generate_obs()
 
         if self.verbose:
@@ -87,25 +85,35 @@ class DubinsRejoin(gym.Env):
         self.env_objs['rejoin_region'].step()
 
         # check rejoin condition
-        self.rejoin_failed = False
-        self.in_rejoin = self.rejoin_cond()
-        if self.in_rejoin:
+        in_rejoin = self.rejoin_cond()
+        if in_rejoin:
             self.rejoin_time += timestep
-        elif self.rejoin_time > 0:
+        else:
             self.rejoin_time = 0
-            self.rejoin_failed = True
 
         # check success/failure conditions
         lead_distance =  distance2d(self.env_objs['wingman'], self.env_objs['lead'])
-        if lead_distance >= 40000:
-            self.failure = 'failure_distance'
-        if self.time_elapsed > 1000:
-            self.failure = 'failure_timeout'
+        
         if lead_distance < self.death_radius:
-            self.failure = 'failure_crash'
+            failure = 'failure_crash'
+        elif self.time_elapsed > 1000:
+            failure = 'failure_timeout'
+        elif lead_distance >= 40000:
+            failure = 'failure_distance'
+        else:
+            failure = False
+
 
         if self.rejoin_time > 20:
-            self.success = True
+            success = True
+        else:
+            success = False
+
+        self.status_dict = {
+            'success': success,
+            'failure': failure,
+            'in_rejoin': in_rejoin
+        }
 
         reward = self._generate_reward(timestep)
         obs = self._generate_obs()
@@ -114,47 +122,81 @@ class DubinsRejoin(gym.Env):
         self.time_elapsed += timestep
 
         # determine if done
-        done = False
-        if self.success or self.failure:
+        if success or failure:
             done = True
+        else:
+            done = False
 
         return  obs, reward, done, info
 
     def _setup_obs_space(self):
-        if self.rejoin_config['obs']['mode'] == 'rect':
-            self.observation_space = Box(low=-1, high=1, shape=(8,))
-            self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
 
-        elif self.rejoin_config['obs']['mode'] == 'polar':
-            self.observation_space = Box(low=-1, high=1, shape=(12,))
-            self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+        self.observation_space = self.obs_integration.observation_space
 
     def _setup_action_space(self):
         self.action_space = self.env_objs['wingman'].action_space
         
     def _generate_obs(self):
-        wingman_lead_r_x = self.env_objs['lead'].x - self.env_objs['wingman'].x
-        wingman_lead_r_y = self.env_objs['lead'].y - self.env_objs['wingman'].y
+        obs = self.obs_integration.get_obs(self.env_objs)
+        return obs
 
-        wingman_rejoin_r_x = self.env_objs['rejoin_region'].x - self.env_objs['wingman'].x
-        wingman_rejoin_r_y = self.env_objs['rejoin_region'].y - self.env_objs['wingman'].y
+    def _generate_reward(self, timestep):
+        reward = self.reward_integration.get_reward(self.env_objs, timestep, self.status_dict)
+        return reward
 
-        if self.rejoin_config['obs']['mode'] == 'rect':
+    def _generate_info(self):
 
-            vel_rect = self.env_objs['wingman'].velocity_rect
+        info = {
+            'wingman': self.env_objs['wingman']._generate_info(),
+            'lead': self.env_objs['lead']._generate_info(),
+            'rejoin_region': self.env_objs['rejoin_region']._generate_info(),
+            'rejoin_time': self.rejoin_time,            
+            'failure': self.status_dict['failure'],
+            'success': self.status_dict['success'],
+        }
+
+        return info
+
+    def rejoin_cond(self):
+        wingman_coords = (self.env_objs['wingman'].x, self.env_objs['wingman'].y)
+        return self.env_objs['rejoin_region'].contains(wingman_coords)
+
+
+class DubinsObservationIntegration():
+    def __init__(self, config):
+        self.config = config
+
+        if self.config['mode'] == 'rect':
+            self.observation_space = Box(low=-1, high=1, shape=(8,))
+            self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
+
+        elif self.config['mode'] == 'polar':
+            self.observation_space = Box(low=-1, high=1, shape=(12,))
+            self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+
+    def get_obs(self, env_objs):
+        wingman_lead_r_x = env_objs['lead'].x - env_objs['wingman'].x
+        wingman_lead_r_y = env_objs['lead'].y - env_objs['wingman'].y
+
+        wingman_rejoin_r_x = env_objs['rejoin_region'].x - env_objs['wingman'].x
+        wingman_rejoin_r_y = env_objs['rejoin_region'].y - env_objs['wingman'].y
+
+        if self.config['mode'] == 'rect':
+
+            vel_rect = env_objs['wingman'].velocity_rect
             vel_x = vel_rect[0]
             vel_y = vel_rect[1]
 
-            lead_vel_rect = self.env_objs['lead'].velocity_rect
+            lead_vel_rect = env_objs['lead'].velocity_rect
             lead_vel_x = lead_vel_rect[0]
             lead_vel_y = lead_vel_rect[1]
 
-            if self.rejoin_config['obs']['reference'] == 'global':
+            if self.config['reference'] == 'global':
                 obs = np.array([wingman_lead_r_x, wingman_lead_r_y, wingman_rejoin_r_x, wingman_rejoin_r_y, vel_x, vel_y, lead_vel_x, lead_vel_y], dtype=np.float64)
             else:
-                raise ValueError('Invalid obs referece {} for obs mode rect'.format(self.rejoin_config['obs']['reference']))
+                raise ValueError('Invalid obs referece {} for obs mode rect'.format(self.config['reference']))
 
-        elif self.rejoin_config['obs']['mode'] == 'polar':
+        elif self.config['mode'] == 'polar':
 
             def rect2polar(vec_x, vec_y):
                 mag = math.sqrt(vec_x**2 + vec_y**2)
@@ -167,21 +209,21 @@ class DubinsRejoin(gym.Env):
             wingman_lead_r_mag, wingman_lead_r_theta = rect2polar(wingman_lead_r_x,wingman_lead_r_y)
             wingman_rejoin_r_mag, wingman_rejoin_r_theta = rect2polar(wingman_rejoin_r_x, wingman_rejoin_r_y)
 
-            vel_polar = self.env_objs['wingman'].velocity_polar
+            vel_polar = env_objs['wingman'].velocity_polar
             vel_mag = vel_polar[0]
             vel_theta = vel_polar[1]
 
-            lead_vel_polar = self.env_objs['lead'].velocity_polar
+            lead_vel_polar = env_objs['lead'].velocity_polar
             lead_vel_mag = lead_vel_polar[0]
             lead_vel_theta = lead_vel_polar[1]
 
-            if self.rejoin_config['obs']['reference'] == 'wingman':
+            if self.config['reference'] == 'wingman':
                 wingman_lead_r_theta -= vel_theta
                 wingman_rejoin_r_theta -= vel_theta
                 lead_vel_theta -= vel_theta
                 vel_theta = 0
             else:
-                raise ValueError('Invalid obs referece {} for obs mode polar'.format(self.rejoin_config['obs']['reference']))
+                raise ValueError('Invalid obs referece {} for obs mode polar'.format(self.config['reference']))
 
             obs =np.array(
                     polar2obs(wingman_lead_r_mag, wingman_lead_r_theta) +
@@ -197,55 +239,50 @@ class DubinsRejoin(gym.Env):
 
         return obs
 
-    def _init_reward(self):
-        self.prev_distance = distance2d(self.env_objs['wingman'], self.env_objs['rejoin_region'])
+class DubinsRewardIntegration():
+    def __init__(self, config):
+        self.config = config
 
-    def _generate_reward(self, timestep):
-        cur_distance = distance2d(self.env_objs['wingman'], self.env_objs['rejoin_region'])
+    def reset(self, env_objs):
+        self.prev_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
+
+        self.total_reward_rejoin = 0
+        self.in_rejoin_prev = False
+        self.rejoin_first_time_applied = False
+
+    def get_reward(self, env_objs, timestep, status_dict):
+        cur_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
         dist_change = cur_distance - self.prev_distance
 
         reward = 0
 
-        reward += self.reward_time_decay
+        reward += self.config['time_decay']
 
         self.prev_distance = cur_distance
 
-        if self.in_rejoin:
-            reward_rejoin = self.reward_config['rejoin_timestep'] * timestep
+        in_rejoin = status_dict['in_rejoin']
+
+        if in_rejoin:
+            reward_rejoin = self.config['rejoin_timestep'] * timestep
             reward += reward_rejoin
             self.total_reward_rejoin += reward_rejoin
 
             if not self.rejoin_first_time_applied:
-                reward += self.reward_config['rejoin_first_time']
+                reward += self.config['rejoin_first_time']
                 self.rejoin_first_time_applied = True
         else:
-            reward_dist = dist_change*self.reward_config['dist_change']
+            reward_dist = dist_change*self.config['dist_change']
             reward += reward_dist
 
-            if self.rejoin_failed:
+            if self.in_rejoin_prev:
                 reward += -1*1*self.total_reward_rejoin
                 self.total_reward_rejoin = 0
 
-        if self.failure:
-            reward += self.reward_config[self.failure]
-        elif self.success:
-            reward += self.reward_config['success']
+        self.in_rejoin_prev = in_rejoin
+
+        if status_dict['failure']:
+            reward += self.config[status_dict['failure']]
+        elif status_dict['success']:
+            reward += self.config['success']
 
         return reward
-
-    def _generate_info(self):
-
-        info = {
-            'wingman': self.env_objs['wingman']._generate_info(),
-            'lead': self.env_objs['lead']._generate_info(),
-            'rejoin_region': self.env_objs['rejoin_region']._generate_info(),
-            'rejoin_time': self.rejoin_time,            
-            'failure': self.failure,
-            'success': self.success,
-        }
-
-        return info
-
-    def rejoin_cond(self):
-        wingman_coords = (self.env_objs['wingman'].x, self.env_objs['wingman'].y)
-        return self.env_objs['rejoin_region'].contains(wingman_coords)
