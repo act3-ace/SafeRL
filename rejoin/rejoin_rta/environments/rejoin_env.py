@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import random
 
 import gym
 from gym.spaces import Discrete, Box
@@ -50,6 +51,14 @@ class DubinsRejoin(gym.Env):
             'lead': lead,
             'rejoin_region': rejoin_region,
         }
+
+    def seed(self, seed=None):
+        np.random.seed(seed)
+        # note that python random should not be used (use numpy random instead)
+        # Setting seed just to be safe incase it is accidentally used
+        random.seed(seed)
+
+        return [seed]
 
     def reset(self):
 

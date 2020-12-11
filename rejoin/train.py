@@ -81,6 +81,7 @@ config["num_workers"] = 1
 config["output"] = log_dir
 # config["eager"] = False
 config['_fake_gpus'] = True
+config['seed'] = 0
 
 rollout_history = []
 
