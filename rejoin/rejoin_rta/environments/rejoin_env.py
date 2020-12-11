@@ -14,22 +14,20 @@ class DubinsRejoin(gym.Env):
 
     def __init__(self, config):
         # save config
-        self.reward_config = config["reward_config"]
-        self.rejoin_config = config['rejoin_config']
+        self.config = config
 
         if 'verbose' in config:
             self.verbose = config['verbose']
         else:
             self.verbose = False
 
-        self.obs_integration = DubinsObservationIntegration(self.rejoin_config['obs'])
-        self.reward_integration = DubinsRewardIntegration(self.reward_config)
+        self.obs_integration = DubinsObservationIntegration(self.config['obs'])
+        self.reward_integration = DubinsRewardIntegration(self.config["reward"])
 
         self._setup_env_objs()
         self._setup_action_space()
         self._setup_obs_space()
 
-        self.reward_time_decay = -.01
         self.death_radius = 100
 
         self.reset()
@@ -38,13 +36,13 @@ class DubinsRejoin(gym.Env):
         wingman = DubinsAgent()
         lead = DubinsAircraft()
 
-        if self.rejoin_config['rejoin_region']['type'] == 'circle':
-            r_offset = self.rejoin_config['rejoin_region']['range']
-            radius = self.rejoin_config['rejoin_region']['radius']
-            aspect_angle = np.radians(self.rejoin_config['rejoin_region']['aspect_angle'])
+        if self.config['rejoin_region']['type'] == 'circle':
+            r_offset = self.config['rejoin_region']['range']
+            radius = self.config['rejoin_region']['radius']
+            aspect_angle = np.radians(self.config['rejoin_region']['aspect_angle'])
             rejoin_region = RelativeCircle2D(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
         else:
-            raise ValueError('Invalid rejoin region type {} not supported'.format(self.rejoin_config['rejoin_region']['type']))
+            raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['rejoin_region']['type']))
 
         self.env_objs = {
             'wingman': wingman,
@@ -62,7 +60,7 @@ class DubinsRejoin(gym.Env):
 
     def reset(self):
 
-        init_dict = self.rejoin_config['init']
+        init_dict = self.config['init']
 
         successful_init = False
         while not successful_init:

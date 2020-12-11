@@ -97,6 +97,7 @@ reward_config = {
 }
 
 rejoin_config = {
+    'reward': reward_config,
     'init': {
         'wingman': {
             'x': [-4000, 4000],
@@ -122,10 +123,21 @@ rejoin_config = {
         'range':500,
         'aspect_angle': 60,
         'radius':150,
-    }
+    },
+    'constraints':{
+        'safety_margin': {
+            'aircraft': 100
+        },
+        'max_time': 1000,
+        'max_target_distance': 40000,
+        'success': {
+            'rejoin_time': 20,
+        },
+    },
+    'verbose':False,
 }
 
-config['env_config'] = {'reward_config':reward_config, 'rejoin_config':rejoin_config, 'verbose':False}
+config['env_config'] = rejoin_config
 
 trainer = ppo.PPOTrainer(config=config, env=DubinsRejoin)
 
