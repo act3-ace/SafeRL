@@ -128,8 +128,8 @@ rejoin_config = {
         'safety_margin': {
             'aircraft': 100
         },
-        'max_time': 1000,
-        'max_target_distance': 40000,
+        'timeout': 1000,
+        'max_goal_distance': 40000,
         'success': {
             'rejoin_time': 20,
         },

@@ -23,12 +23,11 @@ class DubinsRejoin(gym.Env):
 
         self.obs_integration = DubinsObservationIntegration(self.config['obs'])
         self.reward_integration = DubinsRewardIntegration(self.config["reward"])
+        self.constraints_integration = DubinsConstraintIntegration(self.config['constraints'])
 
         self._setup_env_objs()
         self._setup_action_space()
         self._setup_obs_space()
-
-        self.death_radius = 100
 
         self.reset()
 
@@ -71,11 +70,11 @@ class DubinsRejoin(gym.Env):
             # TODO check if initialization is safe
             successful_init = True
 
-        self.time_elapsed = 0
         self.status_dict = {}
 
-        self.rejoin_time = 0
         self.reward_integration.reset(self.env_objs)
+        self.obs_integration.reset()
+        self.constraints_integration.reset()
         
         obs = self._generate_obs()
 
@@ -91,45 +90,14 @@ class DubinsRejoin(gym.Env):
         self.env_objs['lead'].step(timestep)
         self.env_objs['rejoin_region'].step()
 
-        # check rejoin condition
-        in_rejoin = self.rejoin_cond()
-        if in_rejoin:
-            self.rejoin_time += timestep
-        else:
-            self.rejoin_time = 0
-
-        # check success/failure conditions
-        lead_distance =  distance2d(self.env_objs['wingman'], self.env_objs['lead'])
-        
-        if lead_distance < self.death_radius:
-            failure = 'failure_crash'
-        elif self.time_elapsed > 1000:
-            failure = 'failure_timeout'
-        elif lead_distance >= 40000:
-            failure = 'failure_distance'
-        else:
-            failure = False
-
-
-        if self.rejoin_time > 20:
-            success = True
-        else:
-            success = False
-
-        self.status_dict = {
-            'success': success,
-            'failure': failure,
-            'in_rejoin': in_rejoin
-        }
+        self.status_dict = self._generate_constraint_status(timestep)
 
         reward = self._generate_reward(timestep)
         obs = self._generate_obs()
         info = self._generate_info()
 
-        self.time_elapsed += timestep
-
         # determine if done
-        if success or failure:
+        if self.status_dict['success'] or self.status_dict['failure']:
             done = True
         else:
             done = False
@@ -151,23 +119,21 @@ class DubinsRejoin(gym.Env):
         reward = self.reward_integration.get_reward(self.env_objs, timestep, self.status_dict)
         return reward
 
+    def _generate_constraint_status(self, timestep):
+        return self.constraints_integration.step(self.env_objs, timestep)
+
     def _generate_info(self):
 
         info = {
             'wingman': self.env_objs['wingman']._generate_info(),
             'lead': self.env_objs['lead']._generate_info(),
             'rejoin_region': self.env_objs['rejoin_region']._generate_info(),
-            'rejoin_time': self.rejoin_time,            
             'failure': self.status_dict['failure'],
             'success': self.status_dict['success'],
+            'status': self.status_dict,
         }
 
         return info
-
-    def rejoin_cond(self):
-        wingman_coords = (self.env_objs['wingman'].x, self.env_objs['wingman'].y)
-        return self.env_objs['rejoin_region'].contains(wingman_coords)
-
 
 class DubinsObservationIntegration():
     def __init__(self, config):
@@ -180,6 +146,9 @@ class DubinsObservationIntegration():
         elif self.config['mode'] == 'polar':
             self.observation_space = Box(low=-1, high=1, shape=(12,))
             self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+
+    def reset(self):
+        pass
 
     def get_obs(self, env_objs):
         wingman_lead_r_x = env_objs['lead'].x - env_objs['wingman'].x
@@ -293,3 +262,59 @@ class DubinsRewardIntegration():
             reward += self.config['success']
 
         return reward
+
+class DubinsConstraintIntegration():
+    def __init__(self, config):
+        self.config = config
+        self.reset()
+    
+    def reset(self):
+        self.time_elapsed = 0
+        self.rejoin_time = 0
+        self.in_rejoin = False
+
+    def step(self, env_objs, timestep):
+        # increment rejoin time
+        in_rejoin = self.check_rejoin_cond(env_objs)
+        if in_rejoin:
+            self.rejoin_time += timestep
+        else:
+            self.rejoin_time = 0
+
+        self.time_elapsed += timestep
+
+        return self.check_constraints(env_objs)
+    
+    def check_constraints(self, env_objs):
+        # get rejoin status
+        in_rejoin = self.check_rejoin_cond(env_objs)
+
+        # check success/failure conditions
+        lead_distance =  distance2d(env_objs['wingman'], env_objs['lead'])
+        
+        if lead_distance < self.config['safety_margin']['aircraft']:
+            failure = 'failure_crash'
+        elif self.time_elapsed > self.config['timeout']:
+            failure = 'failure_timeout'
+        elif lead_distance >= self.config['max_goal_distance']:
+            failure = 'failure_distance'
+        else:
+            failure = False
+
+        if self.rejoin_time > self.config['success']['rejoin_time']:
+            success = True
+        else:
+            success = False
+
+        status_dict = {
+            'success': success,
+            'failure': failure,
+            'in_rejoin': in_rejoin,
+            'time_elapsed': self.time_elapsed
+        }
+
+        return status_dict
+
+    def check_rejoin_cond(self, env_objs):
+        wingman_coords = (env_objs['wingman'].x, env_objs['wingman'].y)
+        return env_objs['rejoin_region'].contains(wingman_coords)
