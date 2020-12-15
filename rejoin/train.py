@@ -15,7 +15,7 @@ import ray
 from ray import tune
 
 import ray.rllib.agents.ppo as ppo
-from ray.tune.logger import pretty_print
+from ray.tune.logger import JsonLogger
 
 from rejoin_rta.environments.rejoin_env import DubinsRejoin
 
@@ -25,19 +25,8 @@ parser.add_argument('--output_dir', type=str, default='./output')
 
 args = parser.parse_args()
 
-output_dir = os.path.join(args.output_dir, datetime.now().strftime("expr_%Y%m%d_%H%M%S") )
-log_dir = os.path.join(output_dir, 'logs')
-ckpt_dir = os.path.join(output_dir, 'ckpt')
-
-config={
-    'env': DubinsRejoin,
-    'env_config':{},
-}
-
-stop = {
-    "training_iteration": 50,
-    "timesteps_total": 1000000,
-}
+expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
+output_dir = os.path.join(args.output_dir, expr_name)
 
 def run_rollout(agent, env_config):
     # instantiate env class
@@ -72,14 +61,10 @@ def run_rollout(agent, env_config):
 
     return rollout_data
 
-# results = tune.run("PPO", config=config, stop=stop)
-
 ray.init(num_gpus=0)
 config = ppo.DEFAULT_CONFIG.copy()
 config["num_gpus"] = 0
-config["num_workers"] = 1
-config["output"] = log_dir
-# config["eager"] = False
+config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
 
@@ -138,8 +123,11 @@ rejoin_config = {
 }
 
 config['env_config'] = rejoin_config
+config['env'] = DubinsRejoin
 
-trainer = ppo.PPOTrainer(config=config, env=DubinsRejoin)
+stop_dict = {
+    'training_iteration': 200,
+}
 
 # create output dir and save experiment params
 os.makedirs(output_dir, exist_ok=True)
@@ -151,21 +139,4 @@ with open(args_yaml_filepath, 'w') as args_yaml_file:
 with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
     yaml.dump(config, ray_config_yaml_file)
 
-rollout_history.append(run_rollout(trainer, config['env_config']))
-num_iter = 200
-for i in range(num_iter):
-    result = trainer.train()
-    rollout_history.append(run_rollout(trainer, config['env_config']))
-    print(pretty_print(result))
-    if i % 25 == 0  or i == (num_iter-1):
-        ckpt_path = trainer.save(ckpt_dir)
-        print('ckpt saved @{}'.format(ckpt_path))
-
-save_data = {
-    'config':config,
-    'rollout_history':rollout_history
-}
-
-rollout_history_filepath = os.path.join(output_dir, "rollout_history.pickle")
-
-pickle.dump( save_data, open( rollout_history_filepath, "wb" ) )
+tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=2, checkpoint_at_end=True, name=expr_name)
