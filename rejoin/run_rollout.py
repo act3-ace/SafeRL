@@ -60,29 +60,29 @@ def run_rollouts(agent, env_config, num_rollouts=1):
     return rollout_seq
 
 if __name__ == '__main__':
-    expr_dir = 'output/expr_20201209_183223'
+    expr_dir = 'output/expr_20201215_104654/PPO_DubinsRejoin_e7b6d_00000_0_2020-12-15_10-46-55'
     ckpt_num = 200
     only_failures = False
 
-    ray_config_path = os.path.join(expr_dir, 'ray_config.yaml')
+    ray_config_path = os.path.join(expr_dir, 'params.pkl')
 
     ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
     ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
-    ckpt_path = os.path.join(expr_dir, 'ckpt', ckpt_dir_name, ckpt_filename)
+    ckpt_path = os.path.join(expr_dir, ckpt_dir_name, ckpt_filename)
 
-    with open(ray_config_path, 'r') as ray_config_f:
-        ray_config = yaml.load(ray_config_f)
+    with open(ray_config_path, 'rb') as ray_config_f:
+        ray_config = pickle.load(ray_config_f)
 
     ray.init()
 
     env_config = ray_config['env_config']
-    ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
+    # ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
 
     agent = ppo.PPOTrainer(config=ray_config, env=DubinsRejoin)
     agent.restore(ckpt_path)
 
     print('running rollouts')
-    rollout_seq = run_rollouts(agent, env_config, num_rollouts=50)
+    rollout_seq = run_rollouts(agent, env_config, num_rollouts=20)
     print('finished running rollouts')
 
     output_dir = os.path.join(expr_dir, 'rollouts', ckpt_dir_name)
