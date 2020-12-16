@@ -257,7 +257,7 @@ class DubinsRewardIntegration():
         self.in_rejoin_prev = in_rejoin
 
         if status_dict['failure']:
-            reward += self.config[status_dict['failure']]
+            reward += self.config['failure'][status_dict['failure']]
         elif status_dict['success']:
             reward += self.config['success']
 
@@ -293,11 +293,11 @@ class DubinsConstraintIntegration():
         lead_distance =  distance2d(env_objs['wingman'], env_objs['lead'])
         
         if lead_distance < self.config['safety_margin']['aircraft']:
-            failure = 'failure_crash'
+            failure = 'crash'
         elif self.time_elapsed > self.config['timeout']:
-            failure = 'failure_timeout'
+            failure = 'timeout'
         elif lead_distance >= self.config['max_goal_distance']:
-            failure = 'failure_distance'
+            failure = 'distance'
         else:
             failure = False
 
