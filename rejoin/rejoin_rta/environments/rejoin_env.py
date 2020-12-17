@@ -112,11 +112,11 @@ class DubinsRejoin(gym.Env):
         self.action_space = self.env_objs['wingman'].action_space
         
     def _generate_obs(self):
-        obs = self.obs_integration.get_obs(self.env_objs)
+        obs = self.obs_integration.gen_obs(self.env_objs)
         return obs
 
     def _generate_reward(self, timestep):
-        reward = self.reward_integration.get_reward(self.env_objs, timestep, self.status_dict)
+        reward = self.reward_integration.gen_reward(self.env_objs, timestep, self.status_dict)
         return reward
 
     def _generate_constraint_status(self, timestep):
@@ -131,6 +131,7 @@ class DubinsRejoin(gym.Env):
             'failure': self.status_dict['failure'],
             'success': self.status_dict['success'],
             'status': self.status_dict,
+            'reward': self.reward_integration._generate_info(),
         }
 
         return info
@@ -150,7 +151,7 @@ class DubinsObservationIntegration():
     def reset(self):
         pass
 
-    def get_obs(self, env_objs):
+    def gen_obs(self, env_objs):
         wingman_lead_r_x = env_objs['lead'].x - env_objs['wingman'].x
         wingman_lead_r_y = env_objs['lead'].y - env_objs['wingman'].y
 
@@ -222,44 +223,84 @@ class DubinsRewardIntegration():
     def reset(self, env_objs):
         self.prev_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
 
-        self.total_reward_rejoin = 0
+        self.step_reward = 0
+        self.total_reward = 0
+        self.reward_component_totals = {
+            'rejoin': 0,
+            'rejoin_first_time': 0,
+            'time': 0,
+            'distance_change': 0,
+            'success': 0,
+            'failure': 0,
+        }
+
         self.in_rejoin_prev = False
         self.rejoin_first_time_applied = False
 
-    def get_reward(self, env_objs, timestep, status_dict):
-        cur_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
-        dist_change = cur_distance - self.prev_distance
+    def _generate_info(self):
+        info = {
+            'step': self.step_reward,
+            'component_totals': self.reward_component_totals,
+            'total': self.total_reward
+        }
 
+        return info
+
+    def gen_reward(self, env_objs, timestep, status_dict):
         reward = 0
 
-        reward += self.config['time_decay']
+        rejoin_reward = 0
+        rejoin_first_time_reward = 0
+        time_reward = 0
+        distance_change_reward = 0
+        failure_reward = 0
+        success_reward = 0
 
-        self.prev_distance = cur_distance
+        time_reward += self.config['time_decay']
 
         in_rejoin = status_dict['in_rejoin']
 
+        # compute distance changed between this timestep and previous
+        cur_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
+        dist_change = cur_distance - self.prev_distance
+        self.prev_distance = cur_distance
+
         if in_rejoin:
-            reward_rejoin = self.config['rejoin_timestep'] * timestep
-            reward += reward_rejoin
-            self.total_reward_rejoin += reward_rejoin
+            rejoin_reward += self.config['rejoin_timestep'] * timestep
 
             if not self.rejoin_first_time_applied:
-                reward += self.config['rejoin_first_time']
+                rejoin_first_time_reward += self.config['rejoin_first_time']
                 self.rejoin_first_time_applied = True
         else:
-            reward_dist = dist_change*self.config['dist_change']
-            reward += reward_dist
+            distance_change_reward += dist_change*self.config['dist_change']
 
+            # if rejoin region is left, refund all accumulated rejoin reward
+            #   this is to ensure that the agent doesn't infinitely enter and leave rejoin region
             if self.in_rejoin_prev:
-                reward += -1*1*self.total_reward_rejoin
-                self.total_reward_rejoin = 0
+                rejoin_reward += -1*self.reward_component_totals['rejoin']
 
         self.in_rejoin_prev = in_rejoin
 
         if status_dict['failure']:
-            reward += self.config['failure'][status_dict['failure']]
+            failure_reward += self.config['failure'][status_dict['failure']]
         elif status_dict['success']:
-            reward += self.config['success']
+            success_reward += self.config['success']
+
+        reward += rejoin_reward
+        reward += rejoin_first_time_reward
+        reward += time_reward
+        reward += distance_change_reward
+        reward += success_reward
+        reward += failure_reward
+
+        self.step_reward = reward
+        self.total_reward += reward
+        self.reward_component_totals['rejoin'] += rejoin_reward
+        self.reward_component_totals['rejoin_first_time'] += rejoin_first_time_reward
+        self.reward_component_totals['time'] += time_reward
+        self.reward_component_totals['distance_change'] += distance_change_reward
+        self.reward_component_totals['success'] += success_reward
+        self.reward_component_totals['failure'] += failure_reward
 
         return reward
 

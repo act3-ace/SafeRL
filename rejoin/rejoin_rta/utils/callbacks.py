@@ -40,3 +40,12 @@ class FailureCodeCallback:
         if episode.last_info_for()['failure']:
             for failure_code in self.failure_codes:
                 episode.custom_metrics["failure_code_ratio/{}".format(failure_code)] = int(episode.last_info_for()['failure'] == failure_code)
+
+class RewardComponentsCallback:
+    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
+                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
+                       env_index: int, **kwargs):
+        
+        ep_info = episode.last_info_for()
+        for reward_comp_name, reward_comp_val in ep_info['reward']['component_totals'].items():
+            episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val

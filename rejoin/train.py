@@ -18,11 +18,11 @@ import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
 from rejoin_rta.environments.rejoin_env import DubinsRejoin
-from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback
+from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--output_dir', type=str, default='./output/debug')
+parser.add_argument('--output_dir', type=str, default='./output')
 
 args = parser.parse_args()
 
@@ -68,7 +68,7 @@ config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback()])
+config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback()])
 
 rollout_history = []
 
