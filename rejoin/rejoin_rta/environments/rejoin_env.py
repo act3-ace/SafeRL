@@ -70,6 +70,8 @@ class DubinsRejoin(gym.Env):
             # TODO check if initialization is safe
             successful_init = True
 
+        self.timestep = 1
+
         self.status_dict = {}
 
         self.reward_integration.reset(self.env_objs)
@@ -84,15 +86,13 @@ class DubinsRejoin(gym.Env):
         return obs
 
     def step(self, action):
-        timestep = 1
 
-        self.env_objs['wingman'].step(timestep, action)
-        self.env_objs['lead'].step(timestep)
-        self.env_objs['rejoin_region'].step()
+        self.env_objs['lead'].step(self.timestep)
+        self.env_objs['wingman'].step(self.timestep, action)
 
-        self.status_dict = self._generate_constraint_status(timestep)
+        self.status_dict = self._generate_constraint_status()
 
-        reward = self._generate_reward(timestep)
+        reward = self._generate_reward()
         obs = self._generate_obs()
         info = self._generate_info()
 
@@ -115,12 +115,12 @@ class DubinsRejoin(gym.Env):
         obs = self.obs_integration.gen_obs(self.env_objs)
         return obs
 
-    def _generate_reward(self, timestep):
-        reward = self.reward_integration.gen_reward(self.env_objs, timestep, self.status_dict)
+    def _generate_reward(self):
+        reward = self.reward_integration.gen_reward(self.env_objs, self.timestep, self.status_dict)
         return reward
 
-    def _generate_constraint_status(self, timestep):
-        return self.constraints_integration.step(self.env_objs, timestep)
+    def _generate_constraint_status(self):
+        return self.constraints_integration.step(self.env_objs, self.timestep)
 
     def _generate_info(self):
 

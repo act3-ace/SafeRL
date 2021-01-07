@@ -11,6 +11,8 @@ class DubinsAircraft:
         self.vel_min = 10
         self.vel_max = 100
 
+        self.dependent_objs = []
+
         self.reset(x, y, theta, velocity)
 
     def reset(self, x=0, y=0, theta=0, velocity=100):
@@ -20,6 +22,9 @@ class DubinsAircraft:
         theta_dot = 0
 
         self.state = np.array([x, y, theta, vel, theta_dot, vel_dot], dtype=np.float64)
+
+        for obj in self.dependent_objs:
+            obj.reset()
 
     def step(self, timestep, control=np.array([0, 0], dtype=np.float64)):
        # Extract current state data
@@ -57,6 +62,9 @@ class DubinsAircraft:
         # vel_dot: 5
         self.state = np.array([x, y, theta, vel, theta_dot, vel_dot], dtype=np.float64)
 
+        for obj in self.dependent_objs:
+            obj.step()
+
     def _generate_info(self):
         info = {
             'x': self.x,
@@ -68,6 +76,9 @@ class DubinsAircraft:
         }
 
         return info
+
+    def register_dependent_obj(self, obj):
+        self.dependent_objs.append(obj)
 
     @property
     def x(self):

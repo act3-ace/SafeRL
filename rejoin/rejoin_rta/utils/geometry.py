@@ -11,7 +11,14 @@ class RelativePoint:
 
         self._center = np.array([0,0,0], dtype=np.float64)
 
+        # save reference object
         self.ref = ref
+        # register self to reference object dependency list
+        self.ref.register_dependent_obj(self)
+
+        self.update()
+
+    def reset(self):
         self.update()
 
     def update(self):
