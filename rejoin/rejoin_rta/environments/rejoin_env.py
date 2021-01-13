@@ -52,7 +52,7 @@ class DubinsRejoin(gym.Env):
     def seed(self, seed=None):
         np.random.seed(seed)
         # note that python random should not be used (use numpy random instead)
-        # Setting seed just to be safe incase it is accidentally used
+        # Setting seed just to be safe in case it is accidentally used
         random.seed(seed)
 
         return [seed]
@@ -102,10 +102,9 @@ class DubinsRejoin(gym.Env):
         else:
             done = False
 
-        return  obs, reward, done, info
+        return obs, reward, done, info
 
     def _setup_obs_space(self):
-
         self.observation_space = self.obs_integration.observation_space
 
     def _setup_action_space(self):
@@ -135,6 +134,15 @@ class DubinsRejoin(gym.Env):
         }
 
         return info
+
+    """
+    This method returns an array of specified length of randomly generated numbers from numpy.
+    It is used only for consistency testing purposes.
+    args: array_length - number of random elements to be included in returned array
+    returns: an array of numpy generated random numbers
+    """
+    def _sample_random(self, array_length):
+        return np.random.randn(array_length)
 
 class DubinsObservationIntegration():
     def __init__(self, config):
