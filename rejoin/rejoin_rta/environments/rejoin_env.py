@@ -52,13 +52,12 @@ class DubinsRejoin(gym.Env):
     def seed(self, seed=None):
         np.random.seed(seed)
         # note that python random should not be used (use numpy random instead)
-        # Setting seed just to be safe incase it is accidentally used
+        # Setting seed just to be safe in case it is accidentally used
         random.seed(seed)
 
         return [seed]
 
     def reset(self):
-
         init_dict = self.config['init']
 
         successful_init = False
@@ -70,7 +69,7 @@ class DubinsRejoin(gym.Env):
             # TODO check if initialization is safe
             successful_init = True
 
-        self.timestep = 1
+        self.timestep = 1       # sec
 
         self.status_dict = {}
 
@@ -86,7 +85,6 @@ class DubinsRejoin(gym.Env):
         return obs
 
     def step(self, action):
-
         self.env_objs['lead'].step(self.timestep)
         self.env_objs['wingman'].step(self.timestep, action)
 
@@ -102,10 +100,9 @@ class DubinsRejoin(gym.Env):
         else:
             done = False
 
-        return  obs, reward, done, info
+        return obs, reward, done, info
 
     def _setup_obs_space(self):
-
         self.observation_space = self.obs_integration.observation_space
 
     def _setup_action_space(self):
@@ -171,7 +168,7 @@ class DubinsObservationIntegration():
             if self.config['reference'] == 'global':
                 obs = np.array([wingman_lead_r_x, wingman_lead_r_y, wingman_rejoin_r_x, wingman_rejoin_r_y, vel_x, vel_y, lead_vel_x, lead_vel_y], dtype=np.float64)
             else:
-                raise ValueError('Invalid obs referece {} for obs mode rect'.format(self.config['reference']))
+                raise ValueError('Invalid obs reference {} for obs mode rect'.format(self.config['reference']))
 
         elif self.config['mode'] == 'polar':
 
@@ -200,7 +197,7 @@ class DubinsObservationIntegration():
                 lead_vel_theta -= vel_theta
                 vel_theta = 0
             else:
-                raise ValueError('Invalid obs referece {} for obs mode polar'.format(self.config['reference']))
+                raise ValueError('Invalid obs reference {} for obs mode polar'.format(self.config['reference']))
 
             obs =np.array(
                     polar2obs(wingman_lead_r_mag, wingman_lead_r_theta) +
