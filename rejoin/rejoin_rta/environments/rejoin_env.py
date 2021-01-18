@@ -5,31 +5,15 @@ import random
 import gym
 from gym.spaces import Discrete, Box
 
-
+from . import BaseEnv
 from ..aero_models.dubins import DubinsAircraft, DubinsAgent
-from ..utils.util import draw_from_rand_bounds_dict
 from ..utils.geometry import RelativeCircle2D, distance2d
 
-class DubinsRejoin(gym.Env):
+class DubinsRejoin(BaseEnv):
 
     def __init__(self, config):
-        # save config
-        self.config = config
-
-        if 'verbose' in config:
-            self.verbose = config['verbose']
-        else:
-            self.verbose = False
-
-        self.obs_integration = DubinsObservationIntegration(self.config['obs'])
-        self.reward_integration = DubinsRewardIntegration(self.config["reward"])
-        self.constraints_integration = DubinsConstraintIntegration(self.config['constraints'])
-
-        self._setup_env_objs()
-        self._setup_action_space()
-        self._setup_obs_space()
-
-        self.reset()
+        super(DubinsRejoin, self).__init__(config)
+        self.timestep = 1
 
     def _setup_env_objs(self):
         wingman = DubinsAgent()
@@ -49,81 +33,16 @@ class DubinsRejoin(gym.Env):
             'rejoin_region': rejoin_region,
         }
 
-    def seed(self, seed=None):
-        np.random.seed(seed)
-        # note that python random should not be used (use numpy random instead)
-        # Setting seed just to be safe incase it is accidentally used
-        random.seed(seed)
-
-        return [seed]
+        self.agent = wingman
 
     def reset(self):
+        return super(DubinsRejoin, self).reset()
 
-        init_dict = self.config['init']
-
-        successful_init = False
-        while not successful_init:
-            init_dict_draw = draw_from_rand_bounds_dict(init_dict)
-            for obj_key, obj_init_dict in init_dict_draw.items():
-                self.env_objs[obj_key].reset(**obj_init_dict)
-
-            # TODO check if initialization is safe
-            successful_init = True
-
-        self.timestep = 1
-
-        self.status_dict = {}
-
-        self.reward_integration.reset(self.env_objs)
-        self.obs_integration.reset()
-        self.constraints_integration.reset()
-        
-        obs = self._generate_obs()
-
-        if self.verbose:
-            print("env reset with params {}".format(self._generate_info()))
-
-        return obs
-
-    def step(self, action):
-
+    def _step_sim(self, action):
         self.env_objs['lead'].step(self.timestep)
         self.env_objs['wingman'].step(self.timestep, action)
 
-        self.status_dict = self._generate_constraint_status()
-
-        reward = self._generate_reward()
-        obs = self._generate_obs()
-        info = self._generate_info()
-
-        # determine if done
-        if self.status_dict['success'] or self.status_dict['failure']:
-            done = True
-        else:
-            done = False
-
-        return  obs, reward, done, info
-
-    def _setup_obs_space(self):
-
-        self.observation_space = self.obs_integration.observation_space
-
-    def _setup_action_space(self):
-        self.action_space = self.env_objs['wingman'].action_space
-        
-    def _generate_obs(self):
-        obs = self.obs_integration.gen_obs(self.env_objs)
-        return obs
-
-    def _generate_reward(self):
-        reward = self.reward_integration.gen_reward(self.env_objs, self.timestep, self.status_dict)
-        return reward
-
-    def _generate_constraint_status(self):
-        return self.constraints_integration.step(self.env_objs, self.timestep)
-
     def _generate_info(self):
-
         info = {
             'wingman': self.env_objs['wingman']._generate_info(),
             'lead': self.env_objs['lead']._generate_info(),
