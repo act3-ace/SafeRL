@@ -4,7 +4,7 @@ import random
 
 import gym
 
-from ..utils.util import draw_from_rand_bounds_dict
+from rejoin_rta.utils.util import draw_from_rand_bounds_dict
 
 class BaseEnv(gym.Env):
     def __init__(self, config):

@@ -5,9 +5,9 @@ import random
 import gym
 from gym.spaces import Discrete, Box
 
-from . import BaseEnv
-from ..aero_models.dubins import DubinsAircraft, DubinsAgent
-from ..utils.geometry import RelativeCircle2D, distance2d
+from rejoin_rta.environments import BaseEnv
+from rejoin_rta.aero_models.dubins import DubinsAircraft, DubinsAgent
+from rejoin_rta.utils.geometry import RelativeCircle2D, distance2d
 
 class DubinsRejoin(BaseEnv):
 
