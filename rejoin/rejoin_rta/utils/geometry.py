@@ -1,9 +1,10 @@
+import abc
 import math
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 
-class RelativePoint:
+class RelativePoint(abc.ABC):
     def __init__(self, ref, cartesian_offset=None, track_orientation=False):
 
         self._cartesian_offset = cartesian_offset
@@ -35,13 +36,15 @@ class RelativePoint:
     def step(self, *args):
         self.update()
 
-    def get_ref_rot_mat(self):
-        raise NotImplemented
+    @abc.abstractmethod
+    def get_ref_rot_mat(self) -> np.ndarray:
+        ...
 
-    def get_ref_center(self):
-        raise NotImplemented
+    @abc.abstractmethod
+    def get_ref_center(self) -> np.ndarray:
+        ...
 
-class RelativePoint2D(RelativePoint):    
+class RelativePoint2d(RelativePoint):    
     def __init__(self, ref, track_orientation=False, x_offset=None, y_offset=None, r_offset=None, theta_offset=None, aspect_angle=None):
         # check that both x_offset and y_offset are used at the same time if used
         assert (x_offset is None) == (y_offset is None), "if either x_offset or y_offset is used, both x_offset and y_offset must be used"
@@ -72,7 +75,7 @@ class RelativePoint2D(RelativePoint):
         cartesian_offset = np.array([x_offset, y_offset, 0], dtype=np.float64)
 
         self.track_orientation = track_orientation
-        super(RelativePoint2D, self).__init__(ref, cartesian_offset=cartesian_offset, track_orientation=track_orientation)
+        super(RelativePoint2d, self).__init__(ref, cartesian_offset=cartesian_offset, track_orientation=track_orientation)
 
     def _generate_info(self):
         info = {
@@ -104,15 +107,15 @@ class RelativePoint2D(RelativePoint):
     def position(self) -> np.ndarray:
         return self._center[0:2]
 
-class RelativeCircle2D(RelativePoint2D):
+class RelativeCircle2d(RelativePoint2d):
     def __init__(self, ref, radius=None, **kwargs):
         assert radius is not None, "Please specify a radius"
 
         self._radius = radius
-        super(RelativeCircle2D, self).__init__(ref, **kwargs)
+        super(RelativeCircle2d, self).__init__(ref, **kwargs)
 
     def _generate_info(self):
-        info = super(RelativeCircle2D, self)._generate_info()
+        info = super(RelativeCircle2d, self)._generate_info()
         info['radius'] = self.radius
         return info
 
@@ -134,7 +137,7 @@ if __name__=='__main__':
             self.orientation = orientation
 
     ref = test_ref(10, 345, 0)
-    rp = RelativeCircle2D(ref, radius=150, track_orientation=True, r_offset=100, aspect_angle=(60*math.pi/180))
+    rp = RelativeCircle2d(ref, radius=150, track_orientation=True, r_offset=100, aspect_angle=(60*math.pi/180))
 
     print("x={}, y={}".format(rp.x, rp.y))
 
