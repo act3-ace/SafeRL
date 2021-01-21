@@ -7,7 +7,7 @@ from gym.spaces import Discrete, Box
 
 from rejoin_rta.environments import BaseEnv
 from rejoin_rta.aero_models.dubins import DubinsAircraft, DubinsAgent
-from rejoin_rta.utils.geometry import RelativeCircle2D, distance2d
+from rejoin_rta.utils.geometry import RelativeCircle2d, distance2d
 
 class DubinsRejoin(BaseEnv):
 
@@ -23,7 +23,7 @@ class DubinsRejoin(BaseEnv):
             r_offset = self.config['rejoin_region']['range']
             radius = self.config['rejoin_region']['radius']
             aspect_angle = np.radians(self.config['rejoin_region']['aspect_angle'])
-            rejoin_region = RelativeCircle2D(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
+            rejoin_region = RelativeCircle2d(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
         else:
             raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['rejoin_region']['type']))
 
