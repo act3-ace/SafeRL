@@ -5,15 +5,17 @@ import math
 import numpy as np
 from scipy import integrate
 
-from rejoin_rta.aero_models import ContinuousActuator, DynamicsController
+from rejoin_rta.aero_models import ContinuousActuator, PassThroughController, AgentController
 
 def test_diff(t,x,a):
     return a
 
 class CWHSpacecraft:
-    def __init__(self, x=0, y=0, z=0, x_dot=0, y_dot=0, z_dot=0, precision=64, controller=None):
+    def __init__(self, config=None, x=0, y=0, z=0, x_dot=0, y_dot=0, z_dot=0, precision=64):
         
         self.dependent_objs = []
+
+        self.config = config
 
         if precision == 32:
             self.precision_dtype = np.float32
@@ -22,8 +24,20 @@ class CWHSpacecraft:
         else:
             self.precision_dtype = np.float64
 
-        if controller is None:
-            controller = DynamicsController(CWHDynamics())
+        self.dynamics = CWHDynamics()
+
+        if self.config is None or 'controller' not in self.config:
+            controller_config = {
+                'type': 'pass'
+            }
+        else:
+            controller_config = self.config['controller']
+
+        if controller_config['type'] == 'pass':
+            controller = PassThroughController(config=controller_config)
+        elif controller_config['type'] == 'agent':
+            controller = AgentController(self.dynamics, config=controller_config)
+            self.action_space = controller.action_space
 
         self.controller = controller
 
@@ -39,7 +53,9 @@ class CWHSpacecraft:
 
     def step(self, step_size, action=None):
 
-        self.state = self.controller.step(step_size, self.state, action)
+        control = self.controller.generate_control(self.state, action)
+
+        self.state = self.dynamics.step(step_size, self.state, control)
 
     @property
     def x(self):
@@ -55,11 +71,15 @@ class CWHSpacecraft:
 
     @property
     def position(self):
-        return self.state[0:3]
+        return self.position3d
 
     @property
     def position2d(self):
         return self.state[0:2]
+
+    @property
+    def position3d(self):
+        return self.state[0:3]
 
 class CWHDynamics:
     def __init__(self, precision_dtype = np.float64):
@@ -71,6 +91,7 @@ class CWHDynamics:
 
         self.A, self.B = self.get_dynamics_matrices(self.m, self.n)
 
+        self.actuators = self.define_actuators()
         self.default_control = np.array([0,0,0], dtype=np.float64)
 
     def step(self, step_size, state, control=None):
