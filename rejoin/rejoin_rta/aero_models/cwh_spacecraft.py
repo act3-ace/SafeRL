@@ -102,7 +102,7 @@ class CWHDynamics:
         if self.integration_method == "rk45":
             sol = integrate.solve_ivp(self.dynamics_dx, (0,step_size), state, args=(control,))
 
-            state = sol.y[:,-1] # save late timestep of integration solution 
+            state = sol.y[:,-1] # save last timestep of integration solution 
         elif self.integration_method == 'euler': # euler
             state_dot = self.dynamics_dx(0, state, control)
             state = state + step_size * state_dot
