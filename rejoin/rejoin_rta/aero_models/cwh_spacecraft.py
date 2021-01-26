@@ -25,6 +25,7 @@ class CWHSpacecraft:
             self.precision_dtype = np.float64
 
         self.dynamics = CWHDynamics()
+        self.include_actuator_info = False
 
         if self.config is None or 'controller' not in self.config:
             controller_config = {
@@ -38,6 +39,7 @@ class CWHSpacecraft:
         elif controller_config['type'] == 'agent':
             controller = AgentController(self.dynamics, config=controller_config)
             self.action_space = controller.action_space
+            self.include_actuator_info = True
 
         self.controller = controller
 
@@ -57,6 +59,26 @@ class CWHSpacecraft:
 
         self.state = self.dynamics.step(step_size, self.state, control)
 
+    def register_dependent_obj(self, obj):
+        self.dependent_objs.append(obj)
+
+    def _generate_info(self):
+        info = {
+            'state':{
+                'x': self.x,
+                'y': self.y,
+                'z': self.z,
+                'x_dot': self.x_dot,
+                'y_dot': self.y_dot,
+                'z_dot': self.z_dot
+            }
+        }
+
+        if self.include_actuator_info:
+            info['actutators'] = self.dynamics.get_actuator_info()
+
+        return info
+
     @property
     def x(self):
         return self.state[0]
@@ -70,6 +92,18 @@ class CWHSpacecraft:
         return self.state[2]
 
     @property
+    def x_dot(self):
+        return self.state[3]
+
+    @property
+    def y_dot(self):
+        return self.state[4]
+
+    @property
+    def z_dot(self):
+        return self.state[5]
+
+    @property
     def position(self):
         return self.position3d
 
@@ -81,6 +115,10 @@ class CWHSpacecraft:
     def position3d(self):
         return self.state[0:3]
 
+    @property
+    def state2d(self):
+        return self.state[ [0, 1, 3 ,4] ]
+
 class CWHDynamics:
     def __init__(self, precision_dtype = np.float64):
         self.m = 12 # kg
@@ -88,6 +126,8 @@ class CWHDynamics:
 
         self.integration_method = 'rk45'
         self.precision_dtype = precision_dtype
+
+        self.control_cur = None
 
         self.A, self.B = self.get_dynamics_matrices(self.m, self.n)
 
@@ -98,6 +138,9 @@ class CWHDynamics:
 
         if control is None:
             control = self.default_control
+
+        # save the control action for the current timestep
+        self.control_cur = np.copy(control)
 
         if self.integration_method == "rk45":
             sol = integrate.solve_ivp(self.dynamics_dx, (0,step_size), state, args=(control,))
@@ -142,16 +185,27 @@ class CWHDynamics:
         actuators = [
             ContinuousActuator(
                 'thrust_x',
-                [-1, 1]
+                [-100, 100]
             ),
             ContinuousActuator(
                 'thrust_y',
-                [-1, 1]
+                [-100, 100]
             ),
             ContinuousActuator(
                 'thrust_z',
-                [-1, 1]
+                [-100, 100]
             ),
         ]
 
         return actuators
+
+    def get_actuator_info(self):
+        if self.control_cur is None:
+            info = None
+        else:
+            info = {}
+
+            for i, actuator in enumerate(self.actuators):
+                info[actuator.name] = self.control_cur[i]
+
+        return info
