@@ -18,7 +18,7 @@ import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
 from rejoin_rta.environments.rejoin_env import DubinsRejoin
-from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback
+from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback, LoggingCallback
 
 parser = argparse.ArgumentParser()
 
@@ -68,7 +68,8 @@ config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback()])
+config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(),
+                                              RewardComponentsCallback(), LoggingCallback()])
 config['output']=os.path.join(args.output_dir, expr_name)
 config['output_max_file_size'] = 999999
 # config['log_level'] = 'ERROR'
