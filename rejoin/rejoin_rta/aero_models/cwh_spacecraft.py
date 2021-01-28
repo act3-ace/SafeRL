@@ -64,20 +64,22 @@ class CWHSpacecraft:
 
     def _generate_info(self):
         info = {
-            'state':{
-                'x': self.x,
-                'y': self.y,
-                'z': self.z,
-                'x_dot': self.x_dot,
-                'y_dot': self.y_dot,
-                'z_dot': self.z_dot
-            }
+            'state': self.state,
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'x_dot': self.x_dot,
+            'y_dot': self.y_dot,
+            'z_dot': self.z_dot
         }
 
         if self.include_actuator_info:
-            info['actutators'] = self.dynamics.get_actuator_info()
+            info['actuators'] = self.dynamics.get_actuator_info()
 
         return info
+
+    def estimate_trajectory(self, time_window=20, num_points=None):
+        return self.dynamics.estimate_trajectory(self.state, time_window=time_window, num_points=num_points)
 
     @property
     def x(self):
@@ -209,3 +211,12 @@ class CWHDynamics:
                 info[actuator.name] = self.control_cur[i]
 
         return info
+
+    def estimate_trajectory(self, state, time_window=20, num_points=None):
+        control = self.default_control
+        if num_points:
+            t_eval = np.linspace(0, time_window, num_points)
+
+        sol = integrate.solve_ivp(self.dynamics_dx, (0,time_window), state, args=(control,), t_eval=t_eval)
+
+        return sol.y[0:3,:]

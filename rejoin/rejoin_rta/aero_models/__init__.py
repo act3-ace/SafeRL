@@ -72,17 +72,24 @@ class AgentController(BaseController):
                 actuator_config = self.config['actuators'][actuator.name]
 
                 if actuator.space == 'continuous':
-                    
+                    # determine upper and lower bounds of actuator range. Should be the intersection of the actuator object bounds and the actuator config bounds
+                    if 'bounds' in actuator_config:
+                        bounds_min = max(actuator.bounds[0], actuator_config['bounds'][0])
+                        bounds_max = min(actuator.bounds[1], actuator_config['bounds'][1])
+                    else:
+                        bounds_min = actuator.bounds[0]
+                        bounds_max = actuator.bounds[1]
+
                     if actuator_config['space'] == 'discrete':
                         # if actuator in continuous but config is discrete, discretize actuator bounds
-                        vals = np.linspace(actuator.bounds[0], actuator.bounds[1], actuator_config['points'])
+                        vals = np.linspace(bounds_min, bounds_max, actuator_config['points'])
                         preprocessor = ActionPreprocessorDiscreteMap(vals)
                         actuator_action_space = Discrete(actuator_config['points'])
 
                     elif actuator_config['space'] == 'continuous':
                         # if both actuator and config are continuous, simply pass through value to control
                         preprocessor = ActionPreprocessorPassThrough
-                        actuator_action_space = Box(low=actuator.bounds[0], high=actuator.bounds[1], shape=(1,1))
+                        actuator_action_space = Box(low=bounds_min, high=bounds_max, shape=(1,1))
                     else:
                         raise ValueError("Action Config for Actuator {} has invalid space of {}. Should be 'continuous' or 'discrete'".format(actuator.name, actuator.space))
 
