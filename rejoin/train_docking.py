@@ -41,7 +41,7 @@ rollout_history = []
 
 reward_config = {
     'integration': DockingRewardIntegration,
-    'time_decay': -0.01,
+    'time_decay': -0.001,
     'failure': {
         'timeout': -1,
         'crash': -1,
@@ -50,15 +50,15 @@ reward_config = {
     'success': 1,
     'rejoin_timestep': 0.1,
     'rejoin_first_time': 0.25,
-    'dist_change': -0.00001,
+    'dist_change': -0.0001,
 }
 
 env_config = {
     'reward': reward_config,
     'init': {
         'deputy': {
-            'x': 1000,
-            'y': 1000,
+            'x': [-2000, 2000],
+            'y': [-2000, 2000],
             'x_dot': 0,
             'y_dot': 0,
         },
@@ -75,11 +75,13 @@ env_config = {
             'actuators': {
                 'thrust_x': {
                     'space': 'discrete',
-                    'points': 5
+                    'points': 11,
+                    'bounds': [-10, 10]
                 },
                 'thrust_y': {
                     'space': 'discrete',
-                    'points': 5
+                    'points': 11,
+                    'bounds': [-10, 10]
                 },
             },
         },
@@ -102,8 +104,10 @@ env_config = {
 config['env_config'] = env_config
 config['env'] = DockingEnv
 
+test_env = DockingEnv(config = env_config)
+
 stop_dict = {
-    'training_iteration': 200,
+    'training_iteration': 500,
 }
 
 # create output dir and save experiment params
