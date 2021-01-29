@@ -50,12 +50,12 @@ class DubinsRejoin(BaseEnv):
             'failure': self.status_dict['failure'],
             'success': self.status_dict['success'],
             'status': self.status_dict,
-            'reward': self.reward_integration._generate_info(),
+            'reward': self.reward_processor._generate_info(),
         }
 
         return info
 
-class DubinsObservationIntegration():
+class DubinsObservationProcessor():
     def __init__(self, config):
         self.config = config
 
@@ -135,7 +135,7 @@ class DubinsObservationIntegration():
 
         return obs
 
-class DubinsRewardIntegration():
+class DubinsRewardProcessor():
     def __init__(self, config):
         self.config = config
 
@@ -223,7 +223,7 @@ class DubinsRewardIntegration():
 
         return reward
 
-class DubinsConstraintIntegration():
+class DubinsConstraintProcessor():
     def __init__(self, config):
         self.config = config
         self.reset()
