@@ -17,7 +17,7 @@ from ray import tune
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
-from rejoin_rta.environments.rejoin_env import DubinsRejoin, DubinsObservationIntegration, DubinsRewardIntegration, DubinsConstraintIntegration
+from rejoin_rta.environments.rejoin_env import DubinsRejoin, DubinsObservationProcessor, DubinsRewardProcessor, DubinsConstraintProcessor
 from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback
 
 parser = argparse.ArgumentParser()
@@ -73,7 +73,7 @@ config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureC
 rollout_history = []
 
 reward_config = {
-    'integration': DubinsRewardIntegration,
+    'processor': DubinsRewardProcessor,
     'time_decay': -0.01,
     'failure': {
         'timeout': -1,
@@ -103,7 +103,7 @@ rejoin_config = {
         },
     },
     'obs' : {
-        'integration': DubinsObservationIntegration,
+        'processor': DubinsObservationProcessor,
         # 'mode': 'rect',
         # 'reference': 'global',
         'mode': 'polar',
@@ -116,7 +116,7 @@ rejoin_config = {
         'radius':150,
     },
     'constraints':{
-        'integration': DubinsConstraintIntegration,
+        'processor': DubinsConstraintProcessor,
         'safety_margin': {
             'aircraft': 100
         },
