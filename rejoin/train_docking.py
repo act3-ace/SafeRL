@@ -17,7 +17,7 @@ from ray import tune
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
-from rejoin_rta.environments.docking_env import DockingEnv, DockingObservationIntegration, DockingRewardIntegration, DockingConstraintIntegration
+from rejoin_rta.environments.docking_env import DockingEnv, DockingObservationProcessor, DockingRewardProcessor, DockingConstraintProcessor
 from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback
 
 parser = argparse.ArgumentParser()
@@ -40,7 +40,7 @@ config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureC
 rollout_history = []
 
 reward_config = {
-    'integration': DockingRewardIntegration,
+    'processor': DockingRewardProcessor,
     'time_decay': -0.001,
     'failure': {
         'timeout': -1,
@@ -87,14 +87,14 @@ env_config = {
         },
     },
     'obs' : {
-        'integration': DockingObservationIntegration,
+        'processor': DockingObservationProcessor,
     },
     'docking_region' : {
         'type': 'circle',
         'radius': 20,
     },
     'constraints':{
-        'integration': DockingConstraintIntegration,
+        'processor': DockingConstraintProcessor,
         'timeout': 1000,
         'max_goal_distance': 40000,
     },
