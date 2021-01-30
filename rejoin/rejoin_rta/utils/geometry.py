@@ -104,6 +104,10 @@ class RelativePoint2d(RelativePoint):
         return self._center[1]
 
     @property
+    def position2d(self) -> np.ndarray:
+        return self._center[0:2]
+
+    @property
     def position(self) -> np.ndarray:
         return self._center[0:2]
 
@@ -119,8 +123,11 @@ class RelativeCircle2d(RelativePoint2d):
         info['radius'] = self.radius
         return info
 
-    def contains(self, point_coords):
-        center_distance = math.sqrt((point_coords[0]-self.x)**2 + (point_coords[1]-self.y)**2)
+    def contains(self, other):
+        if type(other) == list or type(other) == tuple:
+            center_distance = math.sqrt((other[0]-self.x)**2 + (other[1]-self.y)**2)
+        else:
+            center_distance = np.linalg.norm(self.position2d - other.position2d)
 
         return self._radius >= center_distance
 

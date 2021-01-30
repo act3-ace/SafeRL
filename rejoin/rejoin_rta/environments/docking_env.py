@@ -183,5 +183,4 @@ class DockingConstraintProcessor():
         return status_dict
 
     def check_rejoin_cond(self, env_objs):
-        deputy_coords = (env_objs['deputy'].x, env_objs['deputy'].y)
-        return env_objs['docking_region'].contains(deputy_coords)
+        return env_objs['docking_region'].contains(env_objs['deputy'])
