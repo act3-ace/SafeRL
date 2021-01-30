@@ -48,12 +48,12 @@ class DockingEnv(BaseEnv):
             'failure': self.status_dict['failure'],
             'success': self.status_dict['success'],
             'status': self.status_dict,
-            'reward': self.reward_integration._generate_info(),
+            'reward': self.reward_processor._generate_info(),
         }
 
         return info
 
-class DockingObservationIntegration():
+class DockingObservationProcessor():
     def __init__(self, config):
         self.config = config
 
@@ -70,7 +70,7 @@ class DockingObservationIntegration():
 
         return obs
 
-class DockingRewardIntegration():
+class DockingRewardProcessor():
     def __init__(self, config):
         self.config = config
 
@@ -140,7 +140,7 @@ class DockingRewardIntegration():
 
         return reward
 
-class DockingConstraintIntegration():
+class DockingConstraintProcessor():
     def __init__(self, config):
         self.config = config
         self.reset()
