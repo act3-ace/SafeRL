@@ -23,7 +23,7 @@ class DockingEnv(BaseEnv):
             radius = self.config['docking_region']['radius']
             docking_region = RelativeCircle2d(chief, radius=radius, x_offset=0, y_offset=0)
         else:
-            raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['docking_region']['type']))
+            raise ValueError('Invalid docking region type {} not supported'.format(self.config['docking_region']['type']))
 
         self.env_objs = {
             'deputy': deputy,
@@ -80,15 +80,11 @@ class DockingRewardProcessor():
         self.step_reward = 0
         self.total_reward = 0
         self.reward_component_totals = {
-            'rejoin': 0,
-            'rejoin_first_time': 0,
             'time': 0,
             'distance_change': 0,
             'success': 0,
             'failure': 0,
         }
-
-        self.rejoin_first_time_applied = False
 
     def _generate_info(self):
         info = {
@@ -102,8 +98,6 @@ class DockingRewardProcessor():
     def gen_reward(self, env_objs, timestep, status_dict):
         reward = 0
 
-        rejoin_reward = 0
-        rejoin_first_time_reward = 0
         time_reward = 0
         distance_change_reward = 0
         failure_reward = 0
@@ -122,8 +116,6 @@ class DockingRewardProcessor():
         elif status_dict['success']:
             success_reward += self.config['success']
 
-        reward += rejoin_reward
-        reward += rejoin_first_time_reward
         reward += time_reward
         reward += distance_change_reward
         reward += success_reward
@@ -131,8 +123,6 @@ class DockingRewardProcessor():
 
         self.step_reward = reward
         self.total_reward += reward
-        self.reward_component_totals['rejoin'] += rejoin_reward
-        self.reward_component_totals['rejoin_first_time'] += rejoin_first_time_reward
         self.reward_component_totals['time'] += time_reward
         self.reward_component_totals['distance_change'] += distance_change_reward
         self.reward_component_totals['success'] += success_reward
@@ -155,8 +145,8 @@ class DockingConstraintProcessor():
         return self.check_constraints(env_objs)
     
     def check_constraints(self, env_objs):
-        # get rejoin status
-        in_docking = self.check_rejoin_cond(env_objs)
+        # get docking status
+        in_docking = self.check_docking_cond(env_objs)
 
         # check success/failure conditions
         dock_distance =  distance2d(env_objs['deputy'], env_objs['docking_region'])
@@ -182,5 +172,5 @@ class DockingConstraintProcessor():
 
         return status_dict
 
-    def check_rejoin_cond(self, env_objs):
+    def check_docking_cond(self, env_objs):
         return env_objs['docking_region'].contains(env_objs['deputy'])
