@@ -57,16 +57,24 @@ class DockingObservationProcessor():
     def __init__(self, config):
         self.config = config
 
-        low = np.array([np.finfo(np.float32).min]*4)
-        high = np.array([np.finfo(np.float32).max]*4)
+        low = np.finfo(np.float32).min
+        high = np.finfo(np.float32).max
 
-        self.observation_space = Box(low=low, high=high)
+        if self.config['mode'] == '2d':
+            self.observation_space = Box(low=low, high=high, shape=(4,))
+        elif self.config['mode'] == '3d':
+            self.observation_space = Box(low=low, high=high, shape=(6,))
+        else:
+            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.config['mode']))
 
     def reset(self):
         pass
 
     def gen_obs(self, env_objs):
-        obs = env_objs['deputy'].state2d
+        if self.config['mode'] == '2d':
+            obs = env_objs['deputy'].state2d
+        elif self.config['mode'] == '3d':
+            obs = env_objs['deputy'].state
 
         return obs
 
