@@ -88,6 +88,7 @@ env_config = {
     },
     'obs' : {
         'processor': DockingObservationProcessor,
+        'mode': '2d'
     },
     'docking_region' : {
         'type': 'circle',
