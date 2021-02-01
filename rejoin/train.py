@@ -29,6 +29,10 @@ args = parser.parse_args()
 expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
 
+# set logging verbosity options
+num_logging_workers = 2
+logging_schedule = 10       # log every 10th episode
+
 def run_rollout(agent, env_config):
     # instantiate env class
     env = DubinsRejoin(env_config)
@@ -68,8 +72,8 @@ config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(),
-                                              RewardComponentsCallback(), LoggingCallback()])
+config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback(),
+                                              LoggingCallback(num_logging_workers, logging_schedule)])
 config['output']=os.path.join(args.output_dir, expr_name)
 config['output_max_file_size'] = 999999
 # config['log_level'] = 'ERROR'

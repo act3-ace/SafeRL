@@ -7,6 +7,9 @@ from ray.rllib.utils.typing import AgentID, PolicyID
 from ray.rllib.policy.sample_batch import SampleBatch
 import pickle
 import os
+import json
+import jsonlines
+
 
 def build_callbacks_caller(callbacks : [] ):
 
@@ -69,43 +72,45 @@ class RewardComponentsCallback:
 A callback class to handle the storage of episode states by episode
 """
 class LoggingCallback:
+    def __init__(self, num_logging_workers: int = 999999, episodes_omitted_before_log: int = 0):
+        self.num_logging_workers = num_logging_workers
+        self.episodes_omitted_before_log = episodes_omitted_before_log
+        self.episodes = set()
 
     def on_episode_step(self, *, worker: "RolloutWorker", base_env: BaseEnv, episode: MultiAgentEpisode,
                         env_index: Optional[int] = None, **kwargs) -> None:
 
-        # print(worker.__dict__)
-        # print(base_env.__dict__)
-        # print(episode.__dict__)
-        # print(env_index)
-        # print(episode.length)
+        ## Debug
+        # if episode.episode_id in self.phone_book:
+        #     self.phone_book[episode.episode_id] = self.phone_book[episode.episode_id].append(episode.length)
+        # else:
+        #     self.phone_book[episode.episode_id] = [episode.length]
+        # print(self.phone_book)
+        # print(self)
+        # print(self.phone_book[episode.episode_id])
 
         # get environment instance and set up log path
-        env = base_env.get_unwrapped()[env_index]
         episode_id = episode.episode_id
-        output_dir = worker._original_kwargs["log_dir"]
-        episode_dir = "DubinsTest-ep" + str(episode_id) + "/"
+        worker_index = worker.worker_index
+        output_dir = worker._original_kwargs["log_dir"] + "../training_logs/"
+        worker_file = "worker_" + str(worker_index) + ".log"
         step_num = episode.length
 
-        state = {}
-        state["info_lead"] = env.env_objs["lead"]._generate_info()
-        state["info_wingman"] = env.env_objs["wingman"]._generate_info()
-        state["info_rejoin_region"] = env.env_objs["rejoin_region"]._generate_info()
-        # state["obs"] = env._generate_obs()                        # causes Attribute Error, despite being defined in rejoin_env.py
-        state["actions"] = episode.last_action_for('agent0')       # Should not be hardcoded...***
-        state["obs"] = episode.last_raw_obs_for('agent0')
-        state["info"] = episode.last_info_for('agent0')
-        state["episode_ID"] = episode_id
+        # handle logging options
+        self.episodes.add(episode_id)
+        if worker_index <= self.num_logging_workers and len(self.episodes) % self.episodes_omitted_before_log == 0:
+            state = {}
+            state["actions"] = episode.last_action_for('agent0').tolist()       # TODO: 'agent0' should not be hardcoded...*
+            state["obs"] = episode.last_raw_obs_for('agent0').tolist()
+            state["info"] = episode.last_info_for('agent0')
+            state["episode_ID"] = episode_id
+            state["step_num"] = step_num
 
-        # save environment state to file
-        self.log_to_file(state, output_dir + episode_dir, step_num)
+            # save environment state to file
+            self.log_to_file(state, output_dir, worker_file)
 
     # Helper function to handle writing to file
-    def log_to_file(self, state, episode_dir_path, step_num):
-        os.makedirs(episode_dir_path, exist_ok=True)
-        with open(episode_dir_path + "step_" + str(step_num) + ".log", 'wb') as file:
-            pickle.dump(state, file)
-
-
-# Backlog
-## "finalize" log contents
-## remove hardcoded agentID
+    def log_to_file(self, state, output_dir, jsonline_filename):
+        os.makedirs(output_dir, exist_ok=True)
+        with jsonlines.open(output_dir + jsonline_filename, mode='a') as writer:
+            writer.write(state)
