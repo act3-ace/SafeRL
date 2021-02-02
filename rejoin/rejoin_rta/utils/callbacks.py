@@ -5,10 +5,9 @@ from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.policy import Policy
 from ray.rllib.utils.typing import AgentID, PolicyID
 from ray.rllib.policy.sample_batch import SampleBatch
-import pickle
 import os
-import json
 import jsonlines
+from enum import Enum
 
 
 def build_callbacks_caller(callbacks : [] ):
@@ -69,13 +68,41 @@ class RewardComponentsCallback:
             episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val
 
 """
+Simple Enum class for log contents options
+"""
+class LogContents(Enum):
+    INFO = "info"
+    ACTIONS = "actions"
+    OBS = "obs"
+    VERBOSE = "verbose"
+
+
+"""
 A callback class to handle the storage of episode states by episode
 """
 class LoggingCallback:
-    def __init__(self, num_logging_workers: int = 999999, episodes_omitted_before_log: int = 0):
+    def __init__(self, num_logging_workers: int = 999999, episode_log_interval: int = 1,
+                 contents: tuple = (LogContents.VERBOSE,)):
         self.num_logging_workers = num_logging_workers
-        self.episodes_omitted_before_log = episodes_omitted_before_log
+        self.episode_log_interval = episode_log_interval
         self.episodes = set()
+
+        self.log_actions = False
+        self.log_obs = False
+        self.log_info = False
+
+        for content in contents:
+            if content == LogContents.VERBOSE:
+                self.log_actions = True
+                self.log_obs = True
+                self.log_info = True
+                break
+            if content == LogContents.INFO:
+                self.log_info = True
+            if content == LogContents.OBS:
+                self.log_obs = True
+            if content == LogContents.ACTIONS:
+                self.log_actions = True
 
     def on_episode_step(self, *, worker: "RolloutWorker", base_env: BaseEnv, episode: MultiAgentEpisode,
                         env_index: Optional[int] = None, **kwargs) -> None:
@@ -98,11 +125,14 @@ class LoggingCallback:
 
         # handle logging options
         self.episodes.add(episode_id)
-        if worker_index <= self.num_logging_workers and len(self.episodes) % self.episodes_omitted_before_log == 0:
+        if worker_index <= self.num_logging_workers and len(self.episodes) % self.episode_log_interval == 0:
             state = {}
-            state["actions"] = episode.last_action_for('agent0').tolist()       # TODO: 'agent0' should not be hardcoded...*
-            state["obs"] = episode.last_raw_obs_for('agent0').tolist()
-            state["info"] = episode.last_info_for('agent0')
+            if self.log_actions:
+                state["actions"] = episode.last_action_for('agent0').tolist()     # TODO: 'agent0' should not be hardcoded...*
+            if self.log_obs:
+                state["obs"] = episode.last_raw_obs_for('agent0').tolist()
+            if self.log_info:
+                state["info"] = episode.last_info_for('agent0')
             state["episode_ID"] = episode_id
             state["step_num"] = step_num
 
