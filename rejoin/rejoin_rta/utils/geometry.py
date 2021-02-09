@@ -109,7 +109,7 @@ class RelativePoint2d(RelativePoint):
 
     @property
     def position(self) -> np.ndarray:
-        return self._center[0:2]
+        return self._center[0:3]
 
 class RelativeCircle2d(RelativePoint2d):
     def __init__(self, ref, radius=None, **kwargs):
@@ -134,6 +134,78 @@ class RelativeCircle2d(RelativePoint2d):
     @property
     def radius(self):
         return self._radius
+
+class RelativePoint3d(RelativePoint):
+    def __init__(self, ref, x_offset=0, y_offset=0, z_offset=0, **kwargs):
+
+        cartesian_offset = np.array([x_offset, y_offset, z_offset], dtype=np.float64)
+        super(RelativePoint3d, self).__init__(ref, cartesian_offset=cartesian_offset, **kwargs)
+
+    def _generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z
+        }
+
+        return info
+
+    # TODO implement
+    def get_ref_rot_mat(self):
+        raise NotImplementedError
+
+    def get_ref_center(self):
+        return self.ref.position
+
+    @property
+    def x(self):
+        return self._center[0]
+
+    @property
+    def y(self):
+        return self._center[1]
+
+    @property
+    def z(self):
+        return self._center[2]
+    
+    @property
+    def position(self):
+        return self._center
+
+
+class RelativeCylinder(RelativePoint3d):
+    def __init__(self, ref, x_offset=0, y_offset=0, z_offset=0, radius=None, height=None, **kwargs):
+
+        self._radius = radius
+        self._height = height
+        
+        super(RelativeCylinder, self).__init__(ref,**kwargs)
+
+    def _generate_info(self):
+        info = super(RelativeCylinder, self)._generate_info()
+        info['radius'] = self.radius
+        info['height'] = self.height
+        return info
+
+    def contains(self, other):
+        if type(other) == list or type(other) == tuple:
+            radial_distance = math.sqrt((other[0]-self.x)**2 + (other[1]-self.y)**2)
+            axial_distance = abs(self.z - other[2])
+        else:
+            radial_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
+            axial_distance = abs(self.position[2] - other.position[2])
+
+        is_contained = ( radial_distance <= self._radius ) and ( axial_distance <= (self._height / 2) )
+        return is_contained
+
+    @property
+    def radius(self):
+        return self._radius
+
+    @property
+    def height(self):
+        return self._height
 
 if __name__=='__main__':
 
@@ -164,3 +236,7 @@ if __name__=='__main__':
 
 def distance2d(a,b):
     return math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
+
+def distance(a,b):
+    distance = np.linalg.norm( a.position - b.position )
+    return distance
