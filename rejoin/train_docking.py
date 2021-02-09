@@ -29,7 +29,7 @@ args = parser.parse_args()
 expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
 
-ray.init(num_gpus=0)
+# ray.init(num_gpus=0)
 config = ppo.DEFAULT_CONFIG.copy()
 config["num_gpus"] = 0
 config["num_workers"] = 6
@@ -47,10 +47,22 @@ reward_config = {
         'crash': -1,
         'distance': -1,
     },
-    'success': 1,
-    'rejoin_timestep': 0.1,
-    'rejoin_first_time': 0.25,
+    'success': 100,
     'dist_change': -0.0001,
+    'dist_z_change': 0,
+}
+
+reward_config_3d = {
+    'processor': DockingRewardProcessor,
+    'time_decay': -0.001,
+    'failure': {
+        'timeout': -1,
+        'crash': -1,
+        'distance': -1,
+    },
+    'success': 100,
+    'dist_change': -0.0001,
+    'dist_z_change': -0.001,
 }
 
 env_config = {
@@ -102,10 +114,69 @@ env_config = {
     'verbose':False,
 }
 
+env_config3d = {
+    'reward': reward_config_3d,
+    'init': {
+        'deputy': {
+            'x': 1000,
+            'y': 0,
+            'z': [-2000, 2000],
+            'x_dot': 0,
+            'y_dot': 0,
+            'z_dot': 0,
+        },
+        'chief': {
+            'x': 0,
+            'y': 0,
+            'z': 0,
+            'x_dot': 0,
+            'y_dot': 0,
+            'z_dot': 0,
+        },
+    },
+    'agent':{
+        'controller':{
+            'type': 'agent',
+            'actuators': {
+                'thrust_x': {
+                    'space': 'discrete',
+                    'points': 11,
+                    'bounds': [-10, 10]
+                },
+                'thrust_y': {
+                    'space': 'discrete',
+                    'points': 11,
+                    'bounds': [-10, 10]
+                },
+                'thrust_z': {
+                    'space': 'discrete',
+                    'points': 11,
+                    'bounds': [-10,10]
+                },
+            },
+        },
+    },
+    'obs' : {
+        'processor': DockingObservationProcessor,
+        'mode': '3d'
+    },
+    'docking_region' : {
+        'type': 'cylinder',
+        'params': {
+            'radius': 50,
+            'height': 100,
+        }
+    },
+    'constraints':{
+        'processor': DockingConstraintProcessor,
+        'timeout': 10000,
+        'max_goal_distance': 40000,
+    },
+    'verbose':False,
+}
+
 config['env_config'] = env_config
 config['env'] = DockingEnv
-
-test_env = DockingEnv(config = env_config)
 
 stop_dict = {
     'training_iteration': 500,

@@ -7,7 +7,7 @@ from gym.spaces import Discrete, Box
 
 from rejoin_rta.environments import BaseEnv
 from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft
-from rejoin_rta.utils.geometry import RelativeCircle2d, distance2d
+from rejoin_rta.utils.geometry import RelativeCircle2d, distance, RelativeCylinder
 
 class DockingEnv(BaseEnv):
 
@@ -22,6 +22,8 @@ class DockingEnv(BaseEnv):
         if self.config['docking_region']['type'] == 'circle':
             radius = self.config['docking_region']['radius']
             docking_region = RelativeCircle2d(chief, radius=radius, x_offset=0, y_offset=0)
+        elif self.config['docking_region']['type'] == 'cylinder':
+            docking_region = RelativeCylinder(chief, x_offset=0, y_offset=0, z_offset=0, **self.config['docking_region']['params'])
         else:
             raise ValueError('Invalid docking region type {} not supported'.format(self.config['docking_region']['type']))
 
@@ -83,13 +85,15 @@ class DockingRewardProcessor():
         self.config = config
 
     def reset(self, env_objs):
-        self.prev_distance = distance2d(env_objs['deputy'], env_objs['docking_region'])
+        self.prev_distance = distance(env_objs['deputy'], env_objs['docking_region'])
+        self.prev_distance_z = abs(env_objs['deputy'].z - env_objs['docking_region'].z)
 
         self.step_reward = 0
         self.total_reward = 0
         self.reward_component_totals = {
             'time': 0,
             'distance_change': 0,
+            'distance_change_z': 0,
             'success': 0,
             'failure': 0,
         }
@@ -108,16 +112,23 @@ class DockingRewardProcessor():
 
         time_reward = 0
         distance_change_reward = 0
+        distance_change_z_reward = 0
         failure_reward = 0
         success_reward = 0
 
         time_reward += self.config['time_decay']
 
         # compute distance changed between this timestep and previous
-        cur_distance = distance2d(env_objs['deputy'], env_objs['docking_region'])
+        cur_distance = distance(env_objs['deputy'], env_objs['docking_region'])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
         distance_change_reward += dist_change*self.config['dist_change']
+
+        cur_distance_z = abs(env_objs['deputy'].z - env_objs['docking_region'].z)
+        dist_z_change = cur_distance_z - self.prev_distance_z
+        self.prev_distance_z = cur_distance_z
+        distance_change_z_reward += dist_z_change*self.config['dist_z_change']
+
 
         if status_dict['failure']:
             failure_reward += self.config['failure'][status_dict['failure']]
@@ -126,6 +137,7 @@ class DockingRewardProcessor():
 
         reward += time_reward
         reward += distance_change_reward
+        reward += distance_change_z_reward
         reward += success_reward
         reward += failure_reward
 
@@ -133,6 +145,7 @@ class DockingRewardProcessor():
         self.total_reward += reward
         self.reward_component_totals['time'] += time_reward
         self.reward_component_totals['distance_change'] += distance_change_reward
+        self.reward_component_totals['distance_change_z'] += distance_change_z_reward
         self.reward_component_totals['success'] += success_reward
         self.reward_component_totals['failure'] += failure_reward
 
@@ -157,7 +170,7 @@ class DockingConstraintProcessor():
         in_docking = self.check_docking_cond(env_objs)
 
         # check success/failure conditions
-        dock_distance =  distance2d(env_objs['deputy'], env_objs['docking_region'])
+        dock_distance =  distance(env_objs['deputy'], env_objs['docking_region'])
         
         if self.time_elapsed > self.config['timeout']:
             failure = 'timeout'
