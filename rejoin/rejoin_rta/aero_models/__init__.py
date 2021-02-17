@@ -88,14 +88,15 @@ class AgentController(BaseController):
 
                     elif actuator_config['space'] == 'continuous':
                         # if both actuator and config are continuous, simply pass through value to control
-                        preprocessor = ActionPreprocessorPassThrough
-                        actuator_action_space = Box(low=bounds_min, high=bounds_max, shape=(1,1))
+                        preprocessor = ActionPreprocessorPassThrough()
+                        actuator_action_space = Box(low=bounds_min, high=bounds_max, shape=(1,))
                     else:
                         raise ValueError("Action Config for Actuator {} has invalid space of {}. Should be 'continuous' or 'discrete'".format(actuator.name, actuator.space))
 
                 elif actuator.space == 'discrete':
                     # if the actuator is discrete, ignore actuator config. Use actuator defined points and pass through value to control
-                    preprocessor = ActionPreprocessorPassThrough
+                    raise NotImplementedError
+                    preprocessor = None
                     actuator_action_space = Discrete(actuator.points)
                 else:
                     raise ValueError("Actuator {} has invalid space of {}. Should be 'continuous' or 'discrete'".format(actuator.name, actuator.space))
