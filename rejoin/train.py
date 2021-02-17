@@ -18,7 +18,7 @@ import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
 from rejoin_rta.environments.rejoin_env import DubinsRejoin, DubinsObservationProcessor, DubinsRewardProcessor, DubinsConstraintProcessor
-from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback
+from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback, LoggingCallback
 
 parser = argparse.ArgumentParser()
 
@@ -28,6 +28,10 @@ args = parser.parse_args()
 
 expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
+
+# set logging verbosity options
+num_logging_workers = 2
+logging_schedule = 10       # log every 10th episode
 
 def run_rollout(agent, env_config):
     # instantiate env class
@@ -68,7 +72,8 @@ config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback()])
+config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback(),
+                                              LoggingCallback(num_logging_workers, logging_schedule)])
 
 rollout_history = []
 
@@ -126,7 +131,7 @@ rejoin_config = {
             'rejoin_time': 20,
         },
     },
-    'verbose':False,
+    'verbose': False,
 }
 
 config['env_config'] = rejoin_config
