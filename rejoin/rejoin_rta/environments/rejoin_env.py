@@ -90,7 +90,7 @@ class DubinsObservationProcessor():
             if self.config['reference'] == 'global':
                 obs = np.array([wingman_lead_r_x, wingman_lead_r_y, wingman_rejoin_r_x, wingman_rejoin_r_y, vel_x, vel_y, lead_vel_x, lead_vel_y], dtype=np.float64)
             else:
-                raise ValueError('Invalid obs referece {} for obs mode rect'.format(self.config['reference']))
+                raise ValueError('Invalid obs reference {} for obs mode rect'.format(self.config['reference']))
 
         elif self.config['mode'] == 'polar':
 
@@ -119,7 +119,7 @@ class DubinsObservationProcessor():
                 lead_vel_theta -= vel_theta
                 vel_theta = 0
             else:
-                raise ValueError('Invalid obs referece {} for obs mode polar'.format(self.config['reference']))
+                raise ValueError('Invalid obs reference {} for obs mode polar'.format(self.config['reference']))
 
             obs =np.array(
                     polar2obs(wingman_lead_r_mag, wingman_lead_r_theta) +
