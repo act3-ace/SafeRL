@@ -17,8 +17,8 @@ from ray import tune
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
-from rejoin_rta.environments.docking_env import DockingEnv, DockingObservationProcessor, DockingRewardProcessor, DockingConstraintProcessor
-from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback
+from rejoin_rta.environments.docking_env import DockingEnv, DockingObservationProcessor, DockingRewardProcessor, DockingRewardProcessor3D, DockingConstraintProcessor
+from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback, LoggingCallback
 
 parser = argparse.ArgumentParser()
 
@@ -29,13 +29,22 @@ args = parser.parse_args()
 expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
 
-# ray.init(num_gpus=0)
+# set logging verbosity options
+num_logging_workers = 2
+logging_schedule = 10       # log every 10th episode
+
+ray.init(num_gpus=0)
 config = ppo.DEFAULT_CONFIG.copy()
 config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback()])
+config['callbacks'] = build_callbacks_caller([
+    EpisodeOutcomeCallback(), 
+    FailureCodeCallback(), 
+    RewardComponentsCallback(),
+    # LoggingCallback(num_logging_workers, logging_schedule),
+    ])
 
 rollout_history = []
 
@@ -47,22 +56,21 @@ reward_config = {
         'crash': -1,
         'distance': -1,
     },
-    'success': 100,
+    'success': 1,
     'dist_change': -0.0001,
-    'dist_z_change': 0,
 }
 
 reward_config_3d = {
-    'processor': DockingRewardProcessor,
+    'processor': DockingRewardProcessor3D,
     'time_decay': -0.001,
     'failure': {
         'timeout': -1,
         'crash': -1,
-        'distance': -1,
+        'distance': -10,
     },
     'success': 100,
-    'dist_change': -0.0001,
-    'dist_z_change': -0.001,
+    'dist_change': -0.001,
+    'dist_z_change': -0.01,
 }
 
 env_config = {
@@ -119,7 +127,7 @@ env_config3d = {
     'init': {
         'deputy': {
             'x': 1000,
-            'y': 0,
+            'y': 1000,
             'z': [-2000, 2000],
             'x_dot': 0,
             'y_dot': 0,
@@ -138,19 +146,31 @@ env_config3d = {
         'controller':{
             'type': 'agent',
             'actuators': {
+                # 'thrust_x': {
+                #     'space': 'discrete',
+                #     'points': 11,
+                #     'bounds': [-10, 10]
+                # },
+                # 'thrust_y': {
+                #     'space': 'discrete',
+                #     'points': 11,
+                #     'bounds': [-10, 10]
+                # },
+                # 'thrust_z': {
+                #     'space': 'discrete',
+                #     'points': 11,
+                #     'bounds': [-10,10]
+                # },
                 'thrust_x': {
-                    'space': 'discrete',
-                    'points': 11,
+                    'space': 'continuous',
                     'bounds': [-10, 10]
                 },
                 'thrust_y': {
-                    'space': 'discrete',
-                    'points': 11,
+                    'space': 'continuous',
                     'bounds': [-10, 10]
                 },
                 'thrust_z': {
-                    'space': 'discrete',
-                    'points': 11,
+                    'space': 'continuous',
                     'bounds': [-10,10]
                 },
             },
@@ -163,14 +183,14 @@ env_config3d = {
     'docking_region' : {
         'type': 'cylinder',
         'params': {
-            'radius': 50,
-            'height': 100,
+            'radius': 300,
+            'height': 600,
         }
     },
     'constraints':{
         'processor': DockingConstraintProcessor,
-        'timeout': 10000,
-        'max_goal_distance': 40000,
+        'timeout': 1000,
+        'max_goal_distance': 10000,
     },
     'verbose':False,
 }
