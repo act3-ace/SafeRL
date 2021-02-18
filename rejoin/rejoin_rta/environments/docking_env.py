@@ -86,6 +86,66 @@ class DockingRewardProcessor():
 
     def reset(self, env_objs):
         self.prev_distance = distance(env_objs['deputy'], env_objs['docking_region'])
+
+        self.step_reward = 0
+        self.total_reward = 0
+        self.reward_component_totals = {
+            'time': 0,
+            'distance_change': 0,
+            'success': 0,
+            'failure': 0,
+        }
+
+    def _generate_info(self):
+        info = {
+            'step': self.step_reward,
+            'component_totals': self.reward_component_totals,
+            'total': self.total_reward
+        }
+
+        return info
+
+    def gen_reward(self, env_objs, timestep, status_dict):
+        reward = 0
+
+        time_reward = 0
+        distance_change_reward = 0
+        failure_reward = 0
+        success_reward = 0
+
+        time_reward += self.config['time_decay']
+
+        # compute distance changed between this timestep and previous
+        cur_distance = distance(env_objs['deputy'], env_objs['docking_region'])
+        dist_change = cur_distance - self.prev_distance
+        self.prev_distance = cur_distance
+        distance_change_reward += dist_change*self.config['dist_change']
+
+        if status_dict['failure']:
+            failure_reward += self.config['failure'][status_dict['failure']]
+        elif status_dict['success']:
+            success_reward += self.config['success']
+
+        reward += time_reward
+        reward += distance_change_reward
+        reward += success_reward
+        reward += failure_reward
+
+        self.step_reward = reward
+        self.total_reward += reward
+        self.reward_component_totals['time'] += time_reward
+        self.reward_component_totals['distance_change'] += distance_change_reward
+        self.reward_component_totals['success'] += success_reward
+        self.reward_component_totals['failure'] += failure_reward
+
+        return reward
+
+class DockingRewardProcessor3D():
+    def __init__(self, config):
+        self.config = config
+
+    def reset(self, env_objs):
+        self.prev_distance = distance(env_objs['deputy'], env_objs['docking_region'])
         self.prev_distance_z = abs(env_objs['deputy'].z - env_objs['docking_region'].z)
 
         self.step_reward = 0
