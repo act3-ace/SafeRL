@@ -30,8 +30,8 @@ expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
 
 # set logging verbosity options
-num_logging_workers = 2
-logging_interval = 10                       # log every 10th episode
+num_logging_workers = 6
+logging_interval = 1                        # log every 10th episode
 contents = (LogContents.INFO, LogContents.OBS)           # tuple of desired contents
 
 def run_rollout(agent, env_config):
@@ -66,6 +66,7 @@ def run_rollout(agent, env_config):
     }
 
     return rollout_data
+
 
 ray.init(num_gpus=0)
 config = ppo.DEFAULT_CONFIG.copy()
