@@ -30,7 +30,7 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 `git clone git@github.com/act3-ace:rta/have-deepsky.git`
 6. Then run the commands:  
 `cd have-deepsky`  
-`pip install -e .`
+`pip install .`
 
 ## Pulling an update from Gitlab
 If someone else has updated their files, and you want to pull the most recent changes without erasing your progress:  
