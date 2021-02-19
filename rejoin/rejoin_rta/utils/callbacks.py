@@ -6,6 +6,9 @@ from ray.rllib.policy import Policy
 from ray.rllib.utils.typing import AgentID, PolicyID
 from ray.rllib.policy.sample_batch import SampleBatch
 import os
+import time
+import numpy
+import json
 import jsonlines
 from enum import Enum
 
@@ -76,16 +79,19 @@ class LogContents(Enum):
     OBS = "obs"
     VERBOSE = "verbose"
 
-
 """
 A callback class to handle the storage of episode states by episode
 """
+
 class LoggingCallback:
     def __init__(self, num_logging_workers: int = 999999, episode_log_interval: int = 1,
                  contents: tuple = (LogContents.VERBOSE,)):
         self.num_logging_workers = num_logging_workers
         self.episode_log_interval = episode_log_interval
         self.episodes = set()
+
+        self.worker_episode_numbers = dict()
+        self.episode_count = 0
 
         self.log_actions = False
         self.log_obs = False
@@ -107,14 +113,9 @@ class LoggingCallback:
     def on_episode_step(self, *, worker: "RolloutWorker", base_env: BaseEnv, episode: MultiAgentEpisode,
                         env_index: Optional[int] = None, **kwargs) -> None:
 
-        ## Debug
-        # if episode.episode_id in self.phone_book:
-        #     self.phone_book[episode.episode_id] = self.phone_book[episode.episode_id].append(episode.length)
-        # else:
-        #     self.phone_book[episode.episode_id] = [episode.length]
-        # print(self.phone_book)
-        # print(self)
-        # print(self.phone_book[episode.episode_id])
+        if episode.episode_id not in self.worker_episode_numbers:
+            self.worker_episode_numbers[episode.episode_id] = [self.episode_count]
+            self.episode_count += 1
 
         # get environment instance and set up log path
         episode_id = episode.episode_id
@@ -132,9 +133,22 @@ class LoggingCallback:
             if self.log_obs:
                 state["obs"] = episode.last_raw_obs_for('agent0').tolist()
             if self.log_info:
-                state["info"] = episode.last_info_for('agent0')
+                # check if jsonable and convert if necessary
+                info = episode.last_info_for('agent0')
+
+                # ## DEBUGGING
+                # if info is not None:
+                #     info["not_serializable"] = numpy.array([0,1,2,3,4,5])
+
+                if self.is_jsonable(info) == True:
+                    state["info"] = info
+                else:
+                    state["info"] = self.jsonify(info)
+
             state["episode_ID"] = episode_id
-            state["step_num"] = step_num
+            state["step_number"] = step_num
+            state["worker_episode_number"] = self.worker_episode_numbers[episode_id]
+            state["time"] = time.time()
 
             # save environment state to file
             self.log_to_file(state, output_dir, worker_file)
@@ -144,3 +158,38 @@ class LoggingCallback:
         os.makedirs(output_dir, exist_ok=True)
         with jsonlines.open(output_dir + jsonline_filename, mode='a') as writer:
             writer.write(state)
+
+    # Method to convert non-JSON serializable objects (numpy arrays) to JSON friendly data types inside a dictionary
+    def jsonify(self, map):
+        # iterate through dictionary, converting objects as needed
+        for key in map.keys():
+            suspicious_object = map[key]
+
+            if self.is_jsonable(suspicious_object) == True:
+                continue
+            elif self.is_jsonable(suspicious_object) == TypeError:
+                # recurse if we find sub-dictionaries
+                if type(suspicious_object) is dict:
+                    map[key] = self.jsonify(suspicious_object)
+                    continue
+
+                # only known case is numpy array at the moment
+                if type(suspicious_object) is numpy.ndarray:
+                    map[key] = suspicious_object.tolist()
+                    continue
+
+            elif self.is_jsonable(suspicious_object) == OverflowError:
+                raise OverflowError
+
+        return map
+
+    # Method to determine whether or not an object is JSON serializable
+    # If not, returns the error
+    def is_jsonable(self, object):
+        try:
+            json.dumps(object)
+            return True
+        except TypeError:
+            return TypeError
+        except OverflowError:
+            return OverflowError
