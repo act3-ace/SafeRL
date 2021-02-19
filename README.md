@@ -21,17 +21,16 @@ Once you have an SSH key, install the environment:
 1. Install Anaconda (Recommended):  
 Follow the installation instructions for Anaconda 3 [here](https://docs.continuum.io/anaconda/install/).  
 2. Create a conda Python 3.6 environment, which will help organize the packages used:  
-`conda create -n scrl python=3.6`  
+`conda create -n <env_name> python=3.6`  
 3. To use Python in this environment, activate it by running:  
-`conda activate scrl`  
+`conda activate <env_name>`  
 4. Install OpenMPI (Ubuntu/Debian):  
 `sudo apt-get update && sudo apt-get install libopenmpi-dev`  
 5. In the directory you want to save the environment, run the command:  
-`git clone git@git.act3-ace.ai:kerianne.hobbs/have-deepsky.git`
+`git clone git@git.act3-ace.com:rta/have-deepsky.git`
 6. Then run the commands:  
 `cd have-deepsky`  
-`pip install -e .`  
-
+`pip install -e .`
 
 ## Pulling an update from Gitlab
 If someone else has updated their files, and you want to pull the most recent changes without erasing your progress:  
