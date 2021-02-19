@@ -6,6 +6,7 @@ import gym
 
 from rejoin_rta.utils.util import draw_from_rand_bounds_dict
 
+
 class BaseEnv(gym.Env):
     def __init__(self, config):
         # save config
@@ -24,14 +25,14 @@ class BaseEnv(gym.Env):
         self._setup_action_space()
         self._setup_obs_space()
 
-        self.timestep = 1 #TODO
+        self.timestep = 1  # TODO
 
         self.reset()
 
     def seed(self, seed=None):
         np.random.seed(seed)
         # note that python random should not be used (use numpy random instead)
-        # Setting seed just to be safe incase it is accidentally used
+        # Setting seed just to be safe in case it is accidentally used
         random.seed(seed)
 
         return [seed]
@@ -51,7 +52,7 @@ class BaseEnv(gym.Env):
         else:
             done = False
 
-        return  obs, reward, done, info
+        return obs, reward, done, info
 
     def _step_sim(self, action):
         raise NotImplementedError
@@ -116,3 +117,35 @@ class BaseEnv(gym.Env):
         }
 
         return info
+
+
+class RewardManager:
+    def __init__(self, config):
+        self.config = config
+        self.reward_components = {k: 0 for k in config.keys()}
+        self.step_reward = 0
+        self.total_reward = 0
+
+    def step(self, status):
+        step_reward = {k: 0 for k in self.config.keys()}
+        for k, v in self.config.items():
+            reward = 0
+            if isinstance(v, dict):
+                reward += v[status[k]]
+            else:
+                reward += v
+            step_reward[k] += reward
+        return step_reward
+
+    def update(self, step_reward):
+        self.step_reward = 0
+        for k in self.reward_components.keys():
+            reward = step_reward[k]
+            self.reward_components[k] += reward
+            self.step_reward += reward
+            self.total_reward += reward
+
+    def reset(self):
+        self.reward_components = {k: 0 for k in self.reward_components.keys()}
+        self.step_reward = 0
+        self.total_reward = 0

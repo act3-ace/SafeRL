@@ -3,7 +3,7 @@ import gym
 from gym.spaces import Discrete, Box
 import numpy as np
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import yaml
 import math
 
