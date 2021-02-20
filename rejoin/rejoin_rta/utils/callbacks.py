@@ -136,9 +136,9 @@ class LoggingCallback:
                 # check if jsonable and convert if necessary
                 info = episode.last_info_for('agent0')
 
-                # ## DEBUGGING
-                # if info is not None:
-                #     info["not_serializable"] = numpy.array([0,1,2,3,4,5])
+                # DEBUGGING
+                if info is not None:
+                    info["not_serializable"] = numpy.array([0,1,2,3,4,5])
 
                 if self.is_jsonable(info) == True:
                     state["info"] = info
@@ -164,10 +164,12 @@ class LoggingCallback:
         # iterate through dictionary, converting objects as needed
         for key in map.keys():
             suspicious_object = map[key]
+            is_json_ready = self.is_jsonable(suspicious_object)
 
-            if self.is_jsonable(suspicious_object) == True:
+            if is_json_ready == True:
+                # move along sir
                 continue
-            elif self.is_jsonable(suspicious_object) == TypeError:
+            elif is_json_ready == TypeError:
                 # recurse if we find sub-dictionaries
                 if type(suspicious_object) is dict:
                     map[key] = self.jsonify(suspicious_object)
@@ -178,8 +180,10 @@ class LoggingCallback:
                     map[key] = suspicious_object.tolist()
                     continue
 
-            elif self.is_jsonable(suspicious_object) == OverflowError:
+            elif is_json_ready == OverflowError:
                 raise OverflowError
+            elif is_json_ready == ValueError:
+                raise ValueError
 
         return map
 
@@ -193,3 +197,5 @@ class LoggingCallback:
             return TypeError
         except OverflowError:
             return OverflowError
+        except ValueError:
+            return ValueError
