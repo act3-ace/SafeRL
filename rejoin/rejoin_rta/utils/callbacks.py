@@ -137,8 +137,8 @@ class LoggingCallback:
                 info = episode.last_info_for('agent0')
 
                 # DEBUGGING
-                if info is not None:
-                    info["not_serializable"] = numpy.array([0,1,2,3,4,5])
+                # if info is not None:
+                #     info["not_serializable"] = numpy.array([0,1,2,3,4,5])
 
                 if self.is_jsonable(info) == True:
                     state["info"] = info
