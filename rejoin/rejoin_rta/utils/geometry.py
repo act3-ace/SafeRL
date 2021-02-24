@@ -2,6 +2,56 @@ import abc
 import math
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+from rejoin_rta import BaseEnvObj, BaseEnvObj3d
+
+class BaseGeometery(BaseEnvObj):
+    
+   
+    @orientation.setter
+    @abc.abstractmethod
+    def orientation(self, value):
+        ...
+
+class BaseGeometery3d(BaseEnvObj3d, BaseGeometery):
+    ...
+
+class Point(BaseGeometery):
+    
+    
+    def __init__(self, x=0, y=0):
+        self._center = np.array( [x ,y ,0 ] , dtype=np.float64)
+
+    @property
+    def x(self):
+        return self._center[0]
+
+    @property
+    def y(self):
+        return self._center[1]
+
+    @property
+    def position2d(self):
+        return self._center[0:2]
+
+    @property
+    def orientation(self):
+        # always return a no rotation quaternion as points do not have an orientation
+        return R.from_quat([0, 0, 0, 1])
+    
+    @orientation.setter
+    def orientation(self, value):
+        # simply pass as points do not have an orientation
+        pass
+
+class Point3d(BaseGeometery3d, Point):
+
+
+    def __init__(self, x=0, y=0, z=0):
+        self._center = np.array( [ x, y, z ] , dtype=np.float64)
+
+    @property
+    def position3d(self):
+        return self._center
 
 
 class RelativePoint(abc.ABC):
