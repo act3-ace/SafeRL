@@ -2,7 +2,20 @@ import abc
 import copy
 import numpy as np
 from gym.spaces import Discrete, Box, Tuple
+from scipy import integrate
 
+class BaseActuatorManager(abc.ABC):
+
+
+    @property
+    @abc.abstractmethod
+    def default_control(self):
+        ...
+
+    @property
+    @abc.abstractmethod
+    def actuators(self):
+        ...
 
 class BaseActuator(abc.ABC):
 
@@ -139,4 +152,91 @@ class ActionPreprocessorDiscreteMap(ActionPreprocessor):
         return self.vals[action]
 
 
+class BasePlatform(abc.ABC):
 
+
+    def __init__(self, dynamics, actuator_manager, controller, init_dict=None):
+
+        self.dependent_objs = []
+
+        self.dynamics = dynamics
+        self.actuator_manager = actuator_manager
+        self.controller = controller
+
+        self.reset(init_dict)
+
+    def reset(self, init_dict):
+        self.state = self.init_state(init_dict)
+        self.actuation_cur = None
+        self.control_cur = None
+
+    def step(self, step_size, action=None):
+        actuation = self.controller.gen_actuation(self.state, action)
+
+        control = self.actuator_manager.gen_control(actuation)
+
+        # TODO save current actuation
+        self.control_cur = np.copy(control)
+
+        self.state = self.compute_step(self.state, control)
+
+    @abc.abstractmethod
+    def compute_step(self, state, control):
+        ...
+
+    @abc.abstractmethod
+    def init_state(self, init_dict):
+        ...
+
+class BaseDynamics(abc.ABC):
+    
+    @abc.abstractmethod
+    def step(self, step_size, state, control):
+        ...
+
+class BaseODESolverDynmaics(BaseDynamics):
+
+
+    def __init__(self, integration_method='RK45'):
+        self.integration_method = integration_method
+        super().__init__()
+
+    @abc.abstractmethod
+    def dx(self, t, state, control):
+        ...
+
+    def step(self, step_size, state, control):
+
+        if self.integration_method == "rk45":
+            sol = integrate.solve_ivp(self.dx, (0,step_size), state, args=(control,))
+
+            state = sol.y[:,-1] # save last timestep of integration solution 
+        elif self.integration_method == 'euler': # euler
+            state_dot = self.dx(0, state, control)
+            state = state + step_size * state_dot
+        else:
+            raise ValueError("invalid integration method '{}'".format(self.integration_method))
+
+        return state
+
+class BaseLinearODESolverDynamics(BaseODESolverDynmaics):
+
+
+    def __init__(self, integration_method='RK45'):
+        self.A, self.B = self.gen_dynamics_matrices()
+        super().__init__(integration_method=integration_method)
+
+    @abc.abstractmethod
+    def gen_dynamics_matrices(self):
+        ...
+
+    def update_dynamics_matrices(self):
+        pass
+
+    def dx(self, t, state, control):
+        dx = np.matmul(self.A, state) + np.matmul(self.B, control)
+        return dx
+
+    def step(self, step_size, state, control):
+        self.update_dynamics_matrices()
+        super().step(self, step_size, state, control)
