@@ -66,6 +66,67 @@ class Point(BaseGeometery):
         # simply pass as points do not have an orientation
         pass
 
+class RelativeGeometry(BaseGeometery):
+    
+    
+    def __init__(self, 
+        ref, 
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None, 
+        aspect_angle=None, 
+        **kwargs):
+
+        # check that both x_offset and y_offset are used at the same time if used
+        assert (x_offset is None) == (y_offset is None) == (z_offset is None), \
+            "if either x_offset or y_offset is used, both x_offset and y_offset must be used"
+
+        # check that only r_offset, theta_offset or x/y/z offset are specified
+        assert ((r_offset is not None) or (theta_offset is not None) or (aspect_angle is not None)) != ((x_offset is not None) or (y_offset is not None) or (z_offset is None) ), \
+            "user either polar or cartesian relative position definiton, not both"
+
+        # check that only theta_offset or aspect_angle is used
+        assert (( theta_offset is None ) or ( aspect_angle is None )), "specify either theta_offset or aspect_angle, not both"
+
+        # convert aspect angle to theta
+        if aspect_angle is not None:
+            theta_offset = (math.pi - aspect_angle)
+
+        # convert polar to x,y offset
+        if (x_offset is None) and (y_offset is None):
+            x_offset = r_offset * math.cos(theta_offset)
+            y_offset = r_offset * math.sin(theta_offset)
+
+        # default values if nothing is specified
+        if x_offset is None:
+            x_offset = 0
+        if y_offset is None:
+            y_offset = 0
+        if z_offset is None:
+            z_offset = 0
+
+        self.ref = ref
+        self.track_orientation = track_orientation
+
+        self._cartesian_offset = np.array([x_offset, y_offset, z_offset], dtype=np.float64)
+
+        super().__init__(**kwargs)
+
+        self.update()
+
+    def update(self):
+        ref_orientation = self.ref.orientation
+
+        offset = ref_orientation.apply(self._cartesian_offset)
+
+        self.position = self.ref.position + offset
+
+        if self.track_orientation:
+            self.orientation = self.ref.orientation
+
 
 class RelativePoint(abc.ABC):
     def __init__(self, ref, cartesian_offset=None, track_orientation=False):
