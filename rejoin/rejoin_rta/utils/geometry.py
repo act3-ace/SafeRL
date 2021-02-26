@@ -1,19 +1,33 @@
 import abc
 import math
 import numpy as np
+import copy
 from scipy.spatial.transform import Rotation as R
-from rejoin_rta import BaseEnvObj, BaseEnvObj3d
+from scipy.spatial.transform import Rotation
+from rejoin_rta import BaseEnvObj
 
 class BaseGeometery(BaseEnvObj):
-    
+
+    @property
+    @abc.abstractmethod
+    def position(self):
+        ...
+
+    @position.setter
+    @abc.abstractmethod
+    def position(self, value):
+        ...
+
+    # need to redefine orientation property to add a setter. Is it possible to avoid doing this?
+    @property   
+    @abc.abstractmethod
+    def orientation(self) -> Rotation:
+        ...
    
     @orientation.setter
     @abc.abstractmethod
     def orientation(self, value):
         ...
-
-class BaseGeometery3d(BaseEnvObj3d, BaseGeometery):
-    ...
 
 class Point(BaseGeometery):
     
@@ -30,8 +44,17 @@ class Point(BaseGeometery):
         return self._center[1]
 
     @property
-    def position2d(self):
-        return self._center[0:2]
+    def z(self):
+        return self._center[2]
+
+    @property
+    def position(self):
+        return copy.deepcopy(self._center)
+
+    @position.setter
+    def position(self, value):
+        assert isinstance(value, np.ndarray) and value.shape == (3,) , "Position must be set in a numpy ndarray with shape=(3,)"
+        self._center = copy.deepcopy(value)
 
     @property
     def orientation(self):
@@ -42,16 +65,6 @@ class Point(BaseGeometery):
     def orientation(self, value):
         # simply pass as points do not have an orientation
         pass
-
-class Point3d(BaseGeometery3d, Point):
-
-
-    def __init__(self, x=0, y=0, z=0):
-        self._center = np.array( [ x, y, z ] , dtype=np.float64)
-
-    @property
-    def position3d(self):
-        return self._center
 
 
 class RelativePoint(abc.ABC):
