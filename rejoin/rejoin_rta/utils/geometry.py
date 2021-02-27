@@ -6,7 +6,10 @@ from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Rotation
 from rejoin_rta import BaseEnvObj
 
+POINT_CONTAINS_DISTANCE = 1e-10
+
 class BaseGeometery(BaseEnvObj):
+
 
     @property
     @abc.abstractmethod
@@ -29,11 +32,15 @@ class BaseGeometery(BaseEnvObj):
     def orientation(self, value):
         ...
 
+    @abc.abstractmethod
+    def contains(self, other):
+        ...
+
 class Point(BaseGeometery):
     
     
-    def __init__(self, x=0, y=0):
-        self._center = np.array( [x ,y ,0 ] , dtype=np.float64)
+    def __init__(self, x=0, y=0, z=0):
+        self._center = np.array( [ x, y, z ] , dtype=np.float64)
 
     @property
     def x(self):
@@ -66,6 +73,62 @@ class Point(BaseGeometery):
         # simply pass as points do not have an orientation
         pass
 
+    def contains(self, other):
+        distance = np.linalg.norm( self.position - other.position )
+        is_contained = distance < POINT_CONTAINS_DISTANCE
+        return is_contained
+
+    def generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'position': self.position,
+            'orientation': self.orientation.as_quat().tolist()
+        }
+
+        return info
+
+class Circle(Point):
+
+
+    def __init__(self, x=0, y=0, z=0, radius=1):
+        self.radius = radius
+
+        super().__init__(x=x, y=y, z=z)
+
+    def contains(self, other):
+        radial_distance = np.linalg.norm( self.position[0:2] - other.position[0:2] )
+        is_contained = radial_distance <= self.radius
+        return is_contained
+
+    def generate_info(self):
+        info = super().generate_info()
+        info['radius'] = self.radius
+        
+        return info
+
+class Cyclinder(Circle):
+
+
+    def __init__(self, x=0, y=0, z=0, radius=1, height=1):
+        self.height = height
+
+        super().__init__(x=x, y=y, z=z, radius=radius)
+
+    def contains(self, other):
+        radial_distance = np.linalg.norm( self.position[0:2] - other.position[0:2] )
+        axial_distance = abs(self.position[2] - other.position[2])
+
+        is_contained = ( radial_distance <= self.radius ) and ( axial_distance <= (self.height / 2) )
+        return is_contained
+
+    def generate_info(self):
+        info = super().generate_info()
+        info['height'] = self.height
+        
+        return info
+
 class RelativeGeometry(BaseGeometery):
     
     
@@ -81,12 +144,12 @@ class RelativeGeometry(BaseGeometery):
         **kwargs):
 
         # check that both x_offset and y_offset are used at the same time if used
-        assert (x_offset is None) == (y_offset is None) == (z_offset is None), \
+        assert (x_offset is None) == (y_offset is None), \
             "if either x_offset or y_offset is used, both x_offset and y_offset must be used"
 
         # check that only r_offset, theta_offset or x/y/z offset are specified
-        assert ((r_offset is not None) or (theta_offset is not None) or (aspect_angle is not None)) != ((x_offset is not None) or (y_offset is not None) or (z_offset is None) ), \
-            "user either polar or cartesian relative position definiton, not both"
+        assert ((r_offset is not None) or (theta_offset is not None) or (aspect_angle is not None)) != ((x_offset is not None) or (y_offset is not None)), \
+            "user either polar or x/y relative position definiton, not both"
 
         # check that only theta_offset or aspect_angle is used
         assert (( theta_offset is None ) or ( aspect_angle is None )), "specify either theta_offset or aspect_angle, not both"
@@ -127,6 +190,8 @@ class RelativeGeometry(BaseGeometery):
         if self.track_orientation:
             self.orientation = self.ref.orientation
 
+
+# Old Geometery classes
 
 class RelativePoint(abc.ABC):
     def __init__(self, ref, cartesian_offset=None, track_orientation=False):
