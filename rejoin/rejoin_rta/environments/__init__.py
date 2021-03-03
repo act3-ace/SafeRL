@@ -5,6 +5,7 @@ import random
 import gym
 
 from rejoin_rta.utils.util import draw_from_rand_bounds_dict
+from rejoin.rejoin_rta.environments.managers import RewardManager, StatusManager
 
 
 class BaseEnv(gym.Env):
@@ -18,8 +19,8 @@ class BaseEnv(gym.Env):
             self.verbose = False
 
         self.obs_processor = self.config['obs']['processor'](self.config['obs'])
-        self.reward_processor = self.config['reward']['processor'](self.config["reward"])
-        self.constraints_processor = self.config['constraints']['processor'](self.config['constraints'])
+        self.reward_manager = RewardManager(config=self.config["reward"])
+        self.status_manager = StatusManager(self.config["status"])
 
         self._setup_env_objs()
         self._setup_action_space()
@@ -71,12 +72,12 @@ class BaseEnv(gym.Env):
             successful_init = True
 
         # reset processor objects
-        self.reward_processor.reset(self.env_objs)
+        self.reward_manager.reset(env_objs=self.env_objs)
         self.obs_processor.reset()
-        self.constraints_processor.reset()
+        self.status_manager.reset(env_objs=self.env_objs)
 
         # reset status dict
-        self.status_dict = self.constraints_processor.check_constraints(self.env_objs)
+        self.status_dict = self.status_manager.status
 
         # generate reset state observations
         obs = self._generate_obs()
@@ -102,50 +103,19 @@ class BaseEnv(gym.Env):
         return obs
 
     def _generate_reward(self):
-        reward = self.reward_processor.gen_reward(self.env_objs, self.timestep, self.status_dict)
+        reward = self.reward_manager.step(self.env_objs, self.timestep, self.status_dict)
         return reward
 
     def _generate_constraint_status(self):
-        return self.constraints_processor.step(self.env_objs, self.timestep)
+        self.status_manager.step(env_objs=self.env_objs, timestep=self.timestep, status=self.status_dict)
+        return self.status_manager.status
 
     def _generate_info(self):
         info = {
             'failure': self.status_dict['failure'],
             'success': self.status_dict['success'],
             'status': self.status_dict,
-            'reward': self.reward_processor._generate_info(),
+            'reward': self.reward_manager._generate_info(),
         }
 
         return info
-
-
-class RewardManager:
-    def __init__(self, config):
-        self.config = config
-        self.reward_components = {k: 0 for k in config.keys()}
-        self.step_reward = 0
-        self.total_reward = 0
-
-    def step(self, status):
-        step_reward = {k: 0 for k in self.config.keys()}
-        for k, v in self.config.items():
-            reward = 0
-            if isinstance(v, dict):
-                reward += v[status[k]]
-            else:
-                reward += v
-            step_reward[k] += reward
-        return step_reward
-
-    def update(self, step_reward):
-        self.step_reward = 0
-        for k in self.reward_components.keys():
-            reward = step_reward[k]
-            self.reward_components[k] += reward
-            self.step_reward += reward
-            self.total_reward += reward
-
-    def reset(self):
-        self.reward_components = {k: 0 for k in self.reward_components.keys()}
-        self.step_reward = 0
-        self.total_reward = 0

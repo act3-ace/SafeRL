@@ -202,14 +202,15 @@ stop_dict = {
     'training_iteration': 500,
 }
 
-# create output dir and save experiment params
-os.makedirs(output_dir, exist_ok=True)
-args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
-ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
-with open(args_yaml_filepath, 'w') as args_yaml_file:
-    arg_dict = vars(args)
-    yaml.dump(arg_dict, args_yaml_file)
-with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
-    yaml.dump(config, ray_config_yaml_file)
+if __name__ == "__main__":
+    # create output dir and save experiment params
+    os.makedirs(output_dir, exist_ok=True)
+    args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
+    ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
+    with open(args_yaml_filepath, 'w') as args_yaml_file:
+        arg_dict = vars(args)
+        yaml.dump(arg_dict, args_yaml_file)
+    with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
+        yaml.dump(config, ray_config_yaml_file)
 
-tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
+    tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
