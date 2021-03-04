@@ -92,18 +92,20 @@ env_config = {
     'agent':{
         'controller':{
             'type': 'agent',
-            'actuators': {
-                'thrust_x': {
+            'actuators': [
+                {
+                    'name': 'thrust_x',
                     'space': 'discrete',
                     'points': 11,
                     'bounds': [-10, 10]
                 },
-                'thrust_y': {
+                {
+                    'name': 'thrust_y',
                     'space': 'discrete',
                     'points': 11,
                     'bounds': [-10, 10]
                 },
-            },
+            ]
         },
     },
     'obs' : {
@@ -145,35 +147,26 @@ env_config3d = {
     'agent':{
         'controller':{
             'type': 'agent',
-            'actuators': {
-                # 'thrust_x': {
-                #     'space': 'discrete',
-                #     'points': 11,
-                #     'bounds': [-10, 10]
-                # },
-                # 'thrust_y': {
-                #     'space': 'discrete',
-                #     'points': 11,
-                #     'bounds': [-10, 10]
-                # },
-                # 'thrust_z': {
-                #     'space': 'discrete',
-                #     'points': 11,
-                #     'bounds': [-10,10]
-                # },
-                'thrust_x': {
-                    'space': 'continuous',
+            'actuators': [
+                {
+                    'name': 'thrust_x',
+                    'space': 'discrete',
+                    'points': 11,
                     'bounds': [-10, 10]
                 },
-                'thrust_y': {
-                    'space': 'continuous',
+                {
+                    'name': 'thrust_y',
+                    'space': 'discrete',
+                    'points': 11,
                     'bounds': [-10, 10]
                 },
-                'thrust_z': {
-                    'space': 'continuous',
+                {
+                    'name': 'thrust_z',
+                    'space': 'discrete',
+                    'points': 11,
                     'bounds': [-10,10]
                 },
-            },
+            ],
         },
     },
     'obs' : {
