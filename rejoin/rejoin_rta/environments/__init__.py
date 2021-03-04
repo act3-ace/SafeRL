@@ -20,7 +20,7 @@ class BaseEnv(gym.Env):
 
         self.obs_processor = self.config['obs']['processor'](self.config['obs'])
         self.reward_manager = RewardManager(config=self.config["reward"])
-        self.status_manager = StatusManager(self.config["status"])
+        self.status_manager = StatusManager(config=self.config["status"])
 
         self._setup_env_objs()
         self._setup_action_space()

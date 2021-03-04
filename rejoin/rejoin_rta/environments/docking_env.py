@@ -228,13 +228,13 @@ class DockingRewardProcessor3Dv2:
         self.prev_distance = distance(env_objs['deputy'], env_objs['docking_region'])
         self.prev_distance_z = abs(env_objs['deputy'].z - env_objs['docking_region'].z)
 
-        self.reward_manager.reset()
+        self.reward_manager.reset(env_objs=env_objs)
 
     def _generate_info(self):
         info = {
-            'step': self.reward_manager.step_reward,
-            'component_totals': self.reward_manager.reward_components,
-            'total': self.reward_manager.total_reward,
+            'step': self.reward_manager.step_value,
+            'component_totals': self.reward_manager.components,
+            'total': self.reward_manager.total_value,
         }
 
         return info
