@@ -2,6 +2,9 @@ from rejoin.rejoin_rta.utils.geometry import distance
 from rejoin.rejoin_rta.environments.processors import StatusProcessor
 
 
+# TODO: Implement Dubins status processors
+
+
 class DockingStatusProcessor(StatusProcessor):
     def __init__(self, config, name="docking_status"):
         super().__init__(config=config, name=name)
