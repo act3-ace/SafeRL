@@ -2,6 +2,9 @@ from rejoin.rejoin_rta.utils.geometry import distance
 from rejoin.rejoin_rta.environments.processors import RewardProcessor
 
 
+# TODO: Implement Dubins reward processors
+
+
 class TimeRewardProcessor(RewardProcessor):
     def __init__(self, config, name="time"):
         super().__init__(config=config, name=name)
