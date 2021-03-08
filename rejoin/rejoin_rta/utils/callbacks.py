@@ -114,7 +114,7 @@ class LoggingCallback:
                         env_index: Optional[int] = None, **kwargs) -> None:
 
         if episode.episode_id not in self.worker_episode_numbers:
-            self.worker_episode_numbers[episode.episode_id] = [self.episode_count]
+            self.worker_episode_numbers[episode.episode_id] = self.episode_count
             self.episode_count += 1
 
         # get environment instance and set up log path
@@ -126,7 +126,7 @@ class LoggingCallback:
 
         # handle logging options
         self.episodes.add(episode_id)
-        if worker_index <= self.num_logging_workers and len(self.episodes) % self.episode_log_interval == 0:
+        if worker_index <= self.num_logging_workers and len(self.episodes) % self.episode_log_interval == 0 and step_num:
             state = {}
             if self.log_actions:
                 state["actions"] = episode.last_action_for('agent0').tolist()     # TODO: 'agent0' should not be hardcoded...*
@@ -135,10 +135,6 @@ class LoggingCallback:
             if self.log_info:
                 # check if jsonable and convert if necessary
                 info = episode.last_info_for('agent0')
-
-                # DEBUGGING
-                # if info is not None:
-                #     info["not_serializable"] = numpy.array([0,1,2,3,4,5])
 
                 if self.is_jsonable(info) == True:
                     state["info"] = info
