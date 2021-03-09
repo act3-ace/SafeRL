@@ -6,7 +6,7 @@ import gym
 from gym.spaces import Discrete, Box
 
 from rejoin_rta.environments import BaseEnv
-from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft
+from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft2d, CWHSpacecraft3d
 from rejoin_rta.utils.geometry import RelativeCircle2d, distance, RelativeCylinder
 
 class DockingEnv(BaseEnv):
@@ -16,8 +16,15 @@ class DockingEnv(BaseEnv):
         self.timestep = 1
 
     def _setup_env_objs(self):
-        deputy = CWHSpacecraft(config=self.config['agent'])
-        chief = CWHSpacecraft()
+        if self.config['mode'].lower() == '2d':
+            spacecraft_class = CWHSpacecraft2d
+        elif self.config['mode'].lower() == '3d':
+            spacecraft_class = CWHSpacecraft3d
+        else:
+            raise ValueError("Unknown docking environment mode {}. Should be one of ['2d', '3d']".format(self.config['mode']))
+        
+        deputy = spacecraft_class(controller='agent', config=self.config['agent'])
+        chief = spacecraft_class()
 
         if self.config['docking_region']['type'] == 'circle':
             radius = self.config['docking_region']['radius']
@@ -73,10 +80,7 @@ class DockingObservationProcessor():
         pass
 
     def gen_obs(self, env_objs):
-        if self.config['mode'] == '2d':
-            obs = env_objs['deputy'].state2d
-        elif self.config['mode'] == '3d':
-            obs = env_objs['deputy'].state
+        obs = env_objs['deputy'].state.vector
 
         return obs
 
