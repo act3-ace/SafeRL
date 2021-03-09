@@ -3,6 +3,7 @@ import copy
 import numpy as np
 from gym.spaces import Discrete, Box, Tuple
 from scipy import integrate
+from rejoin_rta import BaseEnvObj
 
 class BaseActuator(abc.ABC):
 
@@ -191,21 +192,34 @@ class BaseActuatorSet:
 
         return control
 
-class BasePlatform(abc.ABC):
+class BasePlatform(BaseEnvObj):
 
 
-    def __init__(self, dynamics, actuator_set, controller, init_dict={}):
+    def __init__(self, dynamics, actuator_set, controller, state, config=None, **kwargs):
+
+        if config is None or 'controller' not in config:
+            controller_config = None
+        else:
+            controller_config = config['controller']
+
+        if controller is None:
+            controller = PassThroughController()
+        elif controller == 'agent':
+            controller = AgentController(actuator_set, config=controller_config)
+            self.action_space = controller.action_space
 
         self.dependent_objs = []
 
         self.dynamics = dynamics
         self.actuator_set = actuator_set
         self.controller = controller
+        self.state = state
 
-        self.reset(**init_dict)
+        self.reset(**kwargs)
 
     def reset(self, **kwargs):
-        self.state = self.init_state(**kwargs)
+        self.state.reset(**kwargs)
+
         self.actuation_cur = None
         self.control_cur = None
 
@@ -217,11 +231,15 @@ class BasePlatform(abc.ABC):
 
         control = self.actuator_set.gen_control(actuation)
 
-        # TODO save current actuation
+        # save current actuation and control
         self.actuation_cur = copy.deepcopy(actuation)
         self.control_cur = copy.deepcopy(control)
 
-        self.state = self.dynamics.step(step_size, self.state, control)
+        # compute new state if dynamics were applied
+        new_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
+
+        # overwrite platform state with new state from dynamics
+        self.state = new_state
 
         for obj in self.dependent_objs:
             obj.step()
@@ -229,9 +247,54 @@ class BasePlatform(abc.ABC):
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
 
+    @property
+    def x(self):
+        return self.state.x
+
+    @property
+    def y(self):
+        return self.state.y
+
+    @property
+    def z(self):
+        return self.state.z
+
+    @property
+    def position(self):
+        return self.state.position
+
+    @property
+    def orientation(self):
+        return self.state.orientation
+
+class BasePlatformState(BaseEnvObj):
+
+
+    def init(self, **kwargs):
+        self.reset(**kwargs)
+
     @abc.abstractmethod
-    def init_state(self, **kwargs):
+    def reset(self):
         ...
+
+class BasePlatformStateVectorized(BasePlatformState):
+
+
+    def reset(self, **kwargs):
+        self._vector = self.build_vector(**kwargs)
+
+    @abc.abstractmethod
+    def build_vector(self):
+        ...
+
+    @property
+    def vector(self):
+        return copy.deepcopy(self._vector)
+    
+    @vector.setter
+    def vector(self, value):
+        self._vector = copy.deepcopy(value)
+
 
 class BaseDynamics(abc.ABC):
     
@@ -247,18 +310,18 @@ class BaseODESolverDynmaics(BaseDynamics):
         super().__init__()
 
     @abc.abstractmethod
-    def dx(self, t, state, control):
+    def dx(self, t, state_vec, control):
         ...
 
     def step(self, step_size, state, control):
 
         if self.integration_method == "RK45":
-            sol = integrate.solve_ivp(self.dx, (0,step_size), state, args=(control,))
+            sol = integrate.solve_ivp(self.dx, (0,step_size), state.vector, args=(control,))
 
-            state = sol.y[:,-1] # save last timestep of integration solution 
+            state.vector = sol.y[:,-1] # save last timestep of integration solution 
         elif self.integration_method == 'Euler':
-            state_dot = self.dx(0, state, control)
-            state = state + step_size * state_dot
+            state_dot = self.dx(0, state.vector, control)
+            state.vector = state.vector + step_size * state_dot
         else:
             raise ValueError("invalid integration method '{}'".format(self.integration_method))
 
@@ -278,8 +341,8 @@ class BaseLinearODESolverDynamics(BaseODESolverDynmaics):
     def update_dynamics_matrices(self):
         pass
 
-    def dx(self, t, state, control):
-        dx = np.matmul(self.A, state) + np.matmul(self.B, control)
+    def dx(self, t, state_vec, control):
+        dx = np.matmul(self.A, state_vec) + np.matmul(self.B, control)
         return dx
 
     def step(self, step_size, state, control):
