@@ -190,7 +190,7 @@ class RelativeCircle2d(RelativePoint2d):
         if type(other) == list or type(other) == tuple:
             center_distance = math.sqrt((other[0]-self.x)**2 + (other[1]-self.y)**2)
         else:
-            center_distance = np.linalg.norm(self.position2d - other.position2d)
+            center_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
 
         return self._radius >= center_distance
 
