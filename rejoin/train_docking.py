@@ -240,6 +240,11 @@ stop_dict = {
 }
 
 if __name__ == "__main__":
+    # Workaround for YAML not dumping ABCMeta objects
+    # TODO: See if there is a better way to fix this
+    from yaml.representer import Representer
+    from abc import ABCMeta
+    Representer.add_representer(ABCMeta, Representer.represent_name)
 
     # create output dir and save experiment params
     os.makedirs(output_dir, exist_ok=True)
