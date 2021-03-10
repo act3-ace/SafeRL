@@ -1,11 +1,14 @@
 import math
-import numpy as np
 import random
+
+from copy import deepcopy
+
+import numpy as np
 
 import gym
 
 from rejoin_rta.utils.util import draw_from_rand_bounds_dict
-from rejoin.rejoin_rta.environments.managers import RewardManager, StatusManager
+from rejoin.rejoin_rta.environments.managers import RewardManager, StatusManager, ObservationManager
 
 
 class BaseEnv(gym.Env):
@@ -18,7 +21,7 @@ class BaseEnv(gym.Env):
         else:
             self.verbose = False
 
-        self.obs_processor = self.config['obs']['processor'](self.config['obs'])
+        self.observation_manager = ObservationManager(self.config["observation"])
         self.reward_manager = RewardManager(config=self.config["reward"])
         self.status_manager = StatusManager(config=self.config["status"])
 
@@ -73,7 +76,7 @@ class BaseEnv(gym.Env):
 
         # reset processor objects
         self.reward_manager.reset(env_objs=self.env_objs)
-        self.obs_processor.reset()
+        self.observation_manager.reset(env_objs=self.env_objs)
         self.status_manager.reset(env_objs=self.env_objs)
 
         # reset status dict
@@ -93,21 +96,37 @@ class BaseEnv(gym.Env):
         raise NotImplementedError
 
     def _setup_obs_space(self):
-        self.observation_space = self.obs_processor.observation_space
+        self.observation_space = self.observation_manager.observation_space
 
     def _setup_action_space(self):
         self.action_space = self.agent.action_space
         
     def _generate_obs(self):
-        obs = self.obs_processor.gen_obs(self.env_objs)
-        return obs
+        # TODO: Handle multiple observations
+        self.observation_manager.step(
+            env_objs=self.env_objs,
+            timestep=self.timestep,
+            status=deepcopy(self.status_dict),
+            old_status=deepcopy(self.status_dict)
+        )
+        return self.observation_manager.obs
 
     def _generate_reward(self):
-        reward = self.reward_manager.step(self.env_objs, self.timestep, self.status_dict)
-        return reward
+        self.reward_manager.step(
+            env_objs=self.env_objs,
+            timestep=self.timestep,
+            status=deepcopy(self.status_dict),
+            old_status=deepcopy(self.status_dict)
+        )
+        return self.reward_manager.step_value
 
     def _generate_constraint_status(self):
-        self.status_manager.step(env_objs=self.env_objs, timestep=self.timestep, status=self.status_dict)
+        self.status_manager.step(
+            env_objs=self.env_objs,
+            timestep=self.timestep,
+            status=deepcopy(self.status_dict),
+            old_status=deepcopy(self.status_dict)
+        )
         return self.status_manager.status
 
     def _generate_info(self):
