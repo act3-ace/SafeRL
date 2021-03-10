@@ -88,7 +88,7 @@ class LoggingCallback:
                  contents: tuple = (LogContents.VERBOSE,)):
         self.num_logging_workers = num_logging_workers
         self.episode_log_interval = episode_log_interval
-        self.episodes = set()
+        # self.episodes = set()
 
         self.worker_episode_numbers = dict()
         self.episode_count = 0
@@ -125,8 +125,8 @@ class LoggingCallback:
         step_num = episode.length
 
         # handle logging options
-        self.episodes.add(episode_id)
-        if worker_index <= self.num_logging_workers and len(self.episodes) % self.episode_log_interval == 0 and step_num:
+        # self.episodes.add(episode_id)
+        if worker_index <= self.num_logging_workers and self.worker_episode_numbers[episode_id] % self.episode_log_interval == 0 and step_num:
             state = {}
             if self.log_actions:
                 state["actions"] = episode.last_action_for('agent0').tolist()     # TODO: 'agent0' should not be hardcoded...*
