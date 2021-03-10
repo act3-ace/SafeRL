@@ -36,6 +36,23 @@ class Manager(ABC):
         raise NotImplementedError
 
 
+class ObservationManager(Manager):
+    def __init__(self, config):
+        super().__init__(config=config)
+
+    def _generate_info(self) -> dict:
+        info = {}
+        return info
+
+    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
+        processor.step(
+            env_objs=env_objs,
+            timestep=timestep,
+            status=status,
+            old_status=old_status
+        )
+
+
 class StatusManager(Manager):
     def __init__(self, config):
         super().__init__(config=config)
