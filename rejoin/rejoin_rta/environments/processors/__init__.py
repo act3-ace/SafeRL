@@ -30,7 +30,6 @@ class ObservationProcessor(Processor):
         # TODO: add normalization and clipping, pre- and post- processors
 
     def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
         self.obs = None
 
     def step(self, env_objs, timestep, status, old_status):

@@ -9,7 +9,7 @@ class DockingStatusProcessor(StatusProcessor):
     def __init__(self, config, name="docking_status"):
         super().__init__(config=config, name=name)
 
-    def generate_status(self, env_objs, time_step, status, old_status):
+    def generate_status(self, env_objs, timestep, status, old_status):
         in_docking = env_objs['docking_region'].contains(env_objs['deputy'])
         return in_docking
 
@@ -18,13 +18,13 @@ class DockingDistanceStatusProcessor(StatusProcessor):
     def __init__(self, config, name="docking_distance"):
         super().__init__(config=config, name=name)
 
-    def generate_status(self, env_objs, time_step, status, old_status):
+    def generate_status(self, env_objs, timestep, status, old_status):
         docking_distance = distance(env_objs['deputy'], env_objs['docking_region'])
         return docking_distance
 
 
 class FailureStatusProcessor(StatusProcessor):
-    def __init__(self, config, name="failure_status"):
+    def __init__(self, config, name="failure"):
         super().__init__(config=config, name=name)
         self.time_elapsed = 0
 
@@ -46,7 +46,7 @@ class FailureStatusProcessor(StatusProcessor):
 
 
 class SuccessStatusProcessor(StatusProcessor):
-    def __init__(self, config, name="success_status"):
+    def __init__(self, config, name="success"):
         super().__init__(config=config, name=name)
 
     def generate_status(self, env_objs, timestep, status, old_status):
