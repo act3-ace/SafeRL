@@ -26,6 +26,7 @@ class ObservationProcessor(Processor):
     def __init__(self, config, name="observation_processor"):
         super().__init__(config=config, name=name)
         self.obs = None
+        self.observation_space = None
         # TODO: add normalization and clipping, pre- and post- processors
 
     def reset(self, env_objs):

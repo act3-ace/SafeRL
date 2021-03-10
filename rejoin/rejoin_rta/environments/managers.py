@@ -39,18 +39,24 @@ class Manager(ABC):
 class ObservationManager(Manager):
     def __init__(self, config):
         super().__init__(config=config)
+        self.obs = None
+
+        # All processors should have same observation space
+        self.observation_space = self.processors[0].observation_space
 
     def _generate_info(self) -> dict:
         info = {}
         return info
 
     def _handle_processor(self, processor, env_objs, timestep, status, old_status):
+        # TODO: Implement multiple observations stored in self.obs
         processor.step(
             env_objs=env_objs,
             timestep=timestep,
             status=status,
             old_status=old_status
         )
+        self.obs = processor.obs
 
 
 class StatusManager(Manager):
