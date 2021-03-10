@@ -30,9 +30,9 @@ expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
 
 # set logging verbosity options
-num_logging_workers = 6
-logging_interval = 1                        # log every 10th episode
-contents = (LogContents.INFO, LogContents.OBS)           # tuple of desired contents
+num_logging_workers = 1
+logging_interval = 10                        # log every 10th episode
+contents = (LogContents.VERBOSE,)           # tuple of desired contents
 
 def run_rollout(agent, env_config):
     # instantiate env class
@@ -74,8 +74,12 @@ config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback(),
-                                              LoggingCallback(num_logging_workers=num_logging_workers, contents=contents)])
+config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
+                                              FailureCodeCallback(),
+                                              RewardComponentsCallback(),
+                                              LoggingCallback(num_logging_workers=num_logging_workers,
+                                                              episode_log_interval=logging_interval,
+                                                              contents=contents)])
 config['output']=os.path.join(args.output_dir, expr_name)
 config['output_max_file_size'] = 999999
 # config['log_level'] = 'ERROR'
