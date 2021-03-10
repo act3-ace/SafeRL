@@ -25,19 +25,26 @@ class Processor(ABC):
 class ObservationProcessor(Processor):
     def __init__(self, config, name="observation_processor"):
         super().__init__(config=config, name=name)
+        self.obs = None
         # TODO: add normalization and clipping, pre- and post- processors
 
     def reset(self, env_objs):
-        pass
+        super().reset(env_objs=env_objs)
+        self.obs = None
 
     def step(self, env_objs, timestep, status, old_status):
-        pass
+        self.obs = self.generate_observation(env_objs=env_objs)
 
     def _generate_info(self) -> dict:
-        pass
+        info = {
+            "observation": self.obs
+        }
+        return info
 
-    def generate_observation(self):
-        pass
+    @abstractmethod
+    def generate_observation(self, env_objs):
+        """Generate an observation from the current environment"""
+        raise NotImplementedError
 
 
 class StatusProcessor(Processor):
