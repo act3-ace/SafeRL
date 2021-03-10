@@ -157,7 +157,7 @@ env_config = {
             },
         },
     },
-    'observations': observation_config,
+    'observation': observation_config,
     'docking_region': {
         'type': 'circle',
         'radius': 20,
@@ -246,6 +246,8 @@ if __name__ == "__main__":
     from abc import ABCMeta
     Representer.add_representer(ABCMeta, Representer.represent_name)
 
+    DEBUG = False
+
     # create output dir and save experiment params
     os.makedirs(output_dir, exist_ok=True)
     args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
@@ -256,4 +258,11 @@ if __name__ == "__main__":
     with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
         yaml.dump(config, ray_config_yaml_file)
 
-    tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
+    if not DEBUG:
+        tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
+    else:
+        # Run training in a single process for debugging
+        config["num_workers"] = 0
+        trainer = ppo.PPOTrainer(config=config)
+        while True:
+            print(trainer.train())
