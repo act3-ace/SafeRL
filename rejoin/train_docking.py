@@ -43,7 +43,7 @@ config['callbacks'] = build_callbacks_caller([
     EpisodeOutcomeCallback(), 
     FailureCodeCallback(), 
     RewardComponentsCallback(),
-    # LoggingCallback(num_logging_workers, logging_schedule),
+    LoggingCallback(num_logging_workers, logging_schedule),
     ])
 
 rollout_history = []
