@@ -3,6 +3,8 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 import math
+from scipy.spatial.transform import Rotation
+
 
 class DubinsAircraft:
 
@@ -106,11 +108,13 @@ class DubinsAircraft:
     
     @property
     def position(self) -> np.ndarray:
-        return self.state[0:2]
+        position = np.zeros((3,))
+        position[0:2] = self.state[0:2]
+        return position
 
     @property
     def orientation(self) -> np.ndarray:
-        return self.theta
+        return Rotation.from_euler('z', self.theta)
 
     @property
     def velocity_rect(self) -> np.ndarray:
