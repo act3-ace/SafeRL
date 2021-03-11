@@ -7,7 +7,7 @@ from gym.spaces import Discrete, Box
 
 from rejoin_rta.environments import BaseEnv
 from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft2d, CWHSpacecraft3d
-from rejoin_rta.utils.geometry import RelativeCircle2d, distance, RelativeCylinder
+from rejoin_rta.utils.geometry import RelativeCircle, RelativeCylinder, distance
 
 class DockingEnv(BaseEnv):
 
@@ -28,7 +28,7 @@ class DockingEnv(BaseEnv):
 
         if self.config['docking_region']['type'] == 'circle':
             radius = self.config['docking_region']['radius']
-            docking_region = RelativeCircle2d(chief, radius=radius, x_offset=0, y_offset=0)
+            docking_region = RelativeCircle(chief, radius=radius, x_offset=0, y_offset=0)
         elif self.config['docking_region']['type'] == 'cylinder':
             docking_region = RelativeCylinder(chief, x_offset=0, y_offset=0, z_offset=0, **self.config['docking_region']['params'])
         else:

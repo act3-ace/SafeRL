@@ -188,7 +188,7 @@ env_config3d = {
     'verbose':False,
 }
 
-config['env_config'] = env_config3d
+config['env_config'] = env_config
 config['env'] = DockingEnv
 
 stop_dict = {

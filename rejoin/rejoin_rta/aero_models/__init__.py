@@ -242,7 +242,7 @@ class BasePlatform(BaseEnvObj):
         self.state = new_state
 
         for obj in self.dependent_objs:
-            obj.step()
+            obj.step(step_size)
 
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
