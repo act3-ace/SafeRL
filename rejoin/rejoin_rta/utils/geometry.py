@@ -35,6 +35,10 @@ class BaseGeometery(BaseEnvObj):
     def contains(self, other):
         ...
 
+    @abc.abstractmethod
+    def _generate_info(self):
+        ...
+
 class Point(BaseGeometery):
     
     
@@ -77,13 +81,11 @@ class Point(BaseGeometery):
         is_contained = distance < POINT_CONTAINS_DISTANCE
         return is_contained
 
-    def generate_info(self):
+    def _generate_info(self):
         info = {
             'x': self.x,
             'y': self.y,
             'z': self.z,
-            'position': self.position,
-            'orientation': self.orientation.as_quat().tolist()
         }
 
         return info
@@ -101,8 +103,8 @@ class Circle(Point):
         is_contained = radial_distance <= self.radius
         return is_contained
 
-    def generate_info(self):
-        info = super().generate_info()
+    def _generate_info(self):
+        info = super()._generate_info()
         info['radius'] = self.radius
         
         return info
@@ -122,8 +124,8 @@ class Cyclinder(Circle):
         is_contained = ( radial_distance <= self.radius ) and ( axial_distance <= (self.height / 2) )
         return is_contained
 
-    def generate_info(self):
-        info = super().generate_info()
+    def _generate_info(self):
+        info = super()._generate_info()
         info['height'] = self.height
         
         return info
@@ -178,6 +180,7 @@ class RelativeGeometry(BaseEnvObj):
 
         self.shape = shape
 
+        self.ref.register_dependent_obj(self)
         self.update()
 
     def update(self):
@@ -189,6 +192,15 @@ class RelativeGeometry(BaseEnvObj):
 
         if self.track_orientation:
             self.shape.orientation = self.ref.orientation
+
+    def step(self, *args, **kwargs):
+        self.update()
+    
+    def reset(self):
+        self.update()
+
+    def _generate_info(self):
+        return self.shape._generate_info()
 
     @property
     def x(self):
@@ -299,3 +311,6 @@ class RelativeCylinder(RelativeGeometry):
     @property
     def height(self):
         return self.height
+
+def distance(a, b):
+    return np.linalg.norm(a.position - b.position)
