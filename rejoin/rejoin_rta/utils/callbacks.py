@@ -9,7 +9,7 @@ from ray.rllib.utils.typing import AgentID, PolicyID
 from ray.rllib.policy.sample_batch import SampleBatch
 import os
 import time
-import numpy
+import numpy as np
 import json
 import jsonlines
 from enum import Enum
@@ -174,8 +174,11 @@ class LoggingCallback:
                     continue
 
                 # only known case is numpy array at the moment
-                if type(suspicious_object) is numpy.ndarray:
+                if type(suspicious_object) is np.ndarray:
                     map[key] = suspicious_object.tolist()
+                    continue
+                elif type(suspicious_object) is np.bool_:
+                    map[key] = bool(suspicious_object)
                     continue
 
             elif is_json_ready == OverflowError:
