@@ -65,7 +65,7 @@ class Point(BaseGeometery):
     @property
     def orientation(self):
         # always return a no rotation quaternion as points do not have an orientation
-        return R.from_quat([0, 0, 0, 1])
+        return Rotation.from_quat([0, 0, 0, 1])
     
     @orientation.setter
     def orientation(self, value):
