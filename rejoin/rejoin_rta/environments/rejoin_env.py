@@ -7,7 +7,7 @@ from gym.spaces import Discrete, Box
 
 from rejoin_rta.environments import BaseEnv
 from rejoin_rta.aero_models.dubins import DubinsAircraft, DubinsAgent
-from rejoin_rta.utils.geometry import RelativeCircle2d, distance2d
+from rejoin_rta.utils.geometry import RelativeCircle, distance
 
 class DubinsRejoin(BaseEnv):
 
@@ -23,7 +23,7 @@ class DubinsRejoin(BaseEnv):
             r_offset = self.config['rejoin_region']['range']
             radius = self.config['rejoin_region']['radius']
             aspect_angle = np.radians(self.config['rejoin_region']['aspect_angle'])
-            rejoin_region = RelativeCircle2d(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
+            rejoin_region = RelativeCircle(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
         else:
             raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['rejoin_region']['type']))
 
@@ -140,7 +140,7 @@ class DubinsRewardProcessor():
         self.config = config
 
     def reset(self, env_objs):
-        self.prev_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
+        self.prev_distance = distance(env_objs['wingman'], env_objs['rejoin_region'])
 
         self.step_reward = 0
         self.total_reward = 0
@@ -180,7 +180,7 @@ class DubinsRewardProcessor():
         in_rejoin = status_dict['in_rejoin']
 
         # compute distance changed between this timestep and previous
-        cur_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
+        cur_distance = distance(env_objs['wingman'], env_objs['rejoin_region'])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
 
@@ -250,7 +250,7 @@ class DubinsConstraintProcessor():
         in_rejoin = self.check_rejoin_cond(env_objs)
 
         # check success/failure conditions
-        lead_distance =  distance2d(env_objs['wingman'], env_objs['lead'])
+        lead_distance =  distance(env_objs['wingman'], env_objs['lead'])
         
         if lead_distance < self.config['safety_margin']['aircraft']:
             failure = 'crash'
@@ -276,5 +276,4 @@ class DubinsConstraintProcessor():
         return status_dict
 
     def check_rejoin_cond(self, env_objs):
-        wingman_coords = (env_objs['wingman'].x, env_objs['wingman'].y)
-        return env_objs['rejoin_region'].contains(wingman_coords)
+        return env_objs['rejoin_region'].contains(env_objs['wingman'])
