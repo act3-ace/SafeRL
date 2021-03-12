@@ -171,15 +171,12 @@ class LoggingCallback:
                 # recurse if we find sub-dictionaries
                 if type(suspicious_object) is dict:
                     map[key] = self.jsonify(suspicious_object)
-                    continue
 
                 # only known case is numpy array at the moment
                 if type(suspicious_object) is np.ndarray:
                     map[key] = suspicious_object.tolist()
-                    continue
                 elif type(suspicious_object) is np.bool_:
                     map[key] = bool(suspicious_object)
-                    continue
 
             elif is_json_ready == OverflowError:
                 raise OverflowError
