@@ -13,14 +13,18 @@ Author: John McCarroll
 import pandas as pd
 import numpy as np
 import jsonlines
-# import matplotlib
-# matplotlib.use("Agg")
-import matplotlib.pyplot as pyplot
 from flatten_json import flatten_json
 import time
 import pickle
 from consolemenu import *
 from consolemenu.items import *
+
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as pyplot
+# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+import multiprocessing
+# from Tkinter import *
 
 
 def process_log(path_to_file: str, is_jsonlines: bool, blacklist: list):
@@ -240,7 +244,7 @@ def plot(x, y=None, ax=None):
     return fig
 
 
-def plot_variables():
+def plot_variables(plot_name: str):
     """
     function to quickly plot variables on single plot
     """
@@ -250,15 +254,15 @@ def plot_variables():
 
     for x in x_vars:
         for y in y_vars:
-            print(episode[x])
-            print(type(episode[x]))
-            print(episode[x].shape)
+            # print(episode[x])
+            # print(type(episode[x]))
+            # print(episode[x].shape)
 
             x_array = episode[x].to_numpy()
             y_array = episode[y].to_numpy()
             plot(x_array, {y: y_array}, ax=main_axes)
 
-    main_axes.figure.show()
+    main_axes.figure.savefig(plot_name)
 
 
 #TODO
@@ -299,8 +303,12 @@ if __name__ == "__main__":
         "z": z_vars
     }
     main_figure, main_axes = pyplot.subplots()
+    plot_name = "test_save.png"
 
-    # create PTUI
+
+
+
+    # create UI
     menu = ConsoleMenu("AFRL RTA - Log Analysis Tool", "Enter a number from the list below:")
 
     # Create some items
@@ -317,7 +325,7 @@ if __name__ == "__main__":
     clear_variables_item = FunctionItem("Clear variables", clear_variables)
     set_variables_item = FunctionItem("Set or Remove Variables", manipulate_variables)
     create_variables_item = FunctionItem("Create Custom Variables", create_variables)
-    plot_variables_item = FunctionItem("Plot Variables", plot_variables)
+    plot_variables_item = FunctionItem("Plot Variables", plot_variables, [plot_name])
     graph_menu = ConsoleMenu("Graph Maker")
 
     graph_menu_item = SubmenuItem("Make a Graph", graph_menu, menu)
@@ -338,11 +346,8 @@ if __name__ == "__main__":
 """
 BACKLOG:
 
-working / versatile plotting function #
-
-convert log reading portion of script to func, expose to notebook
-Expose script functions to a Jupyter Notebook
-Ditch globals?
+thread safe plotting
+Ditch globals
 relative paths
 
 
@@ -350,8 +355,7 @@ Reduce start up time:
     look into saving pandas tables
         -
     consider HDF5
-
-
+    
 add min distance to lead, max rejoin time, reward (total?), etc to metadata table
 
 
@@ -363,6 +367,8 @@ COMPLETE:
 ### display metadata table for user ###
 ### generate t-var plot for user ###
 ### pickle serialization for debugging load time reduction ###
+### convert log reading portion of script to func, expose to notebook ###
+### Expose script functions to a Jupyter Notebook ###
 
 jupyter-lab --NotebookApp.iopub_data_rate_limit=1.0e10
 
