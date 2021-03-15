@@ -112,11 +112,27 @@ rejoin_config = {
             'velocity': [40, 60]
         },
     },
+    'agent':{
+        'controller':{
+            'actuators': [
+                {
+                    'name': 'rudder',
+                    'space': 'discrete',
+                    'points': 5,
+                },
+                {
+                    'name': 'throttle',
+                    'space': 'discrete',
+                    'points': 5,
+                },
+            ],
+        },
+    },
     'obs' : {
         'processor': DubinsObservationProcessor,
         # 'mode': 'rect',
         # 'reference': 'global',
-        'mode': 'polar',
+        'mode': 'magnorm',
         'reference': 'wingman',
     },
     'rejoin_region' : {

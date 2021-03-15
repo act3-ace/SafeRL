@@ -302,7 +302,7 @@ class BaseDynamics(abc.ABC):
     def step(self, step_size, state, control):
         ...
 
-class BaseODESolverDynmaics(BaseDynamics):
+class BaseODESolverDynamics(BaseDynamics):
 
 
     def __init__(self, integration_method='RK45'):
@@ -327,7 +327,7 @@ class BaseODESolverDynmaics(BaseDynamics):
 
         return state
 
-class BaseLinearODESolverDynamics(BaseODESolverDynmaics):
+class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
 
     def __init__(self, integration_method='RK45'):
@@ -338,13 +338,13 @@ class BaseLinearODESolverDynamics(BaseODESolverDynmaics):
     def gen_dynamics_matrices(self):
         ...
 
-    def update_dynamics_matrices(self):
+    def update_dynamics_matrices(self, state_vec):
         pass
 
     def dx(self, t, state_vec, control):
+        self.update_dynamics_matrices(state_vec)
         dx = np.matmul(self.A, state_vec) + np.matmul(self.B, control)
         return dx
 
     def step(self, step_size, state, control):
-        self.update_dynamics_matrices()
         return super().step(step_size, state, control)
