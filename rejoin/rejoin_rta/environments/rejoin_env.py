@@ -129,6 +129,7 @@ class DubinsRejoin(gym.Env):
             'success': self.status_dict['success'],
             'status': self.status_dict,
             'reward': self.reward_integration._generate_info(),
+            'timestep_size': self.timestep
         }
 
         return info
