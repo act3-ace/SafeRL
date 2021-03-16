@@ -4,7 +4,6 @@ Script to prototype a dev debugging tool that presents RLLib logs in a readable,
 Note: requires flatten_json package
         (pip install flatten_json)
         + console-menu
-        + ...
 
 Author: John McCarroll
 3-5-2021
@@ -22,9 +21,6 @@ from consolemenu.items import *
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as pyplot
-# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-import multiprocessing
-# from Tkinter import *
 
 
 def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
