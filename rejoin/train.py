@@ -9,8 +9,6 @@ import math
 
 from datetime import datetime
 
-import pickle
-
 import ray
 from ray import tune
 
@@ -18,7 +16,8 @@ import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
 from rejoin_rta.environments.rejoin_env import DubinsRejoin, DubinsObservationProcessor, DubinsRewardProcessor, DubinsConstraintProcessor
-from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback, LoggingCallback
+from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
+                                        RewardComponentsCallback, LoggingCallback, LogContents
 
 parser = argparse.ArgumentParser()
 
@@ -30,8 +29,9 @@ expr_name =  datetime.now().strftime("expr_%Y%m%d_%H%M%S")
 output_dir = os.path.join(args.output_dir, expr_name)
 
 # set logging verbosity options
-num_logging_workers = 2
-logging_schedule = 10       # log every 10th episode
+num_logging_workers = 1
+logging_interval = 10                        # log every 10th episode
+contents = (LogContents.VERBOSE,)           # tuple of desired contents
 
 def run_rollout(agent, env_config):
     # instantiate env class
@@ -66,14 +66,23 @@ def run_rollout(agent, env_config):
 
     return rollout_data
 
+
 ray.init(num_gpus=0)
 config = ppo.DEFAULT_CONFIG.copy()
 config["num_gpus"] = 0
 config["num_workers"] = 6
 config['_fake_gpus'] = True
 config['seed'] = 0
-config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(), FailureCodeCallback(), RewardComponentsCallback(),
-                                              LoggingCallback(num_logging_workers, logging_schedule)])
+config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
+                                              FailureCodeCallback(),
+                                              RewardComponentsCallback(),
+                                              LoggingCallback(num_logging_workers=num_logging_workers,
+                                                              episode_log_interval=logging_interval,
+                                                              contents=contents)])
+config['output']=os.path.join(args.output_dir, expr_name)
+config['output_max_file_size'] = 999999
+# config['log_level'] = 'ERROR'
+config['monitor'] = True
 
 rollout_history = []
 

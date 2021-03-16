@@ -4,18 +4,154 @@ import numpy as np
 from matplotlib import cm
 import matplotlib.animation as animation
 import os
+import math
+import matplotlib.patches as mpatches
 
 import tqdm
 
-def plot_trajectories(trajectory_data, output_filename, colormap='jet'):
-    for traj in trajectory_data:
-        wingman_pos = traj['wingman_pos']
-        lead_pos = traj['lead_pos']
+from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft
 
-        plt.plot(wingman_pos[:,0],wingman_pos[:,1], color=fp_color)
-        plt.plot(lead_pos[:,0],lead_pos[:,1], 'g')
+def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', frame_interval=50, anim_rate=4, trail_length=40, plot_docking_region=False, plot_safety_region=False, color_type='g', sq_axis=False, extra_time=2, plot_estimated_trajectory=False, plot_actuators=False, actuator_config=None):
+    ims = []
 
-    plt.savefig(output_filename)
+    # Set up formatting for the movie files
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(metadata=dict(artist='Umberto Ravaioli'), bitrate=1800)
+
+    # compute axis dimensions
+    all_xs = [ info['deputy']['x'] for rollout in rollout_seq for info in rollout['info_history'] ] + [ info['chief']['x'] for rollout in rollout_seq for info in rollout['info_history'] ]
+    all_ys = [ info['deputy']['y'] for rollout in rollout_seq for info in rollout['info_history'] ] + [ info['chief']['y'] for rollout in rollout_seq for info in rollout['info_history'] ]
+
+    max_x = max(all_xs)
+    min_x = min(all_xs)
+    max_y = max(all_ys)
+    min_y = min(all_ys)
+
+    fig = plt.figure()
+    ax = plt.axes(xlim=(min_x-50, max_x+50), ylim=(min_y-50, max_y+50))
+
+    if sq_axis:
+        ax.set_aspect('equal', adjustable='box')
+
+    max_time = max([len(rollout['info_history']) for rollout in rollout_seq])
+
+    max_time = int(max_time + extra_time*1000/frame_interval*anim_rate)
+
+    num_rollouts = len(rollout_seq)
+    cmap = cm.get_cmap(colormap)
+
+    # save location history of deputy for trails
+    deputy_trails = [ ([], []) for i in range(num_rollouts) ]
+
+    if plot_estimated_trajectory:
+        trajectory_spacecraft = CWHSpacecraft()
+
+    for t_idx in range(0, max_time, anim_rate):
+        time_artists = []
+        for rollout_idx, rollout in enumerate(rollout_seq):
+            
+            traj_len = len(rollout['info_history'])
+            traj_time = min(t_idx, traj_len-1)
+            info = rollout['info_history'][traj_time]
+
+            deputy_pos = (info['deputy']['x'], info['deputy']['y'])
+            chief_pos = (info['chief']['x'], info['chief']['y'])
+            docking_region_params = (info['docking_region']['x'], info['docking_region']['y'], info['docking_region']['radius'])
+
+            # save to trail
+            deputy_trails[rollout_idx][0].append(deputy_pos[0])
+            deputy_trails[rollout_idx][1].append(deputy_pos[1])
+
+            # pop old trail entries
+            if len(deputy_trails[rollout_idx][0]) > trail_length:
+                deputy_trails[rollout_idx][0].pop(0)
+                deputy_trails[rollout_idx][1].pop(0)
+
+            fp_color = cmap(1 - rollout_idx/num_rollouts)
+
+            if color_type == 'match':
+                chief_color = fp_color
+            else:
+                chief_color = 'g'
+
+            chief_marker = 'p'
+
+            if info['success']:
+                deputy_marker = '*'
+            elif info['failure'] == 'failure_distance':
+                deputy_marker = '4'
+            elif info['failure'] == 'failure_timeout':
+                deputy_marker = '+'
+            elif info['failure'] == 'failure_crash':
+                deputy_marker = 'x'
+                chief_marker = 'x'
+            else:
+                deputy_marker = '^'
+
+            if plot_estimated_trajectory:
+                trajectory_spacecraft.state = info['deputy']['state']
+                estimated_traj = trajectory_spacecraft.estimate_trajectory(time_window=200, num_points=100)
+
+                estimated_traj_artist = plt.plot(estimated_traj[0,:], estimated_traj[1,:], ':', color=fp_color)
+
+                time_artists += estimated_traj_artist          
+
+            deputy_plot = plt.plot(deputy_pos[0], deputy_pos[1], color=fp_color, marker=deputy_marker)
+            chief_plot = plt.plot(chief_pos[0], chief_pos[1], color=chief_color, marker=chief_marker)
+
+            deputy_plot += plt.plot(deputy_trails[rollout_idx][0], deputy_trails[rollout_idx][1], color=fp_color)
+
+            if plot_actuators:
+                thrust_x = -1* info['deputy']['actuators']['thrust_x']
+                thrust_y = -1 * info['deputy']['actuators']['thrust_y']
+                
+                thrust_x_norm_const = (actuator_config['thrust_x']['bounds'][1] - actuator_config['thrust_x']['bounds'][0])/2
+                thrust_y_norm_const = (actuator_config['thrust_y']['bounds'][1] - actuator_config['thrust_y']['bounds'][0])/2
+
+                thrust_x_norm = thrust_x / thrust_x_norm_const
+                thrust_y_norm = thrust_y / thrust_y_norm_const
+
+                thrust_scale = math.sqrt( (max_x - min_x) * (max_y - min_y) ) / 20
+                thrust_angle = np.arctan2(thrust_y_norm, thrust_x_norm) * 180/math.pi
+                thrust_mag = np.linalg.norm([thrust_x_norm, thrust_y_norm]) * thrust_scale
+
+                thrust_artist = mpatches.Wedge(deputy_pos, thrust_mag, thrust_angle-10, thrust_angle+10, color='m')
+                ax.add_patch(thrust_artist)
+                deputy_plot.append(thrust_artist)
+
+            if plot_docking_region or plot_safety_region:
+                death_radius = 100
+                docking_radius = 20
+
+                docking_region_artists = []
+                # docking_region_artists.append(plt.Circle((lead_pos[traj_time,0], lead_pos[traj_time,1]), docking_radius, color='g'))
+                
+                # docking_region_artists.append(plt.Circle((lead_pos[traj_time,0], lead_pos[traj_time,1]), rejoin_min_radius, color='w'))
+                if plot_docking_region:
+                    if color_type == 'match':
+                        docking_color = fp_color
+                    else:
+                        docking_color = color_type
+                    docking_region_artists.append(plt.Circle((docking_region_params[0], docking_region_params[1]), docking_region_params[2], color=docking_color, alpha=0.5))
+
+                # if plot_safety_region:
+                #     docking_region_artists.append(plt.Circle((lead_pos[traj_time,0], lead_pos[traj_time,1]), death_radius, color='r', alpha=0.5))
+
+
+                for circle_artist in docking_region_artists:
+                    ax.add_patch(circle_artist)
+
+                time_artists += docking_region_artists
+
+
+            time_artists += deputy_plot
+            time_artists += chief_plot
+
+        ims.append(time_artists)
+
+    im_ani = animation.ArtistAnimation(fig, ims, interval=frame_interval, repeat_delay=3000,
+                                   blit=True)
+    im_ani.save(output_filename, writer=writer)
 
 def animate_trajectories(trajectory_data, output_filename, colormap='jet', anim_rate=4, trail_length=40, plot_rejoin_region=False, plot_safety_region=False, rejoin_color_type='g', sq_axis=False, extra_time=2):
     ims = []
