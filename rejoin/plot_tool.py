@@ -27,10 +27,10 @@ import multiprocessing
 # from Tkinter import *
 
 
-def process_log(path_to_file: str, is_jsonlines: bool, blacklist: list):
+def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
     """
     This function handles the conversion of stored historical trial data to in-memory python objects,
-    namely a pandas.DataFrame metadatatable and a dictionary of episode ID to episode summary DataFrames.
+    namely a pandas.DataFrame metadata table and a dictionary of episode ID to episode summary DataFrames.
     """
     metadata_table = {
         "worker_episode_number": [],
@@ -100,7 +100,7 @@ def process_log(path_to_file: str, is_jsonlines: bool, blacklist: list):
         t_end = time.time()
         print("log read time: " + str(t_end - t_start))
     else:
-        with open(path_to_file, "rb") as file:         # run into issues with saves using "log" in beginning
+        with open(path_to_file, "rb") as file:         #this has issues with saves using "log" in beginning
             episode_dataframes = pickle.load(file)
 
         with open(path_to_file.strip("log")+"meta", "rb") as file:
@@ -213,19 +213,25 @@ def display_variables():
 
 def plot(x, y=None, ax=None):
     """
-    y should be a dict for multiline plots with 'label'-data kvps
+    This function is responsible for plotting data to a provided Axes object. If no Axes is provided, one will
+    be created. The resulting Figure object is returned.
+    Params:
+    x  - a pandas Series, numpy array, or ndarray of numeric values
+    y  - a dictionary of {string_name: Series} KVPs
+    ax - an Axes object on which to plot the data
     """
-
     # make subplot
     if ax is None:
         fig, ax = pyplot.subplots()
-
     # plot on given Axes
     else:
         fig = ax.figure
 
     # check vars for dimensionality / multi-line
-    if y is None:
+    if list == type(x):
+        return fig
+
+    if not y:
         # 1D plot of x array
         ax.plot(x)
     else:
@@ -234,13 +240,6 @@ def plot(x, y=None, ax=None):
             for label, data in y.items():
                 ax.plot(x, data, label=label)
 
-        # if type(y) in plottable:
-        #         ax.plot(x, data, label=label)
-
-    # ax.set_xlabel()
-    # ax.set_ylabel()
-    # ax.legend()
-    # ax.set_title()
     return fig
 
 
@@ -286,7 +285,7 @@ if __name__ == "__main__":
     blacklist = ["obs", "time"]  # list of log keys to omit from pandas table
     load = True
 
-    metadata_df, episode_dataframes = process_log(path_to_save, False, blacklist)
+    metadata_df, episode_dataframes = process_log(path_to_save, blacklist, is_jsonlines=False)
     # print(metadata_df)
 
     ### Create UI menu
@@ -349,7 +348,6 @@ BACKLOG:
 thread safe plotting
 Ditch globals
 relative paths
-
 
 Reduce start up time:
     look into saving pandas tables
