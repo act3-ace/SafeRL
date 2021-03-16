@@ -141,8 +141,9 @@ class RelativeGeometry(BaseEnvObj):
         y_offset=None, 
         z_offset=None, 
         r_offset=None, 
-        theta_offset=None, 
+        theta_offset=None,
         aspect_angle=None,
+        euler_decomp_axis=None,
         **kwargs):
 
         # check that both x_offset and y_offset are used at the same time if used
@@ -175,6 +176,7 @@ class RelativeGeometry(BaseEnvObj):
 
         self.ref = ref
         self.track_orientation = track_orientation
+        self.euler_decomp_axis = euler_decomp_axis
 
         self._cartesian_offset = np.array([x_offset, y_offset, z_offset], dtype=np.float64)
 
@@ -185,6 +187,11 @@ class RelativeGeometry(BaseEnvObj):
 
     def update(self):
         ref_orientation = self.ref.orientation
+
+        if self.euler_decomp_axis == 'z':
+            raise NotImplementedError
+        elif self.euler_decomp_axis is not None:
+            raise ValueError("Invalid euler_decomp_axis {}".format(self.euler_decomp_axis))
 
         offset = ref_orientation.apply(self._cartesian_offset)
 
