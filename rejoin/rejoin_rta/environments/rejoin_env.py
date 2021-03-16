@@ -1,13 +1,15 @@
 import math
 import numpy as np
 import random
+from scipy.spatial.transform import Rotation
+
 
 import gym
 from gym.spaces import Discrete, Box
 
 from rejoin_rta.environments import BaseEnv
-from rejoin_rta.aero_models.dubins import DubinsAircraft, DubinsAgent
-from rejoin_rta.utils.geometry import RelativeCircle2d, distance2d
+from rejoin_rta.aero_models.dubins import Dubins2dPlatform
+from rejoin_rta.utils.geometry import RelativeCircle, distance
 
 class DubinsRejoin(BaseEnv):
 
@@ -16,14 +18,14 @@ class DubinsRejoin(BaseEnv):
         self.timestep = 1
 
     def _setup_env_objs(self):
-        wingman = DubinsAgent()
-        lead = DubinsAircraft()
+        wingman = Dubins2dPlatform(controller='agent', config=self.config['agent'])
+        lead = Dubins2dPlatform()
 
         if self.config['rejoin_region']['type'] == 'circle':
             r_offset = self.config['rejoin_region']['range']
             radius = self.config['rejoin_region']['radius']
             aspect_angle = np.radians(self.config['rejoin_region']['aspect_angle'])
-            rejoin_region = RelativeCircle2d(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
+            rejoin_region = RelativeCircle(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
         else:
             raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['rejoin_region']['type']))
 
@@ -63,7 +65,7 @@ class DubinsObservationProcessor():
             self.observation_space = Box(low=-1, high=1, shape=(8,))
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
 
-        elif self.config['mode'] == 'polar':
+        elif self.config['mode'] == 'magnorm':
             self.observation_space = Box(low=-1, high=1, shape=(12,))
             self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
 
@@ -71,62 +73,40 @@ class DubinsObservationProcessor():
         pass
 
     def gen_obs(self, env_objs):
-        wingman_lead_r_x = env_objs['lead'].x - env_objs['wingman'].x
-        wingman_lead_r_y = env_objs['lead'].y - env_objs['wingman'].y
+        def vec2magnorm(vec):
+                norm = np.linalg.norm(vec)
+                mag_norm_vec = np.concatenate( ( [norm], vec / norm ) )
+                return mag_norm_vec
 
-        wingman_rejoin_r_x = env_objs['rejoin_region'].x - env_objs['wingman'].x
-        wingman_rejoin_r_y = env_objs['rejoin_region'].y - env_objs['wingman'].y
+        wingman_lead_r = env_objs['lead'].position - env_objs['wingman'].position
+        wingman_rejoin_r = env_objs['rejoin_region'].position - env_objs['wingman'].position
 
-        if self.config['mode'] == 'rect':
+        wingman_vel = env_objs['wingman'].velocity
+        lead_vel = env_objs['lead'].velocity
 
-            vel_rect = env_objs['wingman'].velocity_rect
-            vel_x = vel_rect[0]
-            vel_y = vel_rect[1]
+        reference_rotation = Rotation.from_quat([0, 0, 0, 1])
+        if self.config['reference'] == 'wingman':
+            reference_rotation = env_objs['wingman'].orientation.inv()
 
-            lead_vel_rect = env_objs['lead'].velocity_rect
-            lead_vel_x = lead_vel_rect[0]
-            lead_vel_y = lead_vel_rect[1]
+        wingman_lead_r = reference_rotation.apply(wingman_lead_r)
+        wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
 
-            if self.config['reference'] == 'global':
-                obs = np.array([wingman_lead_r_x, wingman_lead_r_y, wingman_rejoin_r_x, wingman_rejoin_r_y, vel_x, vel_y, lead_vel_x, lead_vel_y], dtype=np.float64)
-            else:
-                raise ValueError('Invalid obs reference {} for obs mode rect'.format(self.config['reference']))
+        wingman_vel = reference_rotation.apply(wingman_vel)
+        lead_vel = reference_rotation.apply(lead_vel)
 
-        elif self.config['mode'] == 'polar':
+        if self.config['mode'] == 'magnorm':
+            wingman_lead_r = vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 
-            def rect2polar(vec_x, vec_y):
-                mag = math.sqrt(vec_x**2 + vec_y**2)
-                theta = math.atan2(vec_y,vec_x)
-                return mag, theta
+            wingman_vel = vec2magnorm(wingman_vel)
+            lead_vel = vec2magnorm(lead_vel)
 
-            def polar2obs(mag, theta):
-                return [mag, math.cos(theta), math.sin(theta)]
-
-            wingman_lead_r_mag, wingman_lead_r_theta = rect2polar(wingman_lead_r_x,wingman_lead_r_y)
-            wingman_rejoin_r_mag, wingman_rejoin_r_theta = rect2polar(wingman_rejoin_r_x, wingman_rejoin_r_y)
-
-            vel_polar = env_objs['wingman'].velocity_polar
-            vel_mag = vel_polar[0]
-            vel_theta = vel_polar[1]
-
-            lead_vel_polar = env_objs['lead'].velocity_polar
-            lead_vel_mag = lead_vel_polar[0]
-            lead_vel_theta = lead_vel_polar[1]
-
-            if self.config['reference'] == 'wingman':
-                wingman_lead_r_theta -= vel_theta
-                wingman_rejoin_r_theta -= vel_theta
-                lead_vel_theta -= vel_theta
-                vel_theta = 0
-            else:
-                raise ValueError('Invalid obs reference {} for obs mode polar'.format(self.config['reference']))
-
-            obs =np.array(
-                    polar2obs(wingman_lead_r_mag, wingman_lead_r_theta) +
-                    polar2obs(wingman_rejoin_r_mag, wingman_rejoin_r_theta) +
-                    polar2obs(vel_mag, vel_theta) +
-                    polar2obs(lead_vel_mag, lead_vel_theta)
-                )
+        obs = np.concatenate( [
+            wingman_lead_r[0:3],
+            wingman_rejoin_r[0:3],
+            wingman_vel[0:3],
+            lead_vel[0:3],
+        ] )
 
         # normalize observation
         obs = np.divide(obs, self.obs_norm_const)
@@ -140,7 +120,7 @@ class DubinsRewardProcessor():
         self.config = config
 
     def reset(self, env_objs):
-        self.prev_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
+        self.prev_distance = distance(env_objs['wingman'], env_objs['rejoin_region'])
 
         self.step_reward = 0
         self.total_reward = 0
@@ -180,7 +160,7 @@ class DubinsRewardProcessor():
         in_rejoin = status_dict['in_rejoin']
 
         # compute distance changed between this timestep and previous
-        cur_distance = distance2d(env_objs['wingman'], env_objs['rejoin_region'])
+        cur_distance = distance(env_objs['wingman'], env_objs['rejoin_region'])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
 
@@ -250,7 +230,7 @@ class DubinsConstraintProcessor():
         in_rejoin = self.check_rejoin_cond(env_objs)
 
         # check success/failure conditions
-        lead_distance =  distance2d(env_objs['wingman'], env_objs['lead'])
+        lead_distance =  distance(env_objs['wingman'], env_objs['lead'])
         
         if lead_distance < self.config['safety_margin']['aircraft']:
             failure = 'crash'
@@ -276,5 +256,4 @@ class DubinsConstraintProcessor():
         return status_dict
 
     def check_rejoin_cond(self, env_objs):
-        wingman_coords = (env_objs['wingman'].x, env_objs['wingman'].y)
-        return env_objs['rejoin_region'].contains(wingman_coords)
+        return env_objs['rejoin_region'].contains(env_objs['wingman'])

@@ -79,10 +79,6 @@ config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                               LoggingCallback(num_logging_workers=num_logging_workers,
                                                               episode_log_interval=logging_interval,
                                                               contents=contents)])
-config['output']=os.path.join(args.output_dir, expr_name)
-config['output_max_file_size'] = 999999
-# config['log_level'] = 'ERROR'
-config['monitor'] = True
 
 rollout_history = []
 
@@ -116,11 +112,27 @@ rejoin_config = {
             'velocity': [40, 60]
         },
     },
+    'agent':{
+        'controller':{
+            'actuators': [
+                {
+                    'name': 'rudder',
+                    'space': 'discrete',
+                    'points': 5,
+                },
+                {
+                    'name': 'throttle',
+                    'space': 'discrete',
+                    'points': 5,
+                },
+            ],
+        },
+    },
     'obs' : {
         'processor': DubinsObservationProcessor,
         # 'mode': 'rect',
         # 'reference': 'global',
-        'mode': 'polar',
+        'mode': 'magnorm',
         'reference': 'wingman',
     },
     'rejoin_region' : {
