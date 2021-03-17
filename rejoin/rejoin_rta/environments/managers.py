@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
+import abc
 
 
-class Manager(ABC):
+class Manager(abc.ABC):
     def __init__(self, config):
         self.config = config
 
@@ -22,12 +22,12 @@ class Manager(ABC):
                 old_status=old_status
             )
 
-    @abstractmethod
+    @abc.abstractmethod
     def _generate_info(self) -> dict:
         """Create and return an info dict"""
         raise NotImplementedError
 
-    @abstractmethod
+    @abc.abstractmethod
     def _handle_processor(self, processor, env_objs, timestep, status, old_status):
         """Handle processor"""
         raise NotImplementedError

@@ -1,22 +1,22 @@
-from abc import ABC, abstractmethod
+import abc
 
 
-class Processor(ABC):
+class Processor(abc.ABC):
     def __init__(self, config, name="generic_processor"):
         self.config = config
         self.name = name
 
-    @abstractmethod
+    @abc.abstractmethod
     def reset(self, env_objs):
         """Reset the processor instance"""
         raise NotImplementedError
 
-    @abstractmethod
+    @abc.abstractmethod
     def _generate_info(self) -> dict:
         """Create and return an info dict"""
         raise NotImplementedError
 
-    @abstractmethod
+    @abc.abstractmethod
     def step(self, env_objs, timestep, status, old_status):
         """Process the environment at the current timestep"""
         raise NotImplementedError
@@ -41,7 +41,7 @@ class ObservationProcessor(Processor):
         }
         return info
 
-    @abstractmethod
+    @abc.abstractmethod
     def generate_observation(self, env_objs):
         """Generate an observation from the current environment"""
         raise NotImplementedError
@@ -70,7 +70,7 @@ class StatusProcessor(Processor):
         )
         status[self.name] = self.status_value
 
-    @abstractmethod
+    @abc.abstractmethod
     def generate_status(self, env_objs, timestep, status, old_status):
         """Generate a status value from the environment at the current timestep"""
         raise NotImplementedError
@@ -97,6 +97,6 @@ class RewardProcessor(Processor):
         self.step_value = self.generate_reward(env_objs, timestep, status)
         self.total_value += self.step_value
 
-    @abstractmethod
+    @abc.abstractmethod
     def generate_reward(self, env_objs, timestep, status):
         raise NotImplementedError
