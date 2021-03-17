@@ -45,7 +45,7 @@ config['callbacks'] = build_callbacks_caller([
     EpisodeOutcomeCallback(), 
     FailureCodeCallback(), 
     RewardComponentsCallback(),
-    # LoggingCallback(num_logging_workers, logging_schedule),
+    LoggingCallback(num_logging_workers, logging_schedule),
     ])
 
 rollout_history = []
@@ -126,6 +126,7 @@ observation_config_3d = {
 
 env_config = {
     'reward': reward_config,
+    'mode': '2d',
     'init': {
         'deputy': {
             'x': [-2000, 2000],
@@ -140,21 +141,22 @@ env_config = {
             'y_dot': 0,
         },
     },
-    'agent': {
-        'controller': {
-            'type': 'agent',
-            'actuators': {
-                'thrust_x': {
+    'agent':{
+        'controller':{
+            'actuators': [
+                {
+                    'name': 'thrust_x',
                     'space': 'discrete',
                     'points': 11,
                     'bounds': [-10, 10]
                 },
-                'thrust_y': {
+                {
+                    'name': 'thrust_y',
                     'space': 'discrete',
                     'points': 11,
                     'bounds': [-10, 10]
                 },
-            },
+            ]
         },
     },
     'observation': observation_config,
@@ -168,6 +170,7 @@ env_config = {
 
 env_config3d = {
     'reward': reward_config_3d,
+    'mode': '3d',
     'init': {
         'deputy': {
             'x': 1000,
@@ -186,38 +189,28 @@ env_config3d = {
             'z_dot': 0,
         },
     },
-    'agent': {
-        'controller': {
-            'type': 'agent',
-            'actuators': {
-                # 'thrust_x': {
-                #     'space': 'discrete',
-                #     'points': 11,
-                #     'bounds': [-10, 10]
-                # },
-                # 'thrust_y': {
-                #     'space': 'discrete',
-                #     'points': 11,
-                #     'bounds': [-10, 10]
-                # },
-                # 'thrust_z': {
-                #     'space': 'discrete',
-                #     'points': 11,
-                #     'bounds': [-10,10]
-                # },
-                'thrust_x': {
-                    'space': 'continuous',
+    'agent':{
+        'controller':{
+            'actuators': [
+                {
+                    'name': 'thrust_x',
+                    'space': 'discrete',
+                    'points': 11,
                     'bounds': [-10, 10]
                 },
-                'thrust_y': {
-                    'space': 'continuous',
+                {
+                    'name': 'thrust_y',
+                    'space': 'discrete',
+                    'points': 11,
                     'bounds': [-10, 10]
                 },
-                'thrust_z': {
-                    'space': 'continuous',
+                {
+                    'name': 'thrust_z',
+                    'space': 'discrete',
+                    'points': 11,
                     'bounds': [-10,10]
                 },
-            },
+            ],
         },
     },
     'observations': observation_config_3d,

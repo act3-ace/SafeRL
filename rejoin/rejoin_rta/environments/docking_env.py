@@ -5,6 +5,9 @@ import random
 import gym
 from gym.spaces import Discrete, Box
 
+from rejoin_rta.environments import BaseEnv
+from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft2d, CWHSpacecraft3d
+from rejoin_rta.utils.geometry import RelativeCircle, RelativeCylinder, distance
 from rejoin.rejoin_rta.environments import BaseEnv, RewardManager
 from rejoin.rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft
 from rejoin.rejoin_rta.utils.geometry import RelativeCircle2d, distance, RelativeCylinder
@@ -17,12 +20,19 @@ class DockingEnv(BaseEnv):
         self.timestep = 1
 
     def _setup_env_objs(self):
-        deputy = CWHSpacecraft(config=self.config['agent'])
-        chief = CWHSpacecraft()
+        if self.config['mode'].lower() == '2d':
+            spacecraft_class = CWHSpacecraft2d
+        elif self.config['mode'].lower() == '3d':
+            spacecraft_class = CWHSpacecraft3d
+        else:
+            raise ValueError("Unknown docking environment mode {}. Should be one of ['2d', '3d']".format(self.config['mode']))
+
+        deputy = spacecraft_class(controller='agent', config=self.config['agent'])
+        chief = spacecraft_class()
 
         if self.config['docking_region']['type'] == 'circle':
             radius = self.config['docking_region']['radius']
-            docking_region = RelativeCircle2d(chief, radius=radius, x_offset=0, y_offset=0)
+            docking_region = RelativeCircle(chief, radius=radius, x_offset=0, y_offset=0)
         elif self.config['docking_region']['type'] == 'cylinder':
             docking_region = RelativeCylinder(chief, x_offset=0, y_offset=0, z_offset=0, **self.config['docking_region']['params'])
         else:
@@ -75,10 +85,7 @@ class DockingObservationProcessor:
         pass
 
     def gen_obs(self, env_objs):
-        if self.config['mode'] == '2d':
-            obs = env_objs['deputy'].state2d
-        elif self.config['mode'] == '3d':
-            obs = env_objs['deputy'].state
+        obs = env_objs['deputy'].state.vector
 
         return obs
 
@@ -215,58 +222,7 @@ class DockingRewardProcessor3D:
 
         return reward
 
-
-class DockingRewardProcessor3Dv2:
-    def __init__(self, config):
-        self.config = config
-        self.prev_distance = 0
-        self.prev_distance_z = 0
-
-        self.reward_manager = RewardManager(config=config)
-
-    def reset(self, env_objs):
-        self.prev_distance = distance(env_objs['deputy'], env_objs['docking_region'])
-        self.prev_distance_z = abs(env_objs['deputy'].z - env_objs['docking_region'].z)
-
-        self.reward_manager.reset(env_objs=env_objs)
-
-    def _generate_info(self):
-        info = {
-            'step': self.reward_manager.step_value,
-            'component_totals': self.reward_manager.components,
-            'total': self.reward_manager.total_value,
-        }
-
-        return info
-
-    def gen_reward(self, env_objs, timestep, status_dict):
-        # --- Preprocess step rewards ---
-        step_rewards = self.reward_manager.step(status=status_dict)
-
-        # --- Modify step rewards based on environment ---
-
-        # compute distance changed between this timestep and previous
-        cur_distance = distance(env_objs['deputy'], env_objs['docking_region'])
-        dist_change = cur_distance - self.prev_distance
-        self.prev_distance = cur_distance
-        step_rewards['dist_change'] += dist_change*step_rewards['dist_change']
-
-        cur_distance_z = abs(env_objs['deputy'].z - env_objs['docking_region'].z)
-        dist_z_change = cur_distance_z - self.prev_distance_z
-        self.prev_distance_z = cur_distance_z
-        step_rewards['dist_z_change'] += dist_z_change*step_rewards['dist_z_change']
-
-        # Set success/failure reward
-        step_rewards['success'] = step_rewards['success'] * status_dict['success']
-        step_rewards['failure'] = step_rewards['failure'] * status_dict['failure']
-
-        # --- Update reward manager with step rewards ---
-        self.reward_manager.update(step_reward=step_rewards)
-
-        return self.reward_manager.step_reward
-
-
-class DockingConstraintProcessor:
+class DockingConstraintProcessor():
     def __init__(self, config):
         self.config = config
         self.reset()
