@@ -17,7 +17,7 @@ from ray import tune
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
-from rejoin_rta.environments.docking_env_refactored import DockingEnv
+from rejoin_rta.environments.docking_env import DockingEnv
 from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback, LoggingCallback
 from rejoin.rejoin_rta.environments.processors.reward_processors import *
 from rejoin.rejoin_rta.environments.processors.status_processors import *
