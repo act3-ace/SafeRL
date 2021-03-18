@@ -113,6 +113,14 @@ class Circle(Point):
         
         return info
 
+class Sphere(Circle):
+
+
+    def contains(self, other):
+        distance = np.linalg.norm( self.position - other.position )
+        is_contained = distance <= self.radius
+        return is_contained
+
 class Cyclinder(Circle):
 
 
@@ -145,8 +153,9 @@ class RelativeGeometry(BaseEnvObj):
         y_offset=None, 
         z_offset=None, 
         r_offset=None, 
-        theta_offset=None, 
+        theta_offset=None,
         aspect_angle=None,
+        euler_decomp_axis=None,
         **kwargs):
 
         # check that both x_offset and y_offset are used at the same time if used
@@ -179,6 +188,7 @@ class RelativeGeometry(BaseEnvObj):
 
         self.ref = ref
         self.track_orientation = track_orientation
+        self.euler_decomp_axis = euler_decomp_axis
 
         self._cartesian_offset = np.array([x_offset, y_offset, z_offset], dtype=np.float64)
 
@@ -189,6 +199,11 @@ class RelativeGeometry(BaseEnvObj):
 
     def update(self):
         ref_orientation = self.ref.orientation
+
+        if self.euler_decomp_axis == 'z':
+            raise NotImplementedError
+        elif self.euler_decomp_axis is not None:
+            raise ValueError("Invalid euler_decomp_axis {}".format(self.euler_decomp_axis))
 
         offset = ref_orientation.apply(self._cartesian_offset)
 
@@ -259,6 +274,8 @@ class RelativePoint(RelativeGeometry):
             aspect_angle=aspect_angle)
 
 class RelativeCircle(RelativeGeometry):
+    
+    
     def __init__(self, 
         ref,
         track_orientation=False, 
@@ -285,7 +302,39 @@ class RelativeCircle(RelativeGeometry):
 
     @property
     def radius(self):
-        return self.radius
+        return self.shape.radius
+
+class RelativeSphere(RelativeGeometry):
+
+
+    def __init__(self, 
+        ref,
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None, 
+        aspect_angle=None,
+        **kwargs):
+
+        shape = Sphere(**kwargs)
+
+        super().__init__(
+            ref, 
+            shape,
+            track_orientation=track_orientation,
+            x_offset=x_offset,
+            y_offset=y_offset, 
+            z_offset=z_offset, 
+            r_offset=r_offset, 
+            theta_offset=theta_offset, 
+            aspect_angle=aspect_angle)
+
+    @property
+    def radius(self):
+        return self.shape.radius
+
 
 class RelativeCylinder(RelativeGeometry):
     def __init__(self, 
@@ -314,11 +363,11 @@ class RelativeCylinder(RelativeGeometry):
 
     @property
     def radius(self):
-        return self.radius
+        return self.shape.radius
 
     @property
     def height(self):
-        return self.height
+        return self.shape.height
 
 def distance(a, b):
     return np.linalg.norm(a.position - b.position)
