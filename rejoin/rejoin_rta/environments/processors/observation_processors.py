@@ -2,7 +2,7 @@ import numpy as np
 from gym.spaces import Box
 from scipy.spatial.transform import Rotation
 
-from rejoin.rejoin_rta.environments.processors import ObservationProcessor
+from rejoin_rta.environments.processors import ObservationProcessor
 
 
 class DockingObservationProcessor(ObservationProcessor):

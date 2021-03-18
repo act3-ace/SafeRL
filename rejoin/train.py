@@ -18,10 +18,10 @@ from ray.tune.logger import JsonLogger
 from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
 
-from rejoin.rejoin_rta.environments.rejoin_env import DubinsRejoin
-from rejoin.rejoin_rta.environments.processors.reward_processors import *
-from rejoin.rejoin_rta.environments.processors.status_processors import *
-from rejoin.rejoin_rta.environments.processors.observation_processors import *
+from rejoin_rta.environments.rejoin_env import DubinsRejoin
+from rejoin_rta.environments.processors.reward_processors import *
+from rejoin_rta.environments.processors.status_processors import *
+from rejoin_rta.environments.processors.observation_processors import *
 
 parser = argparse.ArgumentParser()
 

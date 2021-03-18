@@ -1,6 +1,6 @@
-from rejoin.rejoin_rta.environments import BaseEnv
-from rejoin.rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft
-from rejoin.rejoin_rta.utils.geometry import RelativeCircle2d, RelativeCylinder
+from rejoin_rta.environments import BaseEnv
+from rejoin_rta.aero_models.cwh_spacecraft import CWHSpacecraft
+from rejoin_rta.utils.geometry import RelativeCircle2d, RelativeCylinder
 
 
 class DockingEnv(BaseEnv):
