@@ -1,5 +1,5 @@
-from rejoin.rejoin_rta.utils.geometry import distance
-from rejoin.rejoin_rta.environments.processors import RewardProcessor
+from rejoin_rta.utils.geometry import distance
+from rejoin_rta.environments.processors import RewardProcessor
 
 
 # TODO: Implement Dubins reward processors

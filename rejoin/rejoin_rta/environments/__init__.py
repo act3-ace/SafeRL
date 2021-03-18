@@ -8,7 +8,7 @@ import numpy as np
 import gym
 
 from rejoin_rta.utils.util import draw_from_rand_bounds_dict
-from rejoin.rejoin_rta.environments.managers import RewardManager, StatusManager, ObservationManager
+from rejoin_rta.environments.managers import RewardManager, StatusManager, ObservationManager
 
 
 class BaseEnv(gym.Env):

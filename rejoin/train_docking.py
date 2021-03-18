@@ -19,9 +19,9 @@ from ray.tune.logger import JsonLogger
 
 from rejoin_rta.environments.docking_env import DockingEnv
 from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, RewardComponentsCallback, LoggingCallback
-from rejoin.rejoin_rta.environments.processors.reward_processors import *
-from rejoin.rejoin_rta.environments.processors.status_processors import *
-from rejoin.rejoin_rta.environments.processors.observation_processors import *
+from rejoin_rta.environments.processors.reward_processors import *
+from rejoin_rta.environments.processors.status_processors import *
+from rejoin_rta.environments.processors.observation_processors import *
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--output_dir', type=str, default='./output')
