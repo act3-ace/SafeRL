@@ -1,5 +1,6 @@
 import abc
 from scipy.spatial.transform import Rotation
+import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
@@ -27,4 +28,9 @@ class BaseEnvObj(abc.ABC):
     @property
     @abc.abstractmethod
     def orientation(self) -> Rotation:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def velocity(self):
         ...

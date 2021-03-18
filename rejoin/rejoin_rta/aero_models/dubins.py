@@ -15,10 +15,6 @@ class BaseDubinsPlatform(BasePlatform):
         return self.state.v
 
     @property
-    def velocity(self):
-        return self.state.velocity
-
-    @property
     def yaw(self):
         return self.state.yaw
 
