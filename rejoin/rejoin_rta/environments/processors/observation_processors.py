@@ -20,12 +20,7 @@ class DockingObservationProcessor(ObservationProcessor):
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.config['mode']))
 
     def generate_observation(self, env_objs):
-        obs = None
-        if self.config['mode'] == '2d':
-            obs = env_objs['deputy'].state2d
-        elif self.config['mode'] == '3d':
-            obs = env_objs['deputy'].state
-
+        obs = env_objs['deputy'].state.vector
         return obs
 
 
