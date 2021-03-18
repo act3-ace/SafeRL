@@ -267,6 +267,10 @@ class BasePlatform(BaseEnvObj):
     def orientation(self):
         return self.state.orientation
 
+    @property
+    def velocity(self):
+        return self.state.velocity
+
 class BasePlatformState(BaseEnvObj):
 
 

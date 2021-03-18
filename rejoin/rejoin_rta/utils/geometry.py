@@ -31,6 +31,10 @@ class BaseGeometery(BaseEnvObj):
     def orientation(self, value):
         ...
 
+    @property
+    def velocity(self):
+        return np.array([0,0,0], dtype=np.float64)
+
     @abc.abstractmethod
     def contains(self, other):
         ...
@@ -201,6 +205,10 @@ class RelativeGeometry(BaseEnvObj):
 
     def _generate_info(self):
         return self.shape._generate_info()
+
+    @property
+    def velocity(self):
+        return self.ref.velocity
 
     @property
     def x(self):

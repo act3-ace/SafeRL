@@ -110,6 +110,11 @@ class CWH2dState(BasePlatformStateVectorized):
     def orientation(self):
         # always return a no rotation quaternion as points do not have an orientation
         return Rotation.from_quat([0, 0, 0, 1])
+
+    @property
+    def velocity(self):
+        vel = np.array([self.x_dot, self.y_dot, 0], dtype=np.float64)
+        return vel
     
 
 class CWH3dState(BasePlatformStateVectorized):
@@ -150,6 +155,10 @@ class CWH3dState(BasePlatformStateVectorized):
     def orientation(self):
         # always return a no rotation quaternion as points do not have an orientation
         return Rotation.from_quat([0, 0, 0, 1])
+
+    @property
+    def velocity(self):
+        return copy.deepcopy(self._vector[3:6])
 
 class CWH2dActuatorSet(BaseActuatorSet):
 
