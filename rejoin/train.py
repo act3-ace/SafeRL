@@ -155,14 +155,14 @@ rejoin_config = {
         'wingman': {
             'x': [-4000, 4000],
             'y': [-4000, 4000],
-            'theta': [0, 2*math.pi],
-            'velocity': [10, 100]
+            'heading': [0, 2*math.pi],
+            'v': [10, 100]
         },
         'lead': {
             'x': [-4000, 4000],
             'y': [-4000, 4000],
-            'theta': [0, 2*math.pi],
-            'velocity': [40, 60]
+            'heading': [0, 2*math.pi],
+            'v': [40, 60]
         },
     },
     'agent':{
