@@ -1,9 +1,9 @@
 """
-Script to prototype a dev debugging tool that presents RLLib logs in a readable, informant and directed manner.
+This script implements the API used by the plot_notebook.ipynb Jupyter notebook in order to provide quick and powerful insight into experiment log data. In the future, running this script directly will launch a simplified plotting tool, however currently such a feature is not implemented.
 
-Note: requires flatten_json package
-        (pip install flatten_json)
-        + console-menu
+Note: requires flatten_json package amd console-menu
+        (pip install flatten_json
+         pip install console-menu)
 
 Author: John McCarroll
 3-5-2021
