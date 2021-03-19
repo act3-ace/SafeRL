@@ -121,3 +121,4 @@ class RewardManager(Manager):
             old_status=old_status
         )
         self.step_value += processor.step_value
+        self.components[processor.name] += processor.step_value
