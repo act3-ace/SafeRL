@@ -1,58 +1,173 @@
+import abc
 import math
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+import copy
+from scipy.spatial.transform import Rotation
+from rejoin_rta import BaseEnvObj
+
+POINT_CONTAINS_DISTANCE = 1e-10
+
+class BaseGeometery(BaseEnvObj):
 
 
-class RelativePoint:
-    def __init__(self, ref, cartesian_offset=None, track_orientation=False):
+    @property
+    @abc.abstractmethod
+    def position(self):
+        ...
 
-        self._cartesian_offset = cartesian_offset
-        self.track_orientation = track_orientation
+    @position.setter
+    @abc.abstractmethod
+    def position(self, value):
+        ...
 
-        self._center = np.array([0,0,0], dtype=np.float64)
+    # need to redefine orientation property to add a setter. Is it possible to avoid doing this?
+    @property   
+    @abc.abstractmethod
+    def orientation(self) -> Rotation:
+        ...
+   
+    @orientation.setter
+    @abc.abstractmethod
+    def orientation(self, value):
+        ...
 
-        # save reference object
-        self.ref = ref
-        # register self to reference object dependency list
-        self.ref.register_dependent_obj(self)
+    @property
+    def velocity(self):
+        return np.array([0,0,0], dtype=np.float64)
 
-        self.update()
+    @abc.abstractmethod
+    def contains(self, other):
+        ...
 
-    def reset(self):
-        self.update()
+    @abc.abstractmethod
+    def _generate_info(self):
+        ...
 
-    def update(self):
+class Point(BaseGeometery):
+    
+    
+    def __init__(self, x=0, y=0, z=0):
+        self._center = np.array( [ x, y, z ] , dtype=np.float64)
+
+    @property
+    def x(self):
+        return self._center[0]
+
+    @property
+    def y(self):
+        return self._center[1]
+
+    @property
+    def z(self):
+        return self._center[2]
+
+    @property
+    def position(self):
+        return copy.deepcopy(self._center)
+
+    @position.setter
+    def position(self, value):
+        assert isinstance(value, np.ndarray) and value.shape == (3,) , "Position must be set in a numpy ndarray with shape=(3,)"
+        self._center = copy.deepcopy(value)
+
+    @property
+    def orientation(self):
+        # always return a no rotation quaternion as points do not have an orientation
+        return Rotation.from_quat([0, 0, 0, 1])
+    
+    @orientation.setter
+    def orientation(self, value):
+        # simply pass as points do not have an orientation
+        pass
+
+    def contains(self, other):
+        distance = np.linalg.norm( self.position - other.position )
+        is_contained = distance < POINT_CONTAINS_DISTANCE
+        return is_contained
+
+    def _generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+        }
+
+        return info
+
+class Circle(Point):
+
+
+    def __init__(self, x=0, y=0, z=0, radius=1):
+        self.radius = radius
+
+        super().__init__(x=x, y=y, z=z)
+
+    def contains(self, other):
+        radial_distance = np.linalg.norm( self.position[0:2] - other.position[0:2] )
+        is_contained = radial_distance <= self.radius
+        return is_contained
+
+    def _generate_info(self):
+        info = super()._generate_info()
+        info['radius'] = self.radius
         
-        if self.track_orientation:
-            rot_mat = self.get_ref_rot_mat()
-        else:
-            rot_mat = np.eye(3)
+        return info
 
-        rotated_offset = np.matmul(rot_mat, self._cartesian_offset)
+class Sphere(Circle):
 
-        self._center = self.get_ref_center() + rotated_offset
 
-    def step(self, *args):
-        self.update()
+    def contains(self, other):
+        distance = np.linalg.norm( self.position - other.position )
+        is_contained = distance <= self.radius
+        return is_contained
 
-    def get_ref_rot_mat(self):
-        raise NotImplemented
+class Cyclinder(Circle):
 
-    def get_ref_center(self):
-        raise NotImplemented
 
-class RelativePoint2D(RelativePoint):    
-    def __init__(self, ref, track_orientation=False, x_offset=None, y_offset=None, r_offset=None, theta_offset=None, aspect_angle=None):
+    def __init__(self, x=0, y=0, z=0, radius=1, height=1):
+        self.height = height
+
+        super().__init__(x=x, y=y, z=z, radius=radius)
+
+    def contains(self, other):
+        radial_distance = np.linalg.norm( self.position[0:2] - other.position[0:2] )
+        axial_distance = abs(self.position[2] - other.position[2])
+
+        is_contained = ( radial_distance <= self.radius ) and ( axial_distance <= (self.height / 2) )
+        return is_contained
+
+    def _generate_info(self):
+        info = super()._generate_info()
+        info['height'] = self.height
+        
+        return info
+
+class RelativeGeometry(BaseEnvObj):
+    
+    
+    def __init__(self, 
+        ref,
+        shape,
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None,
+        aspect_angle=None,
+        euler_decomp_axis=None,
+        **kwargs):
+
         # check that both x_offset and y_offset are used at the same time if used
-        assert (x_offset is None) == (y_offset is None), "if either x_offset or y_offset is used, both x_offset and y_offset must be used"
+        assert (x_offset is None) == (y_offset is None), \
+            "if either x_offset or y_offset is used, both x_offset and y_offset must be used"
 
-        # check that only r_offset, theta_offset or x_offset, y_offset are specified
+        # check that only r_offset, theta_offset or x/y/z offset are specified
         assert ((r_offset is not None) or (theta_offset is not None) or (aspect_angle is not None)) != ((x_offset is not None) or (y_offset is not None)), \
-            "user either polar or cartesian relative position definiton, not both"
+            "user either polar or x/y relative position definiton, not both"
 
         # check that only theta_offset or aspect_angle is used
         assert (( theta_offset is None ) or ( aspect_angle is None )), "specify either theta_offset or aspect_angle, not both"
-
 
         # convert aspect angle to theta
         if aspect_angle is not None:
@@ -68,89 +183,191 @@ class RelativePoint2D(RelativePoint):
             x_offset = 0
         if y_offset is None:
             y_offset = 0
+        if z_offset is None:
+            z_offset = 0
 
-        cartesian_offset = np.array([x_offset, y_offset, 0], dtype=np.float64)
-
+        self.ref = ref
         self.track_orientation = track_orientation
-        super(RelativePoint2D, self).__init__(ref, cartesian_offset=cartesian_offset, track_orientation=track_orientation)
+        self.euler_decomp_axis = euler_decomp_axis
+
+        self._cartesian_offset = np.array([x_offset, y_offset, z_offset], dtype=np.float64)
+
+        self.shape = shape
+
+        self.ref.register_dependent_obj(self)
+        self.update()
+
+    def update(self):
+        ref_orientation = self.ref.orientation
+
+        if self.euler_decomp_axis == 'z':
+            raise NotImplementedError
+        elif self.euler_decomp_axis is not None:
+            raise ValueError("Invalid euler_decomp_axis {}".format(self.euler_decomp_axis))
+
+        offset = ref_orientation.apply(self._cartesian_offset)
+
+        self.shape.position = self.ref.position + offset
+
+        if self.track_orientation:
+            self.shape.orientation = self.ref.orientation
+
+    def step(self, *args, **kwargs):
+        self.update()
+    
+    def reset(self):
+        self.update()
 
     def _generate_info(self):
-        info = {
-            'x': self.x,
-            'y': self.y,
-        }
+        return self.shape._generate_info()
 
-        return info
-
-    def get_ref_rot_mat(self):
-        orientation_angle = self.ref.orientation
-
-        rot_mat = R.from_euler('Z', orientation_angle).as_matrix()
-
-        return rot_mat
-
-    def get_ref_center(self):
-        return np.array([ self.ref.x, self.ref.y, 0], dtype=np.float64)
+    @property
+    def velocity(self):
+        return self.ref.velocity
 
     @property
     def x(self):
-        return self._center[0]
+        return self.shape.x
 
     @property
     def y(self):
-        return self._center[1]
+        return self.shape.y
 
     @property
-    def position(self) -> np.ndarray:
-        return self._center[0:2]
+    def z(self):
+        return self.shape.z
 
-class RelativeCircle2D(RelativePoint2D):
-    def __init__(self, ref, radius=None, **kwargs):
-        assert radius is not None, "Please specify a radius"
+    @property
+    def position(self):
+        return self.shape.position
 
-        self._radius = radius
-        super(RelativeCircle2D, self).__init__(ref, **kwargs)
+    @property
+    def orientation(self) -> Rotation:
+        return self.shape.orientation
 
-    def _generate_info(self):
-        info = super(RelativeCircle2D, self)._generate_info()
-        info['radius'] = self.radius
-        return info
+    def contains(self, other):
+        return self.shape.contains(other)
 
-    def contains(self, point_coords):
-        center_distance = math.sqrt((point_coords[0]-self.x)**2 + (point_coords[1]-self.y)**2)
+class RelativePoint(RelativeGeometry):
+    def __init__(self, 
+        ref,
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None, 
+        aspect_angle=None,
+        **kwargs):
 
-        return self._radius >= center_distance
+        shape = Point(**kwargs)
+
+        super().__init__(
+            ref, 
+            shape,
+            track_orientation=track_orientation,
+            x_offset=x_offset,
+            y_offset=y_offset, 
+            z_offset=z_offset, 
+            r_offset=r_offset, 
+            theta_offset=theta_offset, 
+            aspect_angle=aspect_angle)
+
+class RelativeCircle(RelativeGeometry):
+    
+    
+    def __init__(self, 
+        ref,
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None, 
+        aspect_angle=None,
+        **kwargs):
+
+        shape = Circle(**kwargs)
+
+        super().__init__(
+            ref, 
+            shape,
+            track_orientation=track_orientation,
+            x_offset=x_offset,
+            y_offset=y_offset, 
+            z_offset=z_offset, 
+            r_offset=r_offset, 
+            theta_offset=theta_offset, 
+            aspect_angle=aspect_angle)
 
     @property
     def radius(self):
-        return self._radius
+        return self.shape.radius
 
-if __name__=='__main__':
+class RelativeSphere(RelativeGeometry):
 
-    class test_ref:
-        def __init__(self, x, y, orientation):
-            self.x = x
-            self.y = y
-            self.orientation = orientation
 
-    ref = test_ref(10, 345, 0)
-    rp = RelativeCircle2D(ref, radius=150, track_orientation=True, r_offset=100, aspect_angle=(60*math.pi/180))
+    def __init__(self, 
+        ref,
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None, 
+        aspect_angle=None,
+        **kwargs):
 
-    print("x={}, y={}".format(rp.x, rp.y))
+        shape = Sphere(**kwargs)
 
-    ref.orientation = math.pi
-    rp.update()
-    print("x={}, y={}".format(rp.x, rp.y))
+        super().__init__(
+            ref, 
+            shape,
+            track_orientation=track_orientation,
+            x_offset=x_offset,
+            y_offset=y_offset, 
+            z_offset=z_offset, 
+            r_offset=r_offset, 
+            theta_offset=theta_offset, 
+            aspect_angle=aspect_angle)
 
-    ref.orientation = math.pi/2
-    ref.x = 75
-    ref.y=13
-    rp.update()
-    print("x={}, y={}".format(rp.x, rp.y))
+    @property
+    def radius(self):
+        return self.shape.radius
 
-    ref.orientation = 14
-    rp.update()
-    print("x={}, y={}".format(rp.x, rp.y))
 
-def distance2d(a,b):
-    return math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
+class RelativeCylinder(RelativeGeometry):
+    def __init__(self, 
+        ref,
+        track_orientation=False, 
+        x_offset=None, 
+        y_offset=None, 
+        z_offset=None, 
+        r_offset=None, 
+        theta_offset=None, 
+        aspect_angle=None,
+        **kwargs):
+
+        shape = Cyclinder(**kwargs)
+
+        super().__init__(
+            ref, 
+            shape,
+            track_orientation=track_orientation,
+            x_offset=x_offset,
+            y_offset=y_offset, 
+            z_offset=z_offset, 
+            r_offset=r_offset, 
+            theta_offset=theta_offset, 
+            aspect_angle=aspect_angle)
+
+    @property
+    def radius(self):
+        return self.shape.radius
+
+    @property
+    def height(self):
+        return self.shape.height
+
+def distance(a, b):
+    return np.linalg.norm(a.position - b.position)
