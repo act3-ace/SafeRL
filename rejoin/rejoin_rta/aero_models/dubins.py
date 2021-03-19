@@ -1,199 +1,214 @@
+import abc
 import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
 import math
+from scipy.spatial.transform import Rotation
+from rejoin_rta.aero_models import ContinuousActuator, PassThroughController, AgentController, BaseActuatorSet, BaseODESolverDynamics, BasePlatform, BasePlatformStateVectorized
 
-class DubinsAircraft:
+class BaseDubinsPlatform(BasePlatform):
 
-    def __init__(self, x=0, y=0, theta=0, velocity=100):
 
-        self.vel_min = 10
-        self.vel_max = 100
+    @property
+    def v(self):
+        return self.state.v
 
-        self.dependent_objs = []
+    @property
+    def yaw(self):
+        return self.state.yaw
 
-        self.reset(x, y, theta, velocity)
+    @property
+    def pitch(self):
+        return self.state.pitch
 
-    def reset(self, x=0, y=0, theta=0, velocity=100):
+    @property
+    def roll(self):
+        return self.state.roll
 
-        vel = velocity
-        vel_dot = 0
-        theta_dot = 0
+    @property
+    def heading(self):
+        return self.state.heading
 
-        self.state = np.array([x, y, theta, vel, theta_dot, vel_dot], dtype=np.float64)
+    @property
+    def gamma(self):
+        return self.state.gamma
 
-        for obj in self.dependent_objs:
-            obj.reset()
+class BaseDubinsState(BasePlatformStateVectorized):
 
-    def step(self, timestep, control=np.array([0, 0], dtype=np.float64)):
-       # Extract current state data
-        x, y, theta, vel, theta_dot, vel_dot = self.state
+    @property
+    @abc.abstractmethod
+    def v(self):
+        ...
 
-        # unpack control vector
-        thrust_control = control[0]
-        theta_control = control[1]
+    @property
+    def velocity(self):
+        velocity = np.array([
+            self.v * math.cos(self.heading) * math.cos(self.gamma),
+            self.v * math.sin(self.heading) * math.cos(self.gamma),
+            self.v * math.sin(self.gamma),
+        ], dtype=np.float64)
+        return velocity
 
-        # Euler Integrator
-        # Integrate to calculate theta
-        theta = theta + theta_control * timestep
-        vel = vel + thrust_control * timestep
+    @property
+    def yaw(self):
+        return self.heading
 
-        # clip velocity to bounds
-        vel = min(self.vel_max, max(self.vel_min, vel))
+    @property
+    def pitch(self):
+        return self.gamma
 
-        # Calculate x-y velocities
-        x_dot = vel * math.cos(theta)
-        y_dot = vel * math.sin(theta)
+    @property
+    @abc.abstractmethod
+    def roll(self):
+        ...
 
-        # Integrate to calculate x and y
-        x = x + x_dot * timestep
-        y = y + y_dot * timestep
+    @property
+    @abc.abstractmethod
+    def heading(self):
+        ...
 
-        # save acceleration state
-        vel_dot = thrust_control
-        theta_dot = theta_control
+    @property
+    @abc.abstractmethod
+    def gamma(self):
+        ...
 
-        # x:0
-        # y:1
-        # theta:2
-        # velocity: 3
-        # theta_dot: 4
-        # vel_dot: 5
-        self.state = np.array([x, y, theta, vel, theta_dot, vel_dot], dtype=np.float64)
+class Dubins2dPlatform(BaseDubinsPlatform):
 
-        for obj in self.dependent_objs:
-            obj.step()
+
+    def __init__(self, config=None, controller=None, **kwargs):
+
+        dynamics = Dubins2dDynamics()
+        actuator_set = Dubins2dActuatorSet()
+
+        state = Dubins2dState()
+
+        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
     def _generate_info(self):
         info = {
+            'state': self.state.vector,
             'x': self.x,
             'y': self.y,
-            'theta': self.theta,
-            'vel': self.vel,
-            'theta_dot': self.theta_dot,
-            'vel_dot': self.vel_dot
+            'heading': self.heading,
+            'v': self.v,
         }
 
         return info
 
-    def register_dependent_obj(self, obj):
-        self.dependent_objs.append(obj)
+class Dubins2dState(BaseDubinsState):
+
+
+    def build_vector(self, x=0, y=0, heading=0, v=50, **kwargs):
+
+        return np.array([x, y, heading, v], dtype=np.float64)
 
     @property
     def x(self):
-        return self.state[0]
+        return self._vector[0]
+
+    @x.setter
+    def x(self, value):
+        self._vector[0] = value
 
     @property
     def y(self):
-        return self.state[1]
+        return self._vector[1]
+
+    @y.setter
+    def y(self, value):
+        self._vector[1] = value
 
     @property
-    def theta(self):
-        return self.state[2]
+    def z(self):
+        return 0
 
     @property
-    def vel(self):
-        return self.state[3]
+    def heading(self):
+        return self._vector[2]
+
+    @heading.setter
+    def heading(self, value):
+        self._vector[2] = value
 
     @property
-    def theta_dot(self):
-        return self.state[4]
+    def v(self):
+        return self._vector[3]
+
+    @v.setter
+    def v(self, value):
+        self._vector[3] = value
 
     @property
-    def vel_dot(self):
-        return self.state[5]
-    
-    @property
-    def position(self) -> np.ndarray:
-        return self.state[0:2]
+    def position(self):
+        position = np.zeros((3,))
+        position[0:2] = self._vector[0:2]
+        return position
 
     @property
-    def orientation(self) -> np.ndarray:
-        return self.theta
+    def orientation(self):
+        return Rotation.from_euler('z', self.yaw)
 
     @property
-    def velocity_rect(self) -> np.ndarray:
-        return self.vel * np.array([ math.cos(self.theta), math.sin(self.theta) ], dtype=np.float64)
+    def gamma(self):
+        return 0
 
     @property
-    def velocity_polar(self) -> np.ndarray:
-        return np.array([self.vel, self.theta], dtype=np.float64)
+    def roll(self):
+        return 0
 
-    @property
-    def acceleration_rect(self) -> np.ndarray:
-        return self.vel_dot * np.array([ math.cos(self.theta), math.sin(self.theta) ], dtype=np.float64)
-
-    @property
-    def acceleration_polar(self) -> np.ndarray:
-        return np.array([self.vel_dot, self.theta], dtype=np.float64)
-
-    def get_obs(self):
-        return self.state
-
-class DubinsAgent(DubinsAircraft):
-    def __init__(self, action_type='Discrete', action_magnitude=[5, 1.5], **kwargs):
-        self.action_type = action_type
-        self.action_magnitude = action_magnitude # degrees/sec
-        self.action_magnitude_radians = self.action_magnitude[1] * math.pi / 180       
-
-        self.setup_action_space()     
-
-        super(DubinsAgent, self).__init__(**kwargs)
-
-    def setup_action_space(self):
-        if self.action_type == 'Discrete':
-            self.action_space = spaces.MultiDiscrete([5, 5]) # 5 discrete actions
-
-            # create discrete action map
-            self.discrete_action_space = [
-                [
-                    -2 * self.action_magnitude[0],
-                    -1 * self.action_magnitude[0],
-                    0 * self.action_magnitude[0],
-                    1 * self.action_magnitude[0],
-                    2 * self.action_magnitude[0]
-                ],
-                [
-                    -2 * self.action_magnitude_radians,
-                    -1 * self.action_magnitude_radians,
-                    0,
-                    1 * self.action_magnitude_radians,
-                    2 * self.action_magnitude_radians
-                ]
-            ]
-
-        else:
-            # define continuous action space bounds
-            self.cont_action_min = -2*self.action_magnitude
-            self.cont_action_max = 2*self.action_magnitude
-
-            self.action_space = spaces.Box(np.array([self.cont_action_min]), np.array([self.cont_action_max]), dtype=np.float64)
-
-    def preprocess_action(self, action):
-        if self.action_type == 'Discrete': # Discrete action space (Default)
-            assert self.action_space.contains(action), "Invalid action"
-
-            # map discrete action
-            action_processed = np.zeros(len(self.discrete_action_space))
-            action_processed[0] = self.discrete_action_space[0][int(action[0])]
-            action_processed[1] = self.discrete_action_space[1][int(action[1])]
-
-        else: # Continuous action space
-            action = np.clip(action, self.cont_action_min, self.cont_action_max)
-            action[0] = action[0] * math.pi / 180
-
-        return action_processed
+class Dubins2dActuatorSet(BaseActuatorSet):
 
 
-    def step(self, timestep, action=np.array([2,2])):
+    def __init__(self):
 
-        action = self.preprocess_action(action)
+        actuators = [
+            ContinuousActuator(
+                'rudder',
+                [np.deg2rad(-6), np.deg2rad(6)],
+                0
+            ),
+            ContinuousActuator(
+                'throttle',
+                [-10, 10],
+                0
+            )
+        ]
 
-        vel_dot = action[0]
-        theta_dot = action[1]
+        super().__init__(actuators)
 
-        # pack control vector
-        control = np.array([vel_dot, theta_dot], dtype=np.float64)
+class Dubins2dDynamics(BaseODESolverDynamics):
 
-        super(DubinsAgent, self).step(timestep, control=control)
+    def __init__(self, v_min=10, v_max=100, *args, **kwargs):
+        self.v_min = v_min
+        self.v_max = v_max
+
+        super().__init__(*args, **kwargs)
+
+    def step(self, step_size, state, control):
+        state = super().step(step_size, state, control)
+
+        # enforce velocity limits
+        if state.v < self.v_min or state.v > self.v_max:
+            state.v = max( min(state.v, self.v_max), self.v_min)
+
+        return state
+
+    def dx(self, t, state_vec, control):
+        _, _, heading, v = state_vec
+        rudder, throttle = control
+
+        # enforce velocity limits
+        if v <= self.v_min and throttle < 0:
+            throttle = 0
+        elif v >= self.v_max and throttle > 0:
+            throttle = 0
+
+        x_dot = v * math.cos(heading) # x_dot
+        y_dot = v * math.sin(heading) # y_dot
+        heading_dot = rudder
+        v_dot = throttle
+
+        dx_vec = np.array([x_dot, y_dot, heading_dot, v_dot], dtype=np.float64)
+
+        return dx_vec

@@ -3,7 +3,7 @@ import gym
 from gym.spaces import Discrete, Box
 import numpy as np
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import yaml
 import math
 
@@ -15,10 +15,13 @@ from ray import tune
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import JsonLogger
 
-from rejoin_rta.environments.rejoin_env import DubinsRejoin
 from rejoin_rta.utils.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
 
+from rejoin_rta.environments.rejoin_env import DubinsRejoin
+from rejoin_rta.environments.processors.reward_processors import *
+from rejoin_rta.environments.processors.status_processors import *
+from rejoin_rta.environments.processors.observation_processors import *
 
 parser = argparse.ArgumentParser()
 
@@ -80,14 +83,22 @@ config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                               LoggingCallback(num_logging_workers=num_logging_workers,
                                                               episode_log_interval=logging_interval,
                                                               contents=contents)])
-config['output']=os.path.join(args.output_dir, expr_name)
-config['output_max_file_size'] = 999999
-# config['log_level'] = 'ERROR'
-config['monitor'] = True
 
 rollout_history = []
 
+# ------ Define reward configuration ------
+
+reward_processors = [
+    RejoinRewardProcessor,
+    RejoinFirstTimeRewardProcessor,
+    TimeRewardProcessor,
+    RejoinDistanceChangeRewardProcessor,
+    FailureRewardProcessor,
+    SuccessRewardProcessor
+]
+
 reward_config = {
+    'processors': reward_processors,
     'time_decay': -0.01,
     'failure': {
         'timeout': -1,
@@ -100,44 +111,84 @@ reward_config = {
     'dist_change': -0.00001,
 }
 
+# ------ Define status configuration ------
+
+status_processors = [
+    DubinsInRejoin,
+    DubinsInRejoinPrev,
+    DubinsRejoinTime,
+    DubinsTimeElapsed,
+    DubinsLeadDistance,
+    DubinsFailureStatus,
+    DubinsSuccessStatus
+]
+
+status_config = {
+    'processors': status_processors,
+    'safety_margin': {
+        'aircraft': 100
+    },
+    'timeout': 1000,
+    'max_goal_distance': 40000,
+    'success': {
+        'rejoin_time': 20,
+    },
+}
+
+# ------ Define observation configuration ------
+
+observation_processors = [
+    DubinsObservationProcessor
+]
+
+observation_config = {
+    'processors': observation_processors,
+    # 'mode': 'rect',
+    # 'reference': 'global',
+    'mode': 'magnorm',
+    'reference': 'wingman',
+}
+
 rejoin_config = {
     'reward': reward_config,
     'init': {
         'wingman': {
             'x': [-4000, 4000],
             'y': [-4000, 4000],
-            'theta': [0, 2*math.pi],
-            'velocity': [10, 100]
+            'heading': [0, 2*math.pi],
+            'v': [10, 100]
         },
         'lead': {
             'x': [-4000, 4000],
             'y': [-4000, 4000],
-            'theta': [0, 2*math.pi],
-            'velocity': [40, 60]
+            'heading': [0, 2*math.pi],
+            'v': [40, 60]
         },
     },
-    'obs' : {
-        # 'mode': 'rect',
-        # 'reference': 'global',
-        'mode': 'polar',
-        'reference': 'wingman',
+    'agent':{
+        'controller':{
+            'actuators': [
+                {
+                    'name': 'rudder',
+                    'space': 'discrete',
+                    'points': 5,
+                },
+                {
+                    'name': 'throttle',
+                    'space': 'discrete',
+                    'points': 5,
+                },
+            ],
+        },
     },
-    'rejoin_region' : {
+    'observation': observation_config,
+    'rejoin_region': {
         'type': 'circle',
-        'range':500,
+        'range': 500,
         'aspect_angle': 60,
-        'radius':150,
+        'radius': 150,
     },
-    'constraints':{
-        'safety_margin': {
-            'aircraft': 100
-        },
-        'timeout': 1000,
-        'max_goal_distance': 40000,
-        'success': {
-            'rejoin_time': 20,
-        },
-    },
+    'status': status_config,
     'verbose': False,
 }
 
@@ -148,14 +199,31 @@ stop_dict = {
     'training_iteration': 200,
 }
 
-# create output dir and save experiment params
-os.makedirs(output_dir, exist_ok=True)
-args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
-ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
-with open(args_yaml_filepath, 'w') as args_yaml_file:
-    arg_dict = vars(args)
-    yaml.dump(arg_dict, args_yaml_file)
-with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
-    yaml.dump(config, ray_config_yaml_file)
 
-tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
+if __name__ == "__main__":
+    # Workaround for YAML not dumping ABCMeta objects
+    # TODO: See if there is a better way to fix this
+    from yaml.representer import Representer
+    from abc import ABCMeta
+    Representer.add_representer(ABCMeta, Representer.represent_name)
+
+    DEBUG = False
+
+    # create output dir and save experiment params
+    os.makedirs(output_dir, exist_ok=True)
+    args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
+    ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
+    with open(args_yaml_filepath, 'w') as args_yaml_file:
+        arg_dict = vars(args)
+        yaml.dump(arg_dict, args_yaml_file)
+    with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
+        yaml.dump(config, ray_config_yaml_file)
+
+    if not DEBUG:
+        tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
+    else:
+        # Run training in a single process for debugging
+        config["num_workers"] = 0
+        trainer = ppo.PPOTrainer(config=config)
+        while True:
+            print(trainer.train())
