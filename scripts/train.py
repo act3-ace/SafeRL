@@ -11,10 +11,10 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
-from aerospaceSafeRL.environment import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
+from saferl.environment import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
 
-from aerospaceSafeRL.AerospaceTasks import *
+from saferl.aerospace.tasks import *
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"

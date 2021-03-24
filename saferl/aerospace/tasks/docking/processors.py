@@ -1,8 +1,8 @@
 import gym.spaces
 import numpy as np
 
-from aerospaceSafeRL.environment.tasks import ObservationProcessor, RewardProcessor, StatusProcessor
-from aerospaceSafeRL.environment.models import distance
+from saferl.environment.tasks import ObservationProcessor, RewardProcessor, StatusProcessor
+from saferl.environment.models import distance
 
 
 class DockingObservationProcessor(ObservationProcessor):

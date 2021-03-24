@@ -9,7 +9,7 @@ import matplotlib.patches as mpatches
 
 import tqdm
 
-from aerospaceSafeRL.AerospaceModels import CWHSpacecraft2d
+from saferl.aerospace.models import CWHSpacecraft2d
 
 
 def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', frame_interval=50, anim_rate=4, trail_length=40, plot_docking_region=False, plot_safety_region=False, color_type='g', sq_axis=False, extra_time=2, plot_estimated_trajectory=False, plot_actuators=False, actuator_config=None):

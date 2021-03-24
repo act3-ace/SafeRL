@@ -1,8 +1,8 @@
 import numpy as np
 
-from aerospaceSafeRL.environment import BaseEnv
-from aerospaceSafeRL.environment import RelativeCircle
-from aerospaceSafeRL.AerospaceModels import Dubins2dPlatform
+from saferl.environment import BaseEnv
+from saferl.environment import RelativeCircle
+from saferl.aerospace.models import Dubins2dPlatform
 
 
 class DubinsRejoin(BaseEnv):

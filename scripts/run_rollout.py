@@ -7,8 +7,8 @@ import ray
 
 import ray.rllib.agents.ppo as ppo
 
-from aerospaceSafeRL.AerospaceTasks import DubinsRejoin
-from aerospaceSafeRL.visualization import animate_trajectories, process_rollout_data
+from saferl.aerospace.tasks import DubinsRejoin
+from saferl.visualization import animate_trajectories, process_rollout_data
 
 
 def run_rollouts(agent, env_config, num_rollouts=1):
