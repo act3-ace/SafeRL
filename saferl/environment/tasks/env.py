@@ -6,8 +6,8 @@ import numpy as np
 
 import gym
 
-from aerospaceSafeRL.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
-from aerospaceSafeRL.environment.tasks.utils import draw_from_rand_bounds_dict
+from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
+from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
 
 
 class BaseEnv(gym.Env):

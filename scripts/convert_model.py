@@ -1,16 +1,7 @@
-import argparse
-import gym
-from gym.spaces import Discrete, Box
 import numpy as np
 import os
-import yaml
-import math
-import tqdm
-
-from datetime import datetime
 
 import pickle
-import json
 
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
@@ -19,14 +10,11 @@ import tensorflow.keras as keras
 from scipy.io import savemat
 
 import ray
-from ray import tune
 
 import ray.rllib.agents.ppo as ppo
-from ray.tune.logger import pretty_print
 
-from aerospaceSafeRL.AerospaceTasks import DockingEnv, DubinsRejoin
-from aerospaceSafeRL.visualization import animate_trajectories_docking, process_rollout_data
-from aerospaceSafeRL.environment.utils import numpy_to_matlab_txt
+from saferl.aerospace.tasks import DubinsRejoin
+from saferl.environment.utils import numpy_to_matlab_txt
 
 # expr_dir = 'output/expr_20210210_152136/PPO_DubinsRejoin_b926e_00000_0_2021-02-10_15-21-37'
 # ckpt_num = 400

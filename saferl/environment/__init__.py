@@ -1,4 +1,4 @@
-import aerospaceSafeRL.environment.utils
+import saferl.environment.utils
 
 from .callbacks import *
 from .models import *

@@ -3,7 +3,7 @@ import math
 import numpy as np
 import copy
 from scipy.spatial.transform import Rotation
-from aerospaceSafeRL.environment.models.platforms import BaseEnvObj
+from saferl.environment.models.platforms import BaseEnvObj
 
 POINT_CONTAINS_DISTANCE = 1e-10
 

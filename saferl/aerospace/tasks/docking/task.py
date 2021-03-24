@@ -1,6 +1,6 @@
-from aerospaceSafeRL.environment import BaseEnv
-from aerospaceSafeRL.environment import RelativeCircle, RelativeCylinder
-from aerospaceSafeRL.AerospaceModels import CWHSpacecraft2d, CWHSpacecraft3d
+from saferl.environment import BaseEnv
+from saferl.environment import RelativeCircle, RelativeCylinder
+from saferl.aerospace.models import CWHSpacecraft2d, CWHSpacecraft3d
 
 
 class DockingEnv(BaseEnv):
