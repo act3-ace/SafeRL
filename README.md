@@ -30,7 +30,7 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 `git clone git@git.act3-ace.com:rta/have-deepsky.git`
 6. Then run the commands:  
 `cd have-deepsky`  
-`pip install .`
+`pip install -e .`
 
 ## Pulling an update from Gitlab
 If someone else has updated their files, and you want to pull the most recent changes without erasing your progress:  
@@ -46,8 +46,8 @@ If you want to pull the latest changes and overwrite any changes you made:
 ## Running from the Command Line
 These files assume that you have Anaconda or equivalent and standard Python packages installed.
 1. To run from the command line, open a terminal
-2. To run using the standard Anaconda packages, type `conda activate base`. This should make (base) show up before you username.
-3. Navigate to the correct folder.
+2. Activate your conda environment that you setup during the Installation step with `conda activate <env_name>`. This should make (<env_name>) show up before you username.
+3. Ensure the aerospaceSafeRL package is in your environment's PATH (if you ran `pip install -e .` during installation you can ignore this step).
 4. Decide what algorithm you'd like to run, e.g. run the vanilla policy gradient RL algorithm `python VPG.py`
 
 ## Uploading to GitLab
