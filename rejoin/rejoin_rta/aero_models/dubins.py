@@ -46,7 +46,7 @@ class BaseDubinsState(BasePlatformStateVectorized):
         velocity = np.array([
             self.v * math.cos(self.heading) * math.cos(self.gamma),
             self.v * math.sin(self.heading) * math.cos(self.gamma),
-            self.v * math.sin(self.gamma),
+            -1 * self.v * math.sin(self.gamma),
         ], dtype=np.float64)
         return velocity
 
@@ -248,7 +248,7 @@ class Dubins3dPlatform(BaseDubinsPlatform):
 
 class Dubins3dState(BaseDubinsState):
 
-    def build_vector(self, x=0, y=0, z=0, heading=0, gamma=0, roll=0, v=50, **kwargs):
+    def build_vector(self, x=0, y=0, z=0, heading=0, gamma=0, roll=0, v=100, **kwargs):
         return np.array([x, y, z, heading, gamma, roll, v], dtype=np.float64)
 
     @property
@@ -334,11 +334,6 @@ class Dubins3dActuatorSet(BaseActuatorSet):
                 0
             ),
             ContinuousActuator(
-                'rudder',
-                [np.deg2rad(-6), np.deg2rad(6)],
-                0
-            ),
-            ContinuousActuator(
                 'throttle',
                 [-10, 10],
                 0
@@ -350,9 +345,11 @@ class Dubins3dActuatorSet(BaseActuatorSet):
 
 class Dubins3dDynamics(BaseODESolverDynamics):
 
-    def __init__(self, v_min=100, v_max=1000, *args, **kwargs):             # TODO: verify vel min + max
+    def __init__(self, v_min=100, v_max=1000, roll_min=-math.pi/2, roll_max=math.pi/2, *args, **kwargs):             # TODO: verify vel min + max
         self.v_min = v_min
         self.v_max = v_max
+        self.roll_min = roll_min
+        self.roll_max = roll_max
 
         super().__init__(*args, **kwargs)
 
@@ -363,12 +360,16 @@ class Dubins3dDynamics(BaseODESolverDynamics):
         if state.v < self.v_min or state.v > self.v_max:
             state.v = max(min(state.v, self.v_max), self.v_min)
 
+        # enforce roll limits
+        if state.roll < self.roll_min or state.roll > self.roll_max:
+            state.roll = max(min(state.roll, self.roll_max), self.roll_min)
+
         return state
 
     def dx(self, t, state_vec, control):
         x, y, z, heading, gamma, roll, v = state_vec
 
-        elevator, ailerons, rudder, throttle = control
+        elevator, ailerons, throttle = control
 
         # enforce velocity limits
         if v <= self.v_min and throttle < 0:
@@ -376,13 +377,19 @@ class Dubins3dDynamics(BaseODESolverDynamics):
         elif v >= self.v_max and throttle > 0:
             throttle = 0
 
+        # enforce roll limits
+        if roll <= self.roll_min and ailerons < 0:
+            ailerons = 0
+        elif roll >= self.roll_max and ailerons > 0:
+            ailerons = 0
+
         x_dot = v * math.cos(heading) * math.cos(gamma)
         y_dot = v * math.sin(heading) * math.cos(gamma)
-        z_dot = v * math.sin(gamma)
+        z_dot = -1 * v * math.sin(gamma)
 
         gamma_dot = elevator
         roll_dot = ailerons
-        heading_dot = rudder
+        heading_dot = (32.17 / v) * math.tan(roll)                      # g = 32.17 ft/s^2
         v_dot = throttle
 
         dx_vec = np.array([x_dot, y_dot, z_dot, heading_dot, gamma_dot, roll_dot, v_dot], dtype=np.float64)
