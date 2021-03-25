@@ -63,7 +63,7 @@ reward_processors_3d = [
 
 reward_config = {
     'processors': reward_processors,
-    'time_decay': -0.001,
+    'time_decay': -0.01,
     'failure': {
         'timeout': -1,
         'crash': -1,
