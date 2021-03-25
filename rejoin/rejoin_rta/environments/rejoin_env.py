@@ -2,7 +2,7 @@ import numpy as np
 
 
 from rejoin_rta.environments import BaseEnv
-from rejoin_rta.aero_models.dubins import Dubins2dPlatform
+from rejoin_rta.aero_models.dubins import Dubins2dPlatform, Dubins3dPlatform
 from rejoin_rta.utils.geometry import RelativeCircle, distance
 
 
@@ -13,8 +13,14 @@ class DubinsRejoin(BaseEnv):
         self.timestep = 1
 
     def _setup_env_objs(self):
-        wingman = Dubins2dPlatform(controller='agent', config=self.config['agent'])
-        lead = Dubins2dPlatform()
+        if self.config['agent']['model'].lower() == '2d':
+            wingman = Dubins2dPlatform(controller='agent', config=self.config['agent'])
+            lead = Dubins2dPlatform()
+        elif self.config['agent']['model'].lower() == '3d':
+            wingman = Dubins3dPlatform(controller='agent', config=self.config['agent'])
+            lead = Dubins3dPlatform()
+        else:
+            raise ValueError('Invalid agent type {} not supported'.format(self.config['agent']['model']))
 
         if self.config['rejoin_region']['type'] == 'circle':
             r_offset = self.config['rejoin_region']['range']
