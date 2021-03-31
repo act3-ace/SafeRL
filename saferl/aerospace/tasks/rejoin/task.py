@@ -11,6 +11,7 @@ class DubinsRejoin(BaseEnv):
         super(DubinsRejoin, self).__init__(config)
         self.timestep = 1
 
+    # TODO: Remove. Kept as reference for now
     def _setup_env_objs(self):
         wingman = Dubins2dPlatform(controller='agent', config=self.config['agent'])
         lead = Dubins2dPlatform()
