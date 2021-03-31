@@ -23,13 +23,15 @@ class DubinsRejoin(BaseEnv):
         else:
             raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['rejoin_region']['type']))
 
-        self.env_objs = {
+        env_objs = {
             'wingman': wingman,
             'lead': lead,
             'rejoin_region': rejoin_region,
         }
 
-        self.agent = wingman
+        agent = wingman
+
+        return agent, env_objs
 
     def reset(self):
         return super(DubinsRejoin, self).reset()

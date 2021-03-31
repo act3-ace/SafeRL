@@ -24,7 +24,7 @@ class BaseEnv(gym.Env):
         self.reward_manager = RewardManager(config=self.config["reward"])
         self.status_manager = StatusManager(config=self.config["status"])
 
-        self._setup_env_objs()
+        self.agent, self.env_objs = self._setup_env_objs()
         self._setup_action_space()
         self._setup_obs_space()
 
@@ -90,9 +90,19 @@ class BaseEnv(gym.Env):
         return obs
 
     def _setup_env_objs(self):
-        self.env_objs = {}
-        self.agent = None
-        raise NotImplementedError
+        env_objs = {}
+        agent = None
+
+        agent_name = self.config["agent"]
+
+        for obj_config in self.config["env_objs"]:
+            name = obj_config["name"]
+            obj = obj_config["class"](config=obj_config["config"])
+            env_objs[name] = obj
+            if name is agent_name:
+                agent = obj
+
+        return agent, env_objs
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space

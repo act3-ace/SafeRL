@@ -12,9 +12,10 @@ from ray import tune
 import ray.rllib.agents.ppo as ppo
 
 from saferl.environment import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
-                                        RewardComponentsCallback, LoggingCallback, LogContents
+                                        RewardComponentsCallback, LoggingCallback, LogContents, RelativeCircle
 
 from saferl.aerospace.tasks import *
+from saferl.aerospace.models import *
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -197,6 +198,219 @@ stop_dict = {
 }
 
 
+# ----------- New config style ----------------
+
+env_config = {
+    "env_objs": [
+        {
+            "name": "wingman",
+            "class": Dubins2dPlatform,
+            "config": {
+                "controller": {
+                    "actuators": [
+                        {
+                            'name': 'rudder',
+                            'space': 'discrete',
+                            'points': 5,
+                        },
+                        {
+                            'name': 'throttle',
+                            'space': 'discrete',
+                            'points': 5,
+                        },
+                    ]
+                }
+            },
+            "init": {
+                'x': [-4000, 4000],
+                'y': [-4000, 4000],
+                'heading': [0, 2*math.pi],
+                'v': [10, 100]
+            }
+        },
+        {
+            "name": "lead",
+            "class": Dubins2dPlatform,
+            "config": {},
+            "init": {
+                'x': [-4000, 4000],
+                'y': [-4000, 4000],
+                'heading': [0, 2*math.pi],
+                'v': [40, 60]
+            }
+        },
+        {
+            "name": "rejoin_region",
+            "class": RelativeCircle,
+            "config": {
+                'range': 500,
+                'aspect_angle': 60,
+                'radius': 150,
+            },
+            "init": {}
+        },
+    ],
+    "agent": "wingman",
+    "status": [
+        {
+            "name": "in_rejoin",
+            "class": DubinsInRejoin,
+            "config": {
+                "rejoin_region": "rejoin_region",
+                "wingman": "wingman"
+            }
+        },
+        {
+            "name": "in_rejoin_prev",
+            "class": DubinsInRejoinPrev,
+            "config": {
+                'rejoin_status': "in_rejoin",
+            }
+        },
+        {
+            "name": "rejoin_time",
+            "class": DubinsRejoinTime,
+            "config": {
+                'rejoin_status': "in_rejoin",
+            }
+        },
+        {
+            "name": "time_elapsed",
+            "class": DubinsTimeElapsed,
+            "config": {}
+        },
+        {
+            "name": "lead_distance",
+            "class": DubinsLeadDistance,
+            "config": {
+                "wingman": "wingman",
+                "lead": "lead"
+            }
+        },
+        {
+            "name": "failure",
+            "class": DubinsFailureStatus,
+            "config": {
+                "lead_distance": "lead_distance",
+                "time_elapsed": "time_elapsed",
+                'safety_margin': {
+                    'aircraft': 100
+                },
+                'timeout': 1000,
+                'max_goal_distance': 40000,
+            }
+        },
+        {
+            "name": "success",
+            "class": DubinsSuccessStatus,
+            "config": {
+                "rejoin_time": "rejoin_time",
+                'success_time': 20,
+            }
+        },
+    ],
+    "observation": [
+        {
+            "name": "observation_processor",
+            "class": DubinsObservationProcessor,
+            "config": {
+                'lead': 'lead',
+                'wingman': 'wingman',
+                'rejoin_region': 'rejoin_region',
+                'mode': 'magnorm',
+                'reference': 'wingman',
+            }
+        }
+    ],
+    "reward": [
+        {
+            "name": "rejoin_reward",
+            "class": RejoinRewardProcessor,
+            "config": {
+                'rejoin_status': "in_rejoin",
+                'rejoin_prev_status': "in_rejoin_prev",
+                'reward': 0.1,
+            }
+        },
+        {
+            "name": "rejoin_first_time_reward",
+            "class": RejoinFirstTimeRewardProcessor,
+            "config": {
+                'rejoin_status': "in_rejoin",
+                'reward': 0.25,
+            }
+        },
+        {
+            "name": "time_reward",
+            "class": TimeRewardProcessor,
+            "config": {
+                'reward': -0.01,
+            }
+        },
+        {
+            "name": "rejoin_dist_change_reward",
+            "class": RejoinDistanceChangeRewardProcessor,
+            "config": {
+                "wingman": "wingman",
+                "rejoin_status": "in_rejoin",
+                "rejoin_region": "rejoin_region",
+                'reward': -0.00001,
+            }
+        },
+        {
+            "name": "failure_reward",
+            "class": FailureRewardProcessor,
+            "config": {
+                "reward": {
+                    'timeout': -1,
+                    'crash': -1,
+                    'distance': -1,
+                }
+            }
+        },
+        {
+            "name": "success_reward",
+            "class": SuccessRewardProcessor,
+            "config": {
+                'reward': 1,
+            }
+        },
+    ],
+    "verbose": False
+}
+
+
+ray_config = {
+    "env": DubinsRejoin,
+    "env_config": env_config
+}
+
+
+def main(debug=False):
+
+    # Create output dirs
+    os.makedirs(output_dir, exist_ok=True)
+    args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
+    ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
+
+    # Save experiment params
+    with open(args_yaml_filepath, 'w') as args_yaml_file:
+        arg_dict = vars(args)
+        yaml.dump(arg_dict, args_yaml_file)
+    with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
+        yaml.dump(config, ray_config_yaml_file)
+
+    if not debug:
+        tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25,
+                 checkpoint_at_end=True, name=expr_name)
+    else:
+        # Run training in a single process for debugging
+        config["num_workers"] = 0
+        trainer = ppo.PPOTrainer(config=config)
+        while True:
+            print(trainer.train())
+
+
 if __name__ == "__main__":
     # Workaround for YAML not dumping ABCMeta objects
     # TODO: See if there is a better way to fix this
@@ -204,23 +418,4 @@ if __name__ == "__main__":
     from abc import ABCMeta
     Representer.add_representer(ABCMeta, Representer.represent_name)
 
-    DEBUG = False
-
-    # create output dir and save experiment params
-    os.makedirs(output_dir, exist_ok=True)
-    args_yaml_filepath = os.path.join(output_dir, 'script_args.yaml')
-    ray_config_yaml_filepath = os.path.join(output_dir, 'ray_config.yaml')
-    with open(args_yaml_filepath, 'w') as args_yaml_file:
-        arg_dict = vars(args)
-        yaml.dump(arg_dict, args_yaml_file)
-    with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
-        yaml.dump(config, ray_config_yaml_file)
-
-    if not DEBUG:
-        tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir, checkpoint_freq=25, checkpoint_at_end=True, name=expr_name)
-    else:
-        # Run training in a single process for debugging
-        config["num_workers"] = 0
-        trainer = ppo.PPOTrainer(config=config)
-        while True:
-            print(trainer.train())
+    main()
