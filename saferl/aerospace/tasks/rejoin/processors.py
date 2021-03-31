@@ -9,13 +9,19 @@ from saferl.environment.models import distance
 
 class DubinsObservationProcessor(ObservationProcessor):
     def __init__(self, config):
-        super().__init__(config=config, name="dubins_observation")
+        super().__init__(config=config)
 
-        if self.config['mode'] == 'rect':
+        # Initialize member variables from config
+        self.lead = self.config["lead"]
+        self.wingman = self.config["wingman"]
+        self.rejoin_region = self.config["rejoin_region"]
+        self.reference = self.config["reference"]
+        self.mode = self.config["mode"]
+
+        if self.mode is 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
-
-        elif self.config['mode'] == 'magnorm':
+        elif self.mode is 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
             self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
 
@@ -25,15 +31,15 @@ class DubinsObservationProcessor(ObservationProcessor):
             mag_norm_vec = np.concatenate(([norm], vec / norm))
             return mag_norm_vec
 
-        wingman_lead_r = env_objs['lead'].position - env_objs['wingman'].position
-        wingman_rejoin_r = env_objs['rejoin_region'].position - env_objs['wingman'].position
+        wingman_lead_r = env_objs[self.lead].position - env_objs[self.wingman].position
+        wingman_rejoin_r = env_objs[self.rejoin_region].position - env_objs[self.wingman].position
 
-        wingman_vel = env_objs['wingman'].velocity
-        lead_vel = env_objs['lead'].velocity
+        wingman_vel = env_objs[self.wingman].velocity
+        lead_vel = env_objs[self.lead].velocity
 
         reference_rotation = Rotation.from_quat([0, 0, 0, 1])
-        if self.config['reference'] == 'wingman':
-            reference_rotation = env_objs['wingman'].orientation.inv()
+        if self.reference is 'wingman':
+            reference_rotation = env_objs[self.wingman].orientation.inv()
 
         wingman_lead_r = reference_rotation.apply(wingman_lead_r)
         wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
@@ -41,7 +47,7 @@ class DubinsObservationProcessor(ObservationProcessor):
         wingman_vel = reference_rotation.apply(wingman_vel)
         lead_vel = reference_rotation.apply(lead_vel)
 
-        if self.config['mode'] == 'magnorm':
+        if self.mode is 'magnorm':
             wingman_lead_r = vec2magnorm(wingman_lead_r)
             wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 
@@ -64,92 +70,110 @@ class DubinsObservationProcessor(ObservationProcessor):
 
 
 class RejoinRewardProcessor(RewardProcessor):
-    def __init__(self, config, name="rejoin"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
+
+        # Initialize member variables from config
+        self.rejoin_status = self.config["rejoin_status"]
+        self.rejoin_prev_status = self.config["rejoin_prev_status"]
 
     def generate_reward(self, env_objs, timestep, status):
         step_reward = 0
-        in_rejoin = status["rejoin_status"]
+        in_rejoin = status[self.rejoin_status]
         if in_rejoin:
-            step_reward += self.config['rejoin_timestep'] * timestep
+            step_reward += self.reward * timestep
         else:
             # if rejoin region is left, refund all accumulated rejoin reward
             #   this is to ensure that the agent doesn't infinitely enter and leave rejoin region
-            in_rejoin_prev = status["rejoin_prev_status"]
+            in_rejoin_prev = status[self.rejoin_prev_status]
             if in_rejoin_prev:
                 step_reward += -1 * self.total_value
         return step_reward
 
 
 class RejoinFirstTimeRewardProcessor(RewardProcessor):
-    def __init__(self, config, name="rejoin_first_time"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.rejoin_first_time_applied = False
+
+        # Initialize member variables from config
+        self.rejoin_status = self.config["rejoin_status"]
 
     def reset(self, env_objs):
         self.rejoin_first_time_applied = False
 
     def generate_reward(self, env_objs, timestep, status):
         step_reward = 0
-        in_rejoin = status["rejoin_status"]
+        in_rejoin = status[self.rejoin_status]
         if in_rejoin and not self.rejoin_first_time_applied:
-            step_reward += self.config['rejoin_first_time']
+            step_reward += self.reward
             self.rejoin_first_time_applied = True
         return step_reward
 
 
 class RejoinDistanceChangeRewardProcessor(RewardProcessor):
-    def __init__(self, config, name="rejoin_distance"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.prev_distance = 0
+        # Initialize member variables from config
+        self.rejoin_status = self.config["rejoin_status"]
+        self.wingman = self.config["wingman"]
+        self.rejoin_region = self.config["rejoin_region"]
 
     def reset(self, env_objs):
         super().reset(env_objs=env_objs)
-        self.prev_distance = distance(env_objs['wingman'], env_objs['rejoin_region'])
+        self.prev_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
 
     def generate_reward(self, env_objs, timestep, status):
-        cur_distance = distance(env_objs['wingman'], env_objs['rejoin_region'])
+        cur_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
 
-        in_rejoin = status["rejoin_status"]
+        in_rejoin = status[self.rejoin_status]
         step_reward = 0
         if not in_rejoin:
-            step_reward = dist_change * self.config['dist_change']
+            step_reward = dist_change * self.reward
         return step_reward
 
 
 class DubinsInRejoin(StatusProcessor):
-    def __init__(self, config, name="rejoin_status"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
+        # Initialize member variables from config
+        self.wingman = self.config["wingman"]
+        self.rejoin_region = self.config["rejoin_region"]
 
     def generate_status(self, env_objs, timestep, status, old_status):
-        in_rejoin = env_objs['rejoin_region'].contains(env_objs['wingman'])
+        in_rejoin = env_objs[self.rejoin_region].contains(env_objs[self.wingman])
         return in_rejoin
 
 
 class DubinsInRejoinPrev(StatusProcessor):
-    def __init__(self, config, name="rejoin_prev_status"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
+        # Initialize member variables from config
+        self.rejoin_status = self.config["rejoin_status"]
 
     def generate_status(self, env_objs, timestep, status, old_status):
         in_rejoin_prev = False
         if old_status:
-            in_rejoin_prev = old_status["rejoin_status"]
+            in_rejoin_prev = old_status[self.rejoin_status]
         return in_rejoin_prev
 
 
 class DubinsRejoinTime(StatusProcessor):
-    def __init__(self, config, name="rejoin_time"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.rejoin_time = 0
+        # Initialize member variables from config
+        self.rejoin_status = self.config["rejoin_status"]
 
     def reset(self, env_objs):
         super().reset(env_objs=env_objs)
         self.rejoin_time = 0
 
     def generate_status(self, env_objs, timestep, status, old_status):
-        if status["rejoin_status"]:
+        if status[self.rejoin_status]:
             self.rejoin_time += timestep
         else:
             self.rejoin_time = 0
@@ -157,8 +181,8 @@ class DubinsRejoinTime(StatusProcessor):
 
 
 class DubinsTimeElapsed(StatusProcessor):
-    def __init__(self, config, name="rejoin_time_elapsed"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.time_elapsed = 0
 
     def reset(self, env_objs):
@@ -171,44 +195,56 @@ class DubinsTimeElapsed(StatusProcessor):
 
 
 class DubinsLeadDistance(StatusProcessor):
-    def __init__(self, config, name="rejoin_lead_distance"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
+        # Initialize member variables from config
+        self.wingman = self.config["wingman"]
+        self.lead = self.config["lead"]
 
     def generate_status(self, env_objs, timestep, status, old_status):
-        lead_distance = distance(env_objs['wingman'], env_objs['lead'])
+        lead_distance = distance(env_objs[self.wingman], env_objs[self.lead])
         return lead_distance
 
 
 class DubinsFailureStatus(StatusProcessor):
-    def __init__(self, config, name="failure"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
+        # Initialize member variables from config
+        self.lead_distance = self.config["lead_distance"]
+        self.time_elapsed = self.config["time_elapsed"]
+        self.safety_margin = self.config['safety_margin']
+        self.timeout = self.config['timeout']
+        self.max_goal_dist = self.config['max_goal_distance']
 
     def generate_status(self, env_objs, timestep, status, old_status):
-        lead_distance = status["rejoin_lead_distance"]
-        time_elapsed = status["rejoin_time_elapsed"]
+        lead_distance = status[self.lead_distance]
+        time_elapsed = status[self.time_elapsed]
 
         failure = False
 
-        if lead_distance < self.config['safety_margin']['aircraft']:
+        if lead_distance < self.safety_margin['aircraft']:
             failure = 'crash'
-        elif time_elapsed > self.config['timeout']:
+        elif time_elapsed > self.timeout:
             failure = 'timeout'
-        elif lead_distance >= self.config['max_goal_distance']:
+        elif lead_distance >= self.max_goal_dist:
             failure = 'distance'
 
         return failure
 
 
 class DubinsSuccessStatus(StatusProcessor):
-    def __init__(self, config, name="success"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
+        # Initialize member variables from config
+        self.rejoin_time = self.config["rejoin_time"]
+        self.success_time = self.config["success_time"]
 
     def generate_status(self, env_objs, timestep, status, old_status):
-        rejoin_time = status["rejoin_time"]
+        rejoin_time = status[self.rejoin_time]
 
         success = False
 
-        if rejoin_time > self.config['success']['rejoin_time']:
+        if rejoin_time > self.success_time:
             success = True
 
         return success

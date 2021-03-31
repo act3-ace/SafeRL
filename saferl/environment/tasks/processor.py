@@ -2,9 +2,9 @@ import abc
 
 
 class Processor(abc.ABC):
-    def __init__(self, config, name="generic_processor"):
-        self.config = config
-        self.name = name
+    def __init__(self, config):
+        self.config = config["config"]
+        self.name = config["name"]
 
     @abc.abstractmethod
     def reset(self, env_objs):
@@ -23,8 +23,8 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, config, name="observation_processor"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.obs = None
         self.observation_space = None
         # TODO: add normalization and clipping, pre- and post- processors
@@ -48,8 +48,8 @@ class ObservationProcessor(Processor):
 
 
 class StatusProcessor(Processor):
-    def __init__(self, config, name="status_processor"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.status_value = None
 
     def reset(self, env_objs):
@@ -77,10 +77,11 @@ class StatusProcessor(Processor):
 
 
 class RewardProcessor(Processor):
-    def __init__(self, config, name="reward_processor"):
-        super().__init__(config=config, name=name)
+    def __init__(self, config):
+        super().__init__(config=config)
         self.step_value = 0
         self.total_value = 0
+        self.reward = self.config["reward"]
 
     def reset(self, env_objs):
         self.step_value = 0
