@@ -87,7 +87,9 @@ rollout_history = []
 
 # ----------- New config style ----------------
 
-env_config = {
+# --------------- Rejoin ----------------------
+
+rejoin_config = {
     "env_objs": [
         {
             "name": "wingman",
@@ -252,6 +254,7 @@ env_config = {
             "name": "failure_reward",
             "class": FailureRewardProcessor,
             "config": {
+                "failure_status": "failure",
                 "reward": {
                     'timeout': -1,
                     'crash': -1,
@@ -263,6 +266,7 @@ env_config = {
             "name": "success_reward",
             "class": SuccessRewardProcessor,
             "config": {
+                "success_status": "success",
                 'reward': 1,
             }
         },
@@ -271,8 +275,154 @@ env_config = {
 }
 
 
-config['env_config'] = env_config
-config['env'] = DubinsRejoin
+# --------------- Docking ----------------------
+
+docking_config = {
+    "env_objs": [
+        {
+            "name": "deputy",
+            "class": CWHSpacecraft2d,
+            "config": {
+                'controller': {
+                    'actuators': [
+                        {
+                            'name': 'thrust_x',
+                            'space': 'discrete',
+                            'points': 11,
+                            'bounds': [-10, 10]
+                        },
+                        {
+                            'name': 'thrust_y',
+                            'space': 'discrete',
+                            'points': 11,
+                            'bounds': [-10, 10]
+                        },
+                    ]
+                },
+                "init": {
+                    'x': [-2000, 2000],
+                    'y': [-2000, 2000],
+                    'x_dot': 0,
+                    'y_dot': 0,
+                }
+            },
+        },
+        {
+            "name": "chief",
+            "class": CWHSpacecraft2d,
+            "config": {
+                "init": {
+                    'x': 0,
+                    'y': 0,
+                    'x_dot': 0,
+                    'y_dot': 0,
+                }
+            },
+
+        },
+        {
+            "name": "docking_region",
+            "class": RelativeCircle,
+            "config": {
+                'ref': 'chief',
+                'x_offset': 0,
+                'y_offset': 0,
+                'radius': 20,
+                "init": {}
+            },
+        },
+    ],
+    "agent": "deputy",
+    "status": [
+        {
+            "name": "docking_status",
+            "class": DockingStatusProcessor,
+            "config": {
+                "docking_region": "docking_region",
+                "deputy": "deputy"
+            }
+        },
+        {
+            "name": "docking_distance",
+            "class": DockingDistanceStatusProcessor,
+            "config": {
+                "docking_region": "docking_region",
+                "deputy": "deputy"
+            }
+        },
+        {
+            "name": "failure",
+            "class": FailureStatusProcessor,
+            "config": {
+                'timeout': 1000,
+                "docking_distance": "docking_distance",
+                "max_goal_distance": 40000
+            }
+        },
+        {
+            "name": "success",
+            "class": SuccessStatusProcessor,
+            "config": {
+                "docking_status": "docking_status",
+            }
+        },
+    ],
+    "observation": [
+        {
+            "name": "observation_processor",
+            "class": DockingObservationProcessor,
+            "config": {
+                'deputy': 'deputy',
+                'mode': '2d',
+            }
+        }
+    ],
+    "reward": [
+        {
+            "name": "time_reward",
+            "class": TimeRewardProcessor,
+            "config": {
+                'reward': -0.01,
+            }
+        },
+        {
+            "name": "dist_change_reward",
+            "class": DistanceChangeRewardProcessor,
+            "config": {
+                "deputy": "deputy",
+                "docking_region": "docking_region",
+                'reward': -0.00001,
+            }
+        },
+        {
+            "name": "failure_reward",
+            "class": FailureRewardProcessor,
+            "config": {
+                "failure_status": "failure",
+                "reward": {
+                    'timeout': -1,
+                    'crash': -1,
+                    'distance': -1,
+                }
+            }
+        },
+        {
+            "name": "success_reward",
+            "class": SuccessRewardProcessor,
+            "config": {
+                "success_status": "success",
+                'reward': 1,
+            }
+        },
+    ],
+    "verbose": False
+}
+
+
+# --------------- Register environment ----------------------
+
+config['env_config'] = docking_config
+config['env'] = DockingEnv
 
 stop_dict = {
     'training_iteration': 200,
