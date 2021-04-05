@@ -84,119 +84,6 @@ config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
 
 rollout_history = []
 
-# ------ Define reward configuration ------
-
-reward_processors = [
-    RejoinRewardProcessor,
-    RejoinFirstTimeRewardProcessor,
-    TimeRewardProcessor,
-    RejoinDistanceChangeRewardProcessor,
-    FailureRewardProcessor,
-    SuccessRewardProcessor
-]
-
-reward_config = {
-    'processors': reward_processors,
-    'time_decay': -0.01,
-    'failure': {
-        'timeout': -1,
-        'crash': -1,
-        'distance': -1,
-    },
-    'success': 1,
-    'rejoin_timestep': 0.1,
-    'rejoin_first_time': 0.25,
-    'dist_change': -0.00001,
-}
-
-# ------ Define status configuration ------
-
-status_processors = [
-    DubinsInRejoin,
-    DubinsInRejoinPrev,
-    DubinsRejoinTime,
-    DubinsTimeElapsed,
-    DubinsLeadDistance,
-    DubinsFailureStatus,
-    DubinsSuccessStatus
-]
-
-status_config = {
-    'processors': status_processors,
-    'safety_margin': {
-        'aircraft': 100
-    },
-    'timeout': 1000,
-    'max_goal_distance': 40000,
-    'success': {
-        'rejoin_time': 20,
-    },
-}
-
-# ------ Define observation configuration ------
-
-observation_processors = [
-    DubinsObservationProcessor
-]
-
-observation_config = {
-    'processors': observation_processors,
-    # 'mode': 'rect',
-    # 'reference': 'global',
-    'mode': 'magnorm',
-    'reference': 'wingman',
-}
-
-rejoin_config = {
-    'reward': reward_config,
-    'init': {
-        'wingman': {
-            'x': [-4000, 4000],
-            'y': [-4000, 4000],
-            'heading': [0, 2*math.pi],
-            'v': [10, 100]
-        },
-        'lead': {
-            'x': [-4000, 4000],
-            'y': [-4000, 4000],
-            'heading': [0, 2*math.pi],
-            'v': [40, 60]
-        },
-    },
-    'agent':{
-        'controller':{
-            'actuators': [
-                {
-                    'name': 'rudder',
-                    'space': 'discrete',
-                    'points': 5,
-                },
-                {
-                    'name': 'throttle',
-                    'space': 'discrete',
-                    'points': 5,
-                },
-            ],
-        },
-    },
-    'observation': observation_config,
-    'rejoin_region': {
-        'type': 'circle',
-        'range': 500,
-        'aspect_angle': 60,
-        'radius': 150,
-    },
-    'status': status_config,
-    'verbose': False,
-}
-
-config['env_config'] = rejoin_config
-config['env'] = DubinsRejoin
-
-stop_dict = {
-    'training_iteration': 200,
-}
-
 
 # ----------- New config style ----------------
 
@@ -219,35 +106,39 @@ env_config = {
                             'points': 5,
                         },
                     ]
+                },
+                "init": {
+                    'x': [-4000, 4000],
+                    'y': [-4000, 4000],
+                    'heading': [0, 2*math.pi],
+                    'v': [10, 100]
                 }
             },
-            "init": {
-                'x': [-4000, 4000],
-                'y': [-4000, 4000],
-                'heading': [0, 2*math.pi],
-                'v': [10, 100]
-            }
         },
         {
             "name": "lead",
             "class": Dubins2dPlatform,
-            "config": {},
-            "init": {
-                'x': [-4000, 4000],
-                'y': [-4000, 4000],
-                'heading': [0, 2*math.pi],
-                'v': [40, 60]
-            }
+            "config": {
+                "init": {
+                    'x': [-4000, 4000],
+                    'y': [-4000, 4000],
+                    'heading': [0, 2*math.pi],
+                    'v': [40, 60]
+                }
+            },
+
         },
         {
             "name": "rejoin_region",
             "class": RelativeCircle,
             "config": {
-                'range': 500,
+                'ref': 'lead',
+                'track_orientation': True,
+                'r_offset': 500,
                 'aspect_angle': 60,
                 'radius': 150,
+                "init": {}
             },
-            "init": {}
         },
     ],
     "agent": "wingman",
@@ -380,9 +271,11 @@ env_config = {
 }
 
 
-ray_config = {
-    "env": DubinsRejoin,
-    "env_config": env_config
+config['env_config'] = env_config
+config['env'] = DubinsRejoin
+
+stop_dict = {
+    'training_iteration': 200,
 }
 
 
@@ -418,4 +311,6 @@ if __name__ == "__main__":
     from abc import ABCMeta
     Representer.add_representer(ABCMeta, Representer.represent_name)
 
-    main()
+    DEBUG = True
+
+    main(debug=DEBUG)

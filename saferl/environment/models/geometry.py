@@ -8,7 +8,15 @@ from saferl.environment.models.platforms import BaseEnvObj
 POINT_CONTAINS_DISTANCE = 1e-10
 
 
-class BaseGeometery(BaseEnvObj):
+# TODO: Make config flattener function for geometry (maybe put in utils?)
+
+def geo_from_config(cls, config):
+    assert issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry)
+    obj = cls(**config)
+    return obj
+
+
+class BaseGeometry(BaseEnvObj):
 
     @property
     @abc.abstractmethod
@@ -44,7 +52,7 @@ class BaseGeometery(BaseEnvObj):
         ...
 
 
-class Point(BaseGeometery):
+class Point(BaseGeometry):
 
     def __init__(self, x=0, y=0, z=0):
         self._center = np.array([x, y, z], dtype=np.float64)
@@ -157,6 +165,7 @@ class RelativeGeometry(BaseEnvObj):
                  theta_offset=None,
                  aspect_angle=None,
                  euler_decomp_axis=None,
+                 init=None,
                  **kwargs):
 
         # check that both x_offset and y_offset are used at the same time if used
@@ -196,6 +205,8 @@ class RelativeGeometry(BaseEnvObj):
         self._cartesian_offset = np.array([x_offset, y_offset, z_offset], dtype=np.float64)
 
         self.shape = shape
+
+        self.init_dict = init
 
         self.ref.register_dependent_obj(self)
         self.update()
@@ -262,6 +273,7 @@ class RelativePoint(RelativeGeometry):
                  r_offset=None,
                  theta_offset=None,
                  aspect_angle=None,
+                 init=None,
                  **kwargs):
         shape = Point(**kwargs)
 
@@ -274,7 +286,9 @@ class RelativePoint(RelativeGeometry):
             z_offset=z_offset,
             r_offset=r_offset,
             theta_offset=theta_offset,
-            aspect_angle=aspect_angle)
+            aspect_angle=aspect_angle,
+            init=init,
+        )
 
 
 class RelativeCircle(RelativeGeometry):
@@ -288,6 +302,7 @@ class RelativeCircle(RelativeGeometry):
                  r_offset=None,
                  theta_offset=None,
                  aspect_angle=None,
+                 init=None,
                  **kwargs):
         shape = Circle(**kwargs)
 
@@ -300,7 +315,9 @@ class RelativeCircle(RelativeGeometry):
             z_offset=z_offset,
             r_offset=r_offset,
             theta_offset=theta_offset,
-            aspect_angle=aspect_angle)
+            aspect_angle=aspect_angle,
+            init=init
+        )
 
     @property
     def radius(self):
@@ -318,6 +335,7 @@ class RelativeSphere(RelativeGeometry):
                  r_offset=None,
                  theta_offset=None,
                  aspect_angle=None,
+                 init=None,
                  **kwargs):
         shape = Sphere(**kwargs)
 
@@ -330,7 +348,9 @@ class RelativeSphere(RelativeGeometry):
             z_offset=z_offset,
             r_offset=r_offset,
             theta_offset=theta_offset,
-            aspect_angle=aspect_angle)
+            aspect_angle=aspect_angle,
+            init=init
+        )
 
     @property
     def radius(self):
@@ -347,6 +367,7 @@ class RelativeCylinder(RelativeGeometry):
                  r_offset=None,
                  theta_offset=None,
                  aspect_angle=None,
+                 init=None,
                  **kwargs):
         shape = Cyclinder(**kwargs)
 
@@ -359,7 +380,9 @@ class RelativeCylinder(RelativeGeometry):
             z_offset=z_offset,
             r_offset=r_offset,
             theta_offset=theta_offset,
-            aspect_angle=aspect_angle)
+            aspect_angle=aspect_angle,
+            init=init
+        )
 
     @property
     def radius(self):
