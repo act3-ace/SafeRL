@@ -1,7 +1,7 @@
 import numpy as np
 from saferl.environment import BaseEnv
-from saferl.environment import RelativeCircle
-from saferl.aerospace.models import Dubins2dPlatform
+from saferl.environment import RelativeCircle, RelativeCylinder
+from saferl.aerospace.models import Dubins2dPlatform, Dubins3dPlatform
 
 
 class DubinsRejoin(BaseEnv):
@@ -20,11 +20,24 @@ class DubinsRejoin(BaseEnv):
         else:
             raise ValueError('Invalid agent type {} not supported'.format(self.config['agent']['model']))
 
-        if self.config['rejoin_region']['type'] == 'circle':
+        rejoin_region_type = self.config['rejoin_region']['type']
+        if rejoin_region_type in ['circle', 'cylinder']:
             r_offset = self.config['rejoin_region']['range']
             radius = self.config['rejoin_region']['radius']
+
+            if 'height' in self.config['rejoin_region']:
+                height = self.config['rejoin_region']['height']
+            else:
+                height = 1
+
             aspect_angle = np.radians(self.config['rejoin_region']['aspect_angle'])
-            rejoin_region = RelativeCircle(lead, radius=radius, track_orientation=True, r_offset=r_offset, aspect_angle=aspect_angle)
+            if rejoin_region_type == 'circle':
+                rejoin_region = RelativeCircle(lead, radius=radius, track_orientation=True, r_offset=r_offset,
+                                               aspect_angle=aspect_angle)
+            else:
+                rejoin_region = RelativeCylinder(lead, radius=radius, height=height, track_orientation=True, r_offset=r_offset,
+                                               aspect_angle=aspect_angle)
+
         else:
             raise ValueError('Invalid rejoin region type {} not supported'.format(self.config['rejoin_region']['type']))
 
