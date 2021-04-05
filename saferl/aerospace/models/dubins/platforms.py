@@ -77,7 +77,7 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None, controller=None,  **kwargs):
         # TODO: Set up from config
 
         dynamics = Dubins2dDynamics()
