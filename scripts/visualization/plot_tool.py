@@ -15,11 +15,6 @@ import jsonlines
 from flatten_json import flatten_json
 import time
 import pickle
-from consolemenu import *
-from consolemenu.items import *
-
-import matplotlib
-matplotlib.use("TkAgg")
 import matplotlib.pyplot as pyplot
 
 
@@ -274,6 +269,12 @@ def to_numpy(data):
 
 
 if __name__ == "__main__":
+    from consolemenu import *
+    from consolemenu.items import *
+    import matplotlib
+    matplotlib.use("TkAgg")
+
+
     ### Consume log file and construct pandas tables TODO: relative paths
     path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin/output/expr_20210308_085452/training_logs/worker_1.log"
     # path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin/output/expr_20210308_112211/training_logs/worker_1.log"
@@ -341,15 +342,7 @@ if __name__ == "__main__":
 """
 BACKLOG:
 
-thread safe plotting
-Ditch globals
-relative paths
-
-Reduce start up time:
-    look into saving pandas tables
-        -
-    consider HDF5
-    
+thread safe command line (python interpreter?)
 add min distance to lead, max rejoin time, reward (total?), etc to metadata table
 
 
