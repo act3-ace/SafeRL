@@ -8,8 +8,6 @@ from saferl.environment.models.platforms import BaseEnvObj
 POINT_CONTAINS_DISTANCE = 1e-10
 
 
-# TODO: Make config flattener function for geometry (maybe put in utils?)
-
 def geo_from_config(cls, config):
     assert issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry)
     obj = cls(**config)
