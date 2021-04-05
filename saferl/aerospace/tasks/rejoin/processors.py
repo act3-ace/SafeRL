@@ -16,8 +16,10 @@ class DubinsObservationProcessor(ObservationProcessor):
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
 
         elif self.config['mode'] == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+            # self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
+            # self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(16,))
+            self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1], dtype=np.float64)
 
     def generate_observation(self, env_objs):
         def vec2magnorm(vec):
@@ -49,10 +51,10 @@ class DubinsObservationProcessor(ObservationProcessor):
             lead_vel = vec2magnorm(lead_vel)
 
         obs = np.concatenate([
-            wingman_lead_r[0:3],
-            wingman_rejoin_r[0:3],
-            wingman_vel[0:3],
-            lead_vel[0:3],
+            wingman_lead_r,
+            wingman_rejoin_r,
+            wingman_vel,
+            lead_vel,
         ])
 
         # normalize observation
@@ -116,6 +118,8 @@ class RejoinDistanceChangeRewardProcessor(RewardProcessor):
         step_reward = 0
         if not in_rejoin:
             step_reward = dist_change * self.config['dist_change']
+        # print("dist_change: " + str(dist_change))
+        # print("reward: " + str(step_reward))
         return step_reward
 
 
