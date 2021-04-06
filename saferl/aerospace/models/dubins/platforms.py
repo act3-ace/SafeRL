@@ -326,11 +326,11 @@ class Dubins3dActuatorSet(BaseActuatorSet):
                 [np.deg2rad(-6), np.deg2rad(6)],
                 0
             ),
-            # ContinuousActuator(
-            #     'elevator',
-            #     [np.deg2rad(-6), np.deg2rad(6)],
-            #     0
-            # ),
+            ContinuousActuator(
+                'elevator',
+                [np.deg2rad(-6), np.deg2rad(6)],
+                0
+            ),
             ContinuousActuator(
                 'throttle',
                 [-10, 10],
@@ -367,8 +367,8 @@ class Dubins3dDynamics(BaseODESolverDynamics):
     def dx(self, t, state_vec, control):
         x, y, z, heading, gamma, roll, v = state_vec
 
-        # elevator, ailerons, throttle = control
-        ailerons, throttle = control
+        elevator, ailerons, throttle = control
+        # ailerons, throttle = control
 
         # enforce velocity limits
         if v <= self.v_min and throttle < 0:
@@ -386,8 +386,8 @@ class Dubins3dDynamics(BaseODESolverDynamics):
         y_dot = v * math.sin(heading) * math.cos(gamma)
         z_dot = -1 * v * math.sin(gamma)
 
-        # gamma_dot = elevator
-        gamma_dot = 0
+        gamma_dot = elevator
+        # gamma_dot = 0
         roll_dot = ailerons
         heading_dot = (32.17 / v) * math.tan(roll)                      # g = 32.17 ft/s^2
         v_dot = throttle
