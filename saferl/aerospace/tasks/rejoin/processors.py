@@ -1,5 +1,6 @@
 import gym.spaces
 import numpy as np
+import math
 
 from scipy.spatial.transform import Rotation
 
@@ -16,10 +17,8 @@ class DubinsObservationProcessor(ObservationProcessor):
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
 
         elif self.config['mode'] == 'magnorm':
-            # self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            # self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(16,))
-            self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1], dtype=np.float64)
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
+            self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
 
     def generate_observation(self, env_objs):
         def vec2magnorm(vec):
@@ -63,6 +62,35 @@ class DubinsObservationProcessor(ObservationProcessor):
         obs = np.clip(obs, -1, 1)
 
         return obs
+
+
+class Dubins3dObservationProcessor(DubinsObservationProcessor):
+    def __init__(self, config):
+        super().__init__(config=config)
+
+        self.roll_norm_const = np.array([math.pi], dtype=np.float64)
+
+        if self.config['mode'] == 'rect':
+            # self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
+            # self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
+            raise NotImplementedError
+
+        elif self.config['mode'] == 'magnorm':
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(17,))
+            self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1], dtype=np.float64)
+
+
+    def generate_observation(self, env_objs):
+        # delegate to get baseline obs
+        obs = super(Dubins3dObservationProcessor, self).generate_observation(env_objs)
+
+        # get positional info from env
+        roll = np.array([env_objs["wingman"].roll], dtype=np.float64)
+        roll = np.divide(roll, self.roll_norm_const)
+        roll = np.clip(roll, -1, 1)
+
+        # append to obs space
+        return np.concatenate([obs, roll])
 
 
 class RejoinRewardProcessor(RewardProcessor):
