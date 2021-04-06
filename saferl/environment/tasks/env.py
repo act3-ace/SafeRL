@@ -24,7 +24,7 @@ class BaseEnv(gym.Env):
         self.reward_manager = RewardManager(config=self.config["reward"])
         self.status_manager = StatusManager(config=self.config["status"])
 
-        self._setup_env_objs()
+        self.agent, self.env_objs = self._setup_env_objs()
         self._setup_action_space()
         self._setup_obs_space()
 
@@ -61,17 +61,12 @@ class BaseEnv(gym.Env):
         raise NotImplementedError
 
     def reset(self):
-        # apply random initilization to environment objects
-        init_dict = self.config['init']
+        # apply random initialization to environment objects
 
-        successful_init = False
-        while not successful_init:
+        for _, obj in self.env_objs.items():
+            init_dict = obj.init_dict
             init_dict_draw = draw_from_rand_bounds_dict(init_dict)
-            for obj_key, obj_init_dict in init_dict_draw.items():
-                self.env_objs[obj_key].reset(**obj_init_dict)
-
-            # TODO check if initialization is safe
-            successful_init = True
+            obj.reset(**init_dict_draw)
 
         # reset processor objects
         self.reward_manager.reset(env_objs=self.env_objs)
@@ -90,8 +85,6 @@ class BaseEnv(gym.Env):
         return obs
 
     def _setup_env_objs(self):
-        self.env_objs = {}
-        self.agent = None
         raise NotImplementedError
 
     def _setup_obs_space(self):

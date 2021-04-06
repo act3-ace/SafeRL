@@ -246,9 +246,9 @@ class BasePlatform(BaseEnvObj):
         else:
             controller_config = config['controller']
 
-        if controller is None:
+        if controller_config is None:
             controller = PassThroughController()
-        elif controller == 'agent':
+        else:
             controller = AgentController(actuator_set, config=controller_config)
             self.action_space = controller.action_space
 
@@ -258,6 +258,11 @@ class BasePlatform(BaseEnvObj):
         self.actuator_set = actuator_set
         self.controller = controller
         self.state = state
+
+        if config is None:
+            self.init_dict = None
+        else:
+            self.init_dict = config["init"]
 
         self.reset(**kwargs)
 
