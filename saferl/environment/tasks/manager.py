@@ -6,7 +6,7 @@ class Manager(abc.ABC):
         self.config = config
 
         # Register and initialize processors
-        self.processors = [p(config=config) for p in config["processors"]]
+        self.processors = [p_config["class"](config=p_config) for p_config in config]
 
     def reset(self, env_objs):
         for p in self.processors:
