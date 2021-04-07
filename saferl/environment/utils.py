@@ -44,3 +44,7 @@ def setup_env_objs_from_config(config):
             agent = obj
 
     return agent, env_objs
+
+
+def parse_env_config(config_yaml, lookup):
+    pass
