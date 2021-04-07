@@ -1,0 +1,8 @@
+class: FailureRewardProcessor
+config:
+  failure_status: failure
+  reward:
+    crash: -1
+    distance: -1
+    timeout: -1
+name: failure_reward

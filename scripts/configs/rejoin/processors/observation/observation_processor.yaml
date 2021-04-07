@@ -1,0 +1,8 @@
+class: DubinsObservationProcessor
+config:
+  lead: lead
+  mode: magnorm
+  reference: wingman
+  rejoin_region: rejoin_region
+  wingman: wingman
+name: observation_processor
