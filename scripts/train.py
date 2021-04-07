@@ -421,8 +421,8 @@ docking_config = {
 
 # --------------- Register environment ----------------------
 
-config['env_config'] = docking_config
-config['env'] = DockingEnv
+config['env_config'] = rejoin_config
+config['env'] = DubinsRejoin
 
 stop_dict = {
     'training_iteration': 200,
