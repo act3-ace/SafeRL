@@ -5,10 +5,11 @@ from saferl.aerospace.models import Dubins2dPlatform
 from saferl.aerospace.tasks import DubinsObservationProcessor, RejoinRewardProcessor, RejoinFirstTimeRewardProcessor,\
     TimeRewardProcessor, RejoinDistanceChangeRewardProcessor, FailureRewardProcessor, SuccessRewardProcessor, \
     DubinsInRejoin, DubinsInRejoinPrev, DubinsRejoinTime, DubinsTimeElapsed, DubinsLeadDistance, DubinsFailureStatus, \
-    DubinsSuccessStatus
+    DubinsSuccessStatus, DubinsRejoin
 from saferl.environment.models.geometry import RelativeCircle
 
 saferl_lookup = {
+    "DubinsRejoin": DubinsRejoin,
     "Dubins2dPlatform": Dubins2dPlatform,
     "RelativeCircle": RelativeCircle,
     "DubinsObservationProcessor": DubinsObservationProcessor,
