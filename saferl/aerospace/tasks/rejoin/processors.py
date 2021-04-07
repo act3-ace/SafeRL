@@ -20,11 +20,12 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.mode = self.config["mode"]
 
         if self.mode == 'rect':
+            # TODO: add z axis
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
         elif self.mode == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
+            self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi], dtype=np.float64)
 
     def generate_observation(self, env_objs):
         def vec2magnorm(vec):
@@ -55,11 +56,17 @@ class DubinsObservationProcessor(ObservationProcessor):
             wingman_vel = vec2magnorm(wingman_vel)
             lead_vel = vec2magnorm(lead_vel)
 
+        # gamma and roll for 3d positional
+        roll = np.array([env_objs["wingman"].roll], dtype=np.float64)
+        gamma = np.array([env_objs["wingman"].gamma], dtype=np.float64)
+
         obs = np.concatenate([
             wingman_lead_r,
             wingman_rejoin_r,
             wingman_vel,
             lead_vel,
+            roll,
+            gamma
         ])
 
         # normalize observation
@@ -68,35 +75,6 @@ class DubinsObservationProcessor(ObservationProcessor):
         obs = np.clip(obs, -1, 1)
 
         return obs
-
-
-class Dubins3dObservationProcessor(DubinsObservationProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-
-        self.norm_const_3d = np.array([math.pi, math.pi], dtype=np.float64)
-
-        if self.config['mode'] == 'rect':
-            # self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            # self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
-            raise NotImplementedError
-
-        elif self.config['mode'] == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1], dtype=np.float64)
-
-
-    def generate_observation(self, env_objs):
-        # delegate to get baseline obs
-        obs = super(Dubins3dObservationProcessor, self).generate_observation(env_objs)
-
-        # get positional info from env
-        roll_and_gamma = np.array([env_objs["wingman"].roll, env_objs["wingman"].gamma], dtype=np.float64)
-        roll_and_gamma = np.divide(roll_and_gamma, self.norm_const_3d)
-        roll_and_gamma = np.clip(roll_and_gamma, -1, 1)
-
-        # append to obs space
-        return np.concatenate([obs, roll_and_gamma])
 
 
 class RejoinRewardProcessor(RewardProcessor):
