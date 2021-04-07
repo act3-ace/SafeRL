@@ -18,10 +18,10 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.reference = self.config["reference"]
         self.mode = self.config["mode"]
 
-        if self.mode is 'rect':
+        if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
-        elif self.mode is 'magnorm':
+        elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
             self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
 
@@ -38,7 +38,7 @@ class DubinsObservationProcessor(ObservationProcessor):
         lead_vel = env_objs[self.lead].velocity
 
         reference_rotation = Rotation.from_quat([0, 0, 0, 1])
-        if self.reference is 'wingman':
+        if self.reference == 'wingman':
             reference_rotation = env_objs[self.wingman].orientation.inv()
 
         wingman_lead_r = reference_rotation.apply(wingman_lead_r)
@@ -47,7 +47,7 @@ class DubinsObservationProcessor(ObservationProcessor):
         wingman_vel = reference_rotation.apply(wingman_vel)
         lead_vel = reference_rotation.apply(lead_vel)
 
-        if self.mode is 'magnorm':
+        if self.mode == 'magnorm':
             wingman_lead_r = vec2magnorm(wingman_lead_r)
             wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 

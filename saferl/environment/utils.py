@@ -40,7 +40,7 @@ def setup_env_objs_from_config(config):
         else:
             obj = cls(config=obj_config["config"])
         env_objs[name] = obj
-        if name is agent_name:
+        if name == agent_name:
             agent = obj
 
     return agent, env_objs
