@@ -1,0 +1,4 @@
+class: TimeRewardProcessor
+config:
+  reward: -0.01
+name: time_reward

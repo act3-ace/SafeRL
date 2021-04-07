@@ -1,0 +1,9 @@
+class: DubinsFailureStatus
+config:
+  lead_distance: lead_distance
+  max_goal_distance: 40000
+  safety_margin:
+    aircraft: 100
+  time_elapsed: time_elapsed
+  timeout: 1000
+name: failure

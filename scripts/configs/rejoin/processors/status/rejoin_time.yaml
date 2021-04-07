@@ -1,0 +1,4 @@
+class: DubinsRejoinTime
+config:
+  rejoin_status: in_rejoin
+name: rejoin_time

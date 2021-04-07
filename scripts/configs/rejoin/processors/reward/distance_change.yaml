@@ -1,0 +1,7 @@
+class: RejoinDistanceChangeRewardProcessor
+config:
+  rejoin_region: rejoin_region
+  rejoin_status: in_rejoin
+  reward: -1.0e-05
+  wingman: wingman
+name: rejoin_dist_change_reward

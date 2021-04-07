@@ -1,0 +1,5 @@
+class: DubinsLeadDistance
+config:
+  lead: lead
+  wingman: wingman
+name: lead_distance

@@ -8,7 +8,7 @@ import numpy as np
 from saferl.environment.models import BaseGeometry, RelativeGeometry, geo_from_config
 
 
-PATH_CHAR = '#'
+PATH_CHAR = '!'
 
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
@@ -65,26 +65,21 @@ def parse_env_config(config_yaml, lookup):
     return env, env_config
 
 
-def process_yaml_items(target_dict, lookup):
-    for k, v in target_dict.items():
-        if k == "class":
-            target_dict[k] = lookup[v]
-        else:
-            if isinstance(v, str) and len(v) < 0 and v[0] == PATH_CHAR:
-                # Value is path to yaml config
-                path_str = v[1:]
-                path = os.path.abspath(path_str)
-                with open(path, 'r') as f:
-                    v = yaml.load(f)
-                target_dict[k] = process_yaml_items(v, lookup)
-            elif isinstance(v, dict):
-                target_dict[k] = process_yaml_items(v, lookup)
-            elif isinstance(v, list):
-                result = []
-                for i in v:
-                    if isinstance(i, dict):
-                        result.append(process_yaml_items(i, lookup))
-                    else:
-                        result.append(i)
-                target_dict[k] = result
-    return target_dict
+def process_yaml_items(target, lookup):
+    if isinstance(target, dict):
+        for k, v in target.items():
+            target[k] = process_yaml_items(v, lookup)
+    elif isinstance(target, str):
+        if target[0] == PATH_CHAR:
+            # Value is path to yaml config
+            path_str = target[1:]
+            path = os.path.abspath(path_str)
+            with open(path, 'r') as f:
+                contents = yaml.load(f)
+            target = process_yaml_items(contents, lookup)
+        elif target in lookup.keys():
+            target = lookup[target]
+    elif isinstance(target, list):
+        target = [process_yaml_items(i, lookup) for i in target]
+
+    return target
