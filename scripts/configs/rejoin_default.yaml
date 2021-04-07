@@ -1,3 +1,4 @@
+env: DubinsRejoin
 env_config:
   agent: wingman
   env_objs:
