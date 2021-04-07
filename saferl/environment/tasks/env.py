@@ -85,6 +85,8 @@ class BaseEnv(gym.Env):
         return obs
 
     def _setup_env_objs(self):
+        self.env_objs = {}
+        self.agent = None
         raise NotImplementedError
 
     def _setup_obs_space(self):
