@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 
 
 class Manager(abc.ABC):
@@ -12,25 +13,18 @@ class Manager(abc.ABC):
         for p in self.processors:
             p.reset(env_objs)
 
-    def step(self, env_objs, timestep, status, old_status):
-        for processor in self.processors:
-            self._handle_processor(
-                processor=processor,
-                env_objs=env_objs,
-                timestep=timestep,
-                status=status,
-                old_status=old_status
-            )
+    @abc.abstractmethod
+    def step(self, env_objs, timestep, status):
+        raise NotImplementedError
 
     @abc.abstractmethod
     def _generate_info(self) -> dict:
         """Create and return an info dict"""
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        """Handle processor"""
-        raise NotImplementedError
+    # TODO: expose processor status via managers? (loop and return results of proc.process()?)
+    # def process(self, processor, env_objs, status):
+    #     return processor.process(env_objs, status)
 
 
 class ObservationManager(Manager):
@@ -45,15 +39,10 @@ class ObservationManager(Manager):
         info = {}
         return info
 
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        # TODO: Implement multiple observations stored in self.obs
-        processor.step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        self.obs = processor.obs
+    def step(self, env_objs, timestep, status):
+        self.obs = np.array([])
+        for processor in self.processors:
+            self.obs = np.concatenate((self.obs, processor.step(env_objs, timestep, status)))
 
 
 class StatusManager(Manager):
@@ -71,14 +60,9 @@ class StatusManager(Manager):
         }
         return info
 
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        processor.step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        self.status = status
+    def step(self, env_objs, timestep, status):
+        for processor in self.processors:
+            self.status[processor.name] = processor.step(env_objs, timestep, status)
 
 
 class RewardManager(Manager):
@@ -103,22 +87,8 @@ class RewardManager(Manager):
 
         return info
 
-    def step(self, env_objs, timestep, status, old_status):
+    def step(self, env_objs, timestep, status):
         self.step_value = 0
-        super().step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
+        for processor in self.processors:
+            self.step_value += processor.step(env_objs, timestep, status)
         self.total_value += self.step_value
-
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        processor.step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        self.step_value += processor.step_value
-        self.components[processor.name] += processor.step_value
