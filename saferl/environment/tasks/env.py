@@ -100,8 +100,7 @@ class BaseEnv(gym.Env):
         self.observation_manager.step(
             env_objs=self.env_objs,
             timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            status=deepcopy(self.status_dict)
         )
         return self.observation_manager.obs
 
@@ -109,8 +108,7 @@ class BaseEnv(gym.Env):
         self.reward_manager.step(
             env_objs=self.env_objs,
             timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            status=deepcopy(self.status_dict)
         )
         return self.reward_manager.step_value
 
@@ -118,8 +116,7 @@ class BaseEnv(gym.Env):
         self.status_manager.step(
             env_objs=self.env_objs,
             timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            status=deepcopy(self.status_dict)
         )
         return self.status_manager.status
 

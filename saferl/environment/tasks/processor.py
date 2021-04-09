@@ -16,9 +16,23 @@ class Processor(abc.ABC):
         """Create and return an info dict"""
         raise NotImplementedError
 
+
+    def step(self, env_objs, timestep, status):
+        # two stage wrapper which encapsulates the transition between states of size 'timestep'
+        self.increment(env_objs, timestep, status)
+        return self.process(env_objs, status)
+
     @abc.abstractmethod
-    def step(self, env_objs, timestep, status, old_status):
-        """Process the environment at the current timestep"""
+    def increment(self, env_objs, timestep, status):
+        # method to progress internal state proportional to given timestep size
+        raise NotImplementedError
+
+    def process(self, env_objs, status):
+        # method to process and return relevant status
+        return self._process(env_objs, status)
+
+    @abc.abstractmethod
+    def _process(self, env_objs, status):
         raise NotImplementedError
 
 
@@ -32,19 +46,26 @@ class ObservationProcessor(Processor):
     def reset(self, env_objs):
         self.obs = None
 
-    def step(self, env_objs, timestep, status, old_status):
-        self.obs = self.generate_observation(env_objs=env_objs)
-
     def _generate_info(self) -> dict:
         info = {
             "observation": self.obs
         }
         return info
 
+
+    def increment(self, env_objs, timestep, status):
+        # generate observations
+        self.obs = self._increment(env_objs, timestep, status)
+
     @abc.abstractmethod
-    def generate_observation(self, env_objs):
-        """Generate an observation from the current environment"""
+    def _increment(self, env_objs, timestep, status):
+        """Generate and return an observation from the current environment"""
         raise NotImplementedError
+
+    # @abc.abstractmethod
+    # def _process(self, env_objs, status):
+    #     """Return processed observation from current environment"""
+    #     raise NotImplementedError
 
 
 class StatusProcessor(Processor):
@@ -61,19 +82,19 @@ class StatusProcessor(Processor):
         }
         return info
 
-    def step(self, env_objs, timestep, status, old_status):
-        self.status_value = self.generate_status(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        status[self.name] = self.status_value
+
+    def increment(self, env_objs, timestep, status):
+        self.status_value = self._increment(env_objs, timestep, status)
 
     @abc.abstractmethod
-    def generate_status(self, env_objs, timestep, status, old_status):
+    def _increment(self, env_objs, timestep, status):
         """Generate a status value from the environment at the current timestep"""
         raise NotImplementedError
+
+    # @abc.abstractmethod
+    # def _process(self, env_objs, status):
+    #     """return a processed status value from the environment at the current timestep"""
+    #     raise NotImplementedError
 
 
 class RewardProcessor(Processor):
@@ -94,10 +115,16 @@ class RewardProcessor(Processor):
         }
         return info
 
-    def step(self, env_objs, timestep, status, old_status=None):
-        self.step_value = self.generate_reward(env_objs, timestep, status)
+    def increment(self, env_objs, timestep, status):
+        self.step_value = self._increment(env_objs, timestep, status)
         self.total_value += self.step_value
 
     @abc.abstractmethod
-    def generate_reward(self, env_objs, timestep, status):
+    def _increment(self, env_objs, timestep, status):
+        """Generate a reward from environment at current timestep"""
         raise NotImplementedError
+
+    # @abc.abstractmethod
+    # def _process(self, env_objs, status):
+    #     """Return a processed reward from environment at current timestep"""
+    #     raise NotImplementedError

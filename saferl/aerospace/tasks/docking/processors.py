@@ -27,14 +27,31 @@ class DockingObservationProcessor(ObservationProcessor):
         obs = env_objs['deputy'].state.vector
         return obs
 
+    def _increment(self, env_objs, timestep, status):
+        # update status and return
+        return self.generate_observation(env_objs)
+
+    def _process(self, env_objs, status):
+        # return the current status
+        return self.generate_observation(env_objs)
+
 
 class TimeRewardProcessor(RewardProcessor):
     def __init__(self, config):
         super().__init__(config=config)
 
-    def generate_reward(self, env_objs, timestep, status):
+    # def generate_reward(self, env_objs, timestep, status):
+    #     step_reward = self.reward
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        # return step_value of reward accumulated during interval of size timestep
         step_reward = self.reward
         return step_reward
+
+    def _process(self, env_objs, status):
+        # return the current state of reward component
+        return self.total_value
 
 
 class DistanceChangeRewardProcessor(RewardProcessor):
@@ -48,12 +65,24 @@ class DistanceChangeRewardProcessor(RewardProcessor):
         super().reset(env_objs=env_objs)
         self.prev_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
 
-    def generate_reward(self, env_objs, timestep, status):
+    # def generate_reward(self, env_objs, timestep, status):
+    #     cur_distance = distance(env_objs[self.docking_region], env_objs[self.docking_region])
+    #     dist_change = cur_distance - self.prev_distance
+    #     self.prev_distance = cur_distance
+    #     step_reward = dist_change * self.reward
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        # return step_value of reward accumulated during interval of size timestep
         cur_distance = distance(env_objs[self.docking_region], env_objs[self.docking_region])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
         step_reward = dist_change * self.reward
         return step_reward
+
+    def _process(self, env_objs, status):
+        # return the current state of reward component
+        return self.total_value
 
 
 class DistanceChangeZRewardProcessor(RewardProcessor):
@@ -67,12 +96,24 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
         super().reset(env_objs=env_objs)
         self.prev_distance = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
 
-    def generate_reward(self, env_objs, timestep, status):
+    # def generate_reward(self, env_objs, timestep, status):
+    #     cur_distance_z = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
+    #     dist_z_change = cur_distance_z - self.prev_distance
+    #     self.prev_distance = cur_distance_z
+    #     step_reward = dist_z_change * self.reward
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        # return step_value of reward accumulated during interval of size timestep
         cur_distance_z = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
         dist_z_change = cur_distance_z - self.prev_distance
         self.prev_distance = cur_distance_z
         step_reward = dist_z_change * self.reward
         return step_reward
+
+    def _process(self, env_objs, status):
+        # return the current state of reward component
+        return self.total_value
 
 
 class SuccessRewardProcessor(RewardProcessor):
@@ -80,11 +121,23 @@ class SuccessRewardProcessor(RewardProcessor):
         super().__init__(config=config)
         self.success_status = self.config["success_status"]
 
-    def generate_reward(self, env_objs, timestep, status):
-        step_reward = 0
-        if status[self.success_status]:
-            step_reward = self.reward
+    # def generate_reward(self, status):
+    #     step_reward = 0
+    #     if status[self.success_status]:
+    #         step_reward = self.reward
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        # return step_value of reward accumulated during interval of size timestep
+        cur_distance_z = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
+        dist_z_change = cur_distance_z - self.prev_distance
+        self.prev_distance = cur_distance_z
+        step_reward = dist_z_change * self.reward
         return step_reward
+
+    def _process(self, env_objs, status):
+        # return the current state of reward component
+        return self.total_value
 
 
 class FailureRewardProcessor(RewardProcessor):
@@ -92,11 +145,22 @@ class FailureRewardProcessor(RewardProcessor):
         super().__init__(config=config)
         self.failure_status = self.config["failure_status"]
 
-    def generate_reward(self, env_objs, timestep, status):
+    # def generate_reward(self, env_objs, timestep, status):
+    #     step_reward = 0
+    #     if status[self.failure_status]:
+    #         step_reward = self.reward[status[self.failure_status]]
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        # return step_value of reward accumulated during interval of size timestep
         step_reward = 0
         if status[self.failure_status]:
             step_reward = self.reward[status[self.failure_status]]
         return step_reward
+
+    def _process(self, env_objs, status):
+        # return the current state of reward component
+        return self.total_value
 
 
 class DockingStatusProcessor(StatusProcessor):
@@ -105,9 +169,17 @@ class DockingStatusProcessor(StatusProcessor):
         self.docking_region = self.config["docking_region"]
         self.deputy = self.config["deputy"]
 
-    def generate_status(self, env_objs, timestep, status, old_status):
+    def generate_status(self, env_objs):
         in_docking = env_objs[self.docking_region].contains(env_objs[self.deputy])
         return in_docking
+
+    def _increment(self, env_objs, timestep, status):
+        # update status and return
+        return self.generate_status(env_objs)
+
+    def _process(self, env_objs, status):
+        # return the current status
+        return self.generate_status(env_objs)
 
 
 class DockingDistanceStatusProcessor(StatusProcessor):
@@ -116,9 +188,17 @@ class DockingDistanceStatusProcessor(StatusProcessor):
         self.docking_region = self.config["docking_region"]
         self.deputy = self.config["deputy"]
 
-    def generate_status(self, env_objs, timestep, status, old_status):
+    def generate_status(self, env_objs):
         docking_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
         return docking_distance
+
+    def _increment(self, env_objs, timestep, status):
+        # update status and return
+        return self.generate_status(env_objs)
+
+    def _process(self, env_objs, status):
+        # return the current status
+        return self.generate_status(env_objs)
 
 
 class FailureStatusProcessor(StatusProcessor):
@@ -133,9 +213,7 @@ class FailureStatusProcessor(StatusProcessor):
         super().reset(env_objs=env_objs)
         self.time_elapsed = 0
 
-    def generate_status(self, env_objs, timestep, status, old_status):
-        self.time_elapsed += timestep
-
+    def generate_status(self, status):
         if self.time_elapsed > self.timeout:
             failure = 'timeout'
         elif status[self.docking_distance] >= self.max_goal_distance:
@@ -145,12 +223,29 @@ class FailureStatusProcessor(StatusProcessor):
 
         return failure
 
+    def _increment(self, env_objs, timestep, status):
+        # update status and return
+        self.time_elapsed += timestep
+        return self.generate_status(status)
+
+    def _process(self, env_objs, status):
+        # return the current status
+        return self.generate_status(status)
+
 
 class SuccessStatusProcessor(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
         self.docking_status = self.config["docking_status"]
 
-    def generate_status(self, env_objs, timestep, status, old_status):
+    def generate_status(self, status):
         success = status[self.docking_status]
         return success
+
+    def _increment(self, env_objs, timestep, status):
+        # update status and return
+        return self.generate_status(status)
+
+    def _process(self, env_objs, status):
+        # return the current status
+        return self.generate_status(status)
