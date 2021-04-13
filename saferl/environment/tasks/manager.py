@@ -15,6 +15,7 @@ class Manager(abc.ABC):
 
     @abc.abstractmethod
     def step(self, env_objs, timestep, status):
+        """increment and process processors and return resulting value"""
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -22,9 +23,10 @@ class Manager(abc.ABC):
         """Create and return an info dict"""
         raise NotImplementedError
 
-    # @abc.abstractmethod
-    # def process(self, env_objs, status):
-    #     ...
+    @abc.abstractmethod
+    def process(self, env_objs, status):
+        """iteratively process processors and return resulting value"""
+        raise NotImplementedError
 
 
 class ObservationManager(Manager):
@@ -46,6 +48,13 @@ class ObservationManager(Manager):
         self.obs = np.concatenate(obs_list)
         return self.obs
 
+    def process(self, env_objs, status):
+        obs_list = []
+        for processor in self.processors:
+            obs_list.append(processor.process(env_objs, status))
+        obs = np.concatenate(obs_list)
+        return obs
+
 
 class StatusManager(Manager):
     def __init__(self, config):
@@ -66,8 +75,13 @@ class StatusManager(Manager):
         self.status = {}
         for processor in self.processors:
             self.status[processor.name] = processor.step(env_objs, timestep, self.status)
-
         return self.status
+
+    def process(self, env_objs, status):
+        status = {}
+        for processor in self.processors:
+            status[processor.name] = processor.process(env_objs, status)
+        return status
 
 
 class RewardManager(Manager):
@@ -83,14 +97,14 @@ class RewardManager(Manager):
         """helper method to organize reward components"""
         components = {"step": {}, "total": {}}
         for p in self.processors:
-            components["step"][p.name] = p.step_value
-            components["total"][p.name] = p.total_value
+            components["step"][p.name] = p.get_step_value()
+            components["total"][p.name] = p.get_total_value()
         return components
 
     def _generate_info(self):
         info = {
             'step': self.step_value,
-            'component_totals': self.generate_components(),
+            'components': self.generate_components(),
             'total': self.total_value,
         }
 
@@ -102,3 +116,9 @@ class RewardManager(Manager):
             self.step_value += processor.step(env_objs, timestep, status)
         self.total_value += self.step_value
         return self.step_value
+
+    def process(self, env_objs, status):
+        step_value = 0
+        for processor in self.processors:
+            step_value += processor.process(env_objs, status)
+        return step_value
