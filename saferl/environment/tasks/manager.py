@@ -62,8 +62,10 @@ class StatusManager(Manager):
         self.status = {}
 
     def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+        # construct new status from initial environment
         self.status = {}
+        for p in self.processors:
+            self.status[p.name] = p.reset(env_objs, self.status)
 
     def _generate_info(self) -> dict:
         info = {

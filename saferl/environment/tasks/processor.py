@@ -97,8 +97,10 @@ class StatusProcessor(Processor):
         super().__init__(config=config)
         self.status_value = None
 
-    def reset(self, env_objs):
-        self.status_value = None
+    @abc.abstractmethod
+    def reset(self, env_objs, status):
+        # update internal state and return new status value
+        raise NotImplementedError
 
     def _generate_info(self) -> dict:
         info = {
