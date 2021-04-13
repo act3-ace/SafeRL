@@ -20,9 +20,8 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.mode = self.config["mode"]
 
         if self.mode == 'rect':
-            # TODO: add z axis
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
+            self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi], dtype=np.float64)
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
             self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi], dtype=np.float64)
@@ -56,7 +55,7 @@ class DubinsObservationProcessor(ObservationProcessor):
             wingman_vel = vec2magnorm(wingman_vel)
             lead_vel = vec2magnorm(lead_vel)
 
-        # gamma and roll for 3d positional
+        # gamma and roll for 3d orientation info
         roll = np.array([env_objs["wingman"].roll], dtype=np.float64)
         gamma = np.array([env_objs["wingman"].gamma], dtype=np.float64)
 
