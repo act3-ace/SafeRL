@@ -323,7 +323,7 @@ class BasePlatform(BaseEnvObj):
 
 class BasePlatformState(BaseEnvObj):
 
-    def init(self, **kwargs):
+    def __init__(self, **kwargs):
         self.reset(**kwargs)
 
     @abc.abstractmethod
@@ -333,12 +333,24 @@ class BasePlatformState(BaseEnvObj):
 
 class BasePlatformStateVectorized(BasePlatformState):
 
-    def reset(self, **kwargs):
-        self._vector = self.build_vector(**kwargs)
+    def reset(self, vector=None, vector_deep_copy=True, **kwargs):
+        if vector is None:
+            self._vector = self.build_vector(**kwargs)
+        else:
+            assert isinstance(vector, np.ndarray)
+            assert vector.shape == self.vector_shape
+            if vector_deep_copy:
+                self.vector = copy.deepcopy(vector)
+            else:
+                self._vector = vector
 
     @abc.abstractmethod
     def build_vector(self):
         ...
+
+    @property
+    def vector_shape(self):
+        return self.build_vector().shape
 
     @property
     def vector(self):
