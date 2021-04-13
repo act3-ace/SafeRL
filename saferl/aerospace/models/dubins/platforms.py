@@ -368,7 +368,6 @@ class Dubins3dDynamics(BaseODESolverDynamics):
         x, y, z, heading, gamma, roll, v = state_vec
 
         elevator, ailerons, throttle = control
-        # ailerons, throttle = control
 
         # enforce velocity limits
         if v <= self.v_min and throttle < 0:
@@ -387,7 +386,6 @@ class Dubins3dDynamics(BaseODESolverDynamics):
         z_dot = -1 * v * math.sin(gamma)
 
         gamma_dot = elevator
-        # gamma_dot = 0
         roll_dot = ailerons
         heading_dot = (32.17 / v) * math.tan(roll)                      # g = 32.17 ft/s^2
         v_dot = throttle
