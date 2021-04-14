@@ -13,26 +13,18 @@ env_config:
           points: 5
           space: discrete
       init:
-        heading:
-        - [0, 6.283185307179586]
-        v:
-        - [10, 100]
-        x:
-        - [-4000, 4000]
-        y:
-        - [-4000, 4000]
+        heading: [0, 6.283185307179586]
+        v: [10, 100]
+        x: [-4000, 4000]
+        y: [-4000, 4000]
     name: wingman
   - class: Dubins2dPlatform
     config:
       init:
-        heading:
-        - [0, 6.283185307179586]
-        v:
-        - [40, 60]
-        x:
-        - [-4000, 4000]
-        y:
-        - [-4000, 4000]
+        heading: [0, 6.283185307179586]
+        v: [40, 60]
+        x: [-4000, 4000]
+        y: [-4000, 4000]
     name: lead
   - class: RelativeCircle
     config:
