@@ -9,7 +9,7 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.environment import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
+from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback
 
 from saferl.aerospace.tasks import *
