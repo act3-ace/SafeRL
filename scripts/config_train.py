@@ -10,10 +10,10 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.environment import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
+from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
 
-from saferl import saferl_lookup
+from saferl import lookup
 
 from saferl.environment.utils import parse_env_config
 
@@ -87,7 +87,7 @@ def experiment_setup(args):
                                                                   contents=CONTENTS)])
 
     # Setup custom config
-    env, env_config = parse_env_config(config_yaml=args.config, lookup=saferl_lookup)
+    env, env_config = parse_env_config(config_yaml=args.config, lookup=lookup)
     config['env'] = env
     config['env_config'] = env_config
 

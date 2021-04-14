@@ -5,7 +5,7 @@ import yaml
 
 import numpy as np
 
-from saferl.environment.models import BaseGeometry, RelativeGeometry, geo_from_config
+from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
 
 
 PATH_CHAR = '!'
