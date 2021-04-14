@@ -31,7 +31,7 @@ class DubinsObservationProcessor(ObservationProcessor):
         mag_norm_vec = np.concatenate(([norm], vec / norm))
         return mag_norm_vec
 
-    def generate_observation(self, env_objs):
+    def _process(self, env_objs, status):
         wingman_lead_r = env_objs[self.lead].position - env_objs[self.wingman].position
         wingman_rejoin_r = env_objs[self.rejoin_region].position - env_objs[self.wingman].position
 
@@ -69,12 +69,6 @@ class DubinsObservationProcessor(ObservationProcessor):
 
         return obs
 
-    def _increment(self, env_objs, timestep, status):
-        return self.generate_observation(env_objs)
-
-    def _process(self, env_objs, status):
-        return self.generate_observation(env_objs)
-
 
 class RejoinRewardProcessor(RewardProcessor):
     def __init__(self, config):
@@ -84,38 +78,35 @@ class RejoinRewardProcessor(RewardProcessor):
         self.rejoin_status = self.config["rejoin_status"]
         self.rejoin_prev_status = self.config["rejoin_prev_status"]
 
-    # def generate_reward(self, timestep, status):
-    #     step_reward = 0
-    #     in_rejoin = status[self.rejoin_status]
-    #     in_rejoin_prev = status[self.rejoin_prev_status]
-    #     if in_rejoin and in_rejoin_prev:
-    #         step_reward += self.reward * timestep
-    #     else:
-    #         # agent was not in region for duration of timestep and therefore receives no reward
-    #         if in_rejoin_prev:
-    #             # if rejoin region is left, refund all accumulated rejoin reward
-    #             #   this is to ensure that the agent doesn't infinitely enter and leave rejoin region
-    #             step_reward += -1 * self.total_value
-    #     return step_reward
+        # Initialize state vars
+        self.timestep_size = 0
+        self.in_rejoin_for_timestep = False
+        self.left_rejoin = False
 
     def _increment(self, env_objs, timestep, status):
-        # return step_value of reward accumulated during interval of size timestep
-        step_reward = 0
+        # Update state variables
+        self.left_rejoin = False
+        self.in_rejoin_for_timestep = False
+        self.timestep_size = timestep
+
         in_rejoin = status[self.rejoin_status]
         in_rejoin_prev = status[self.rejoin_prev_status]
         if in_rejoin and in_rejoin_prev:
-            step_reward += self.reward * timestep
-        else:
-            # agent was not in region for duration of timestep and therefore receives no reward
-            if in_rejoin_prev:
-                # if rejoin region is left, refund all accumulated rejoin reward
-                #   this is to ensure that the agent doesn't infinitely enter and leave rejoin region
-                step_reward += -1 * self.total_value
-        return step_reward
+            # determine if agent was in rejoin for duration of timestep
+            self.in_rejoin_for_timestep = True
+        elif not in_rejoin and in_rejoin_prev:
+            # if rejoin region is left, refund all accumulated rejoin reward
+            #   this is to ensure that the agent doesn't infinitely enter and leave rejoin region
+            self.left_rejoin = True
 
     def _process(self, env_objs, status):
-        # return the current state of reward component
-        return self.total_value
+        # process state variables and return appropriate reward
+        step_reward = 0
+        if self.in_rejoin_for_timestep:
+            step_reward = self.reward * self.timestep_size
+        elif self.left_rejoin:
+            step_reward = -1 * self.total_value
+        return step_reward
 
 
 class RejoinFirstTimeRewardProcessor(RewardProcessor):
@@ -126,29 +117,35 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-    def reset(self, env_objs):
+        # Initialize state vars
+        self.rejoin_first_time = False
         self.rejoin_first_time_applied = False
 
-    # def generate_reward(self, status):
-    #     step_reward = 0
-    #     in_rejoin = status[self.rejoin_status]
-    #     if in_rejoin and not self.rejoin_first_time_applied:
-    #         step_reward += self.reward
-    #         self.rejoin_first_time_applied = True
-    #     return step_reward
+    def reset(self, env_objs):
+        super().reset(env_objs=env_objs)
+        self.rejoin_first_time = False
+        self.rejoin_first_time_applied = False
+        # TODO: handle init in rejoin case
 
     def _increment(self, env_objs, timestep, status):
         # return step_value of reward accumulated during interval of size timestep
-        step_reward = 0
+
+        if self.rejoin_first_time:
+            # if first time flag true, first time reward has already been applied
+            self.rejoin_first_time_applied = True
+            self.rejoin_first_time = False
+
         in_rejoin = status[self.rejoin_status]
         if in_rejoin and not self.rejoin_first_time_applied:
-            step_reward += self.reward
-            self.rejoin_first_time_applied = True
-        return step_reward
+            # if in rejoin and first time reward not already applied, it is the agent's first timestep in rejoin region
+            self.rejoin_first_time = True
 
     def _process(self, env_objs, status):
-        # return the current state of reward component
-        return self.total_value
+        # process state variables and return appropriate reward
+        step_reward = 0
+        if self.rejoin_first_time:
+            step_reward = self.reward
+        return step_reward
 
 
 class RejoinDistanceChangeRewardProcessor(RewardProcessor):
@@ -160,36 +157,30 @@ class RejoinDistanceChangeRewardProcessor(RewardProcessor):
         self.wingman = self.config["wingman"]
         self.rejoin_region = self.config["rejoin_region"]
 
+        # Initialize state vars
+        self.prev_distance = 0
+        self.cur_distance = 0
+        self.in_rejoin = False
+
     def reset(self, env_objs):
         super().reset(env_objs=env_objs)
         self.prev_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
-
-    # def generate_reward(self, env_objs, status):
-    #     cur_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
-    #     dist_change = cur_distance - self.prev_distance
-    #     self.prev_distance = cur_distance
-    #
-    #     in_rejoin = status[self.rejoin_status]
-    #     step_reward = 0
-    #     if not in_rejoin:
-    #         step_reward = dist_change * self.reward
-    #     return step_reward
+        self.cur_distance = self.prev_distance
+        # TODO: handle init in rejoin case
 
     def _increment(self, env_objs, timestep, status):
-        # return step_value of reward accumulated during interval of size timestep
-        cur_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
-        dist_change = cur_distance - self.prev_distance
-        self.prev_distance = cur_distance
-
-        in_rejoin = status[self.rejoin_status]
-        step_reward = 0
-        if not in_rejoin:
-            step_reward = dist_change * self.reward
-        return step_reward
+        # Update state variables
+        self.prev_distance = self.cur_distance
+        self.cur_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
+        self.in_rejoin = status[self.rejoin_status]
 
     def _process(self, env_objs, status):
-        # return the current state of reward component
-        return self.total_value
+        # process state and return appropriate step reward
+        step_reward = 0
+        distance_change = self.cur_distance - self.prev_distance
+        if not self.in_rejoin:
+            step_reward = distance_change * self.reward
+        return step_reward
 
 
 class DubinsInRejoin(StatusProcessor):
@@ -203,9 +194,12 @@ class DubinsInRejoin(StatusProcessor):
         in_rejoin = env_objs[self.rejoin_region].contains(env_objs[self.wingman])
         return in_rejoin
 
-    def _increment(self, env_objs, timestep, status):
-        # update status and return
+    def reset(self, env_objs, status):
         return self.generate_status(env_objs)
+
+    def _increment(self, env_objs, timestep, status):
+        # this status comes from first principles of the environment and therefore does not require a state machine
+        ...
 
     def _process(self, env_objs, status):
         # return the current status
@@ -217,23 +211,23 @@ class DubinsInRejoinPrev(StatusProcessor):
         super().__init__(config=config)
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
+
+        # Initialize state vars
         self.in_rejoin_prev = False
         self.in_rejoin_current = False
 
-    # def generate_status(self, env_objs, timestep, status, old_status):
-    #     in_rejoin_prev = False
-    #     if old_status:
-    #         in_rejoin_prev = old_status[self.rejoin_status]
-    #     return in_rejoin_prev
-
-    def _increment(self, env_objs, timestep, status):
-        # update status and return
-        self.in_rejoin_prev = self.in_rejoin_current
+    def reset(self, env_objs, status):
+        self.in_rejoin_prev = False
         self.in_rejoin_current = status[self.rejoin_status]
         return self.in_rejoin_prev
 
+    def _increment(self, env_objs, timestep, status):
+        # update rejoin region state variables
+        self.in_rejoin_prev = self.in_rejoin_current
+        self.in_rejoin_current = status[self.rejoin_status]
+
     def _process(self, env_objs, status):
-        # return the current status
+        # return the previous rejoin status
         return self.in_rejoin_prev
 
 
@@ -244,24 +238,22 @@ class DubinsRejoinTime(StatusProcessor):
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+        # Initialize state vars
         self.rejoin_time = 0
+        self.in_rejoin = False
 
-    # def generate_status(self, env_objs, timestep, status, old_status):
-    #     if status[self.rejoin_status]:
-    #         self.rejoin_time += timestep
-    #     else:
-    #         self.rejoin_time = 0
-    #     return self.rejoin_time
+    def reset(self, env_objs, status):
+        self.rejoin_time = 0
+        self.in_rejoin = status[self.rejoin_status]
+        return self.rejoin_time
 
     def _increment(self, env_objs, timestep, status):
-        # update status and return
-        if status[self.rejoin_status]:
+        # update state
+        self.in_rejoin = status[self.rejoin_status]
+        if self.in_rejoin:
             self.rejoin_time += timestep
         else:
             self.rejoin_time = 0
-        return self.rejoin_time
 
     def _process(self, env_objs, status):
         # return the current status
@@ -271,20 +263,17 @@ class DubinsRejoinTime(StatusProcessor):
 class DubinsTimeElapsed(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
+
+        # Initialize state var
         self.time_elapsed = 0
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
         self.time_elapsed = 0
-
-    # def generate_status(self, env_objs, timestep, status, old_status):
-    #     self.time_elapsed += timestep
-    #     return self.time_elapsed
+        return self.time_elapsed
 
     def _increment(self, env_objs, timestep, status):
-        # update status and return
+        # update status
         self.time_elapsed += timestep
-        return self.time_elapsed
 
     def _process(self, env_objs, status):
         # return the current status
@@ -302,9 +291,12 @@ class DubinsLeadDistance(StatusProcessor):
         lead_distance = distance(env_objs[self.wingman], env_objs[self.lead])
         return lead_distance
 
-    def _increment(self, env_objs, timestep, status):
-        # update status and return
+    def reset(self, env_objs, status):
         return self.generate_status(env_objs)
+
+    def _increment(self, env_objs, timestep, status):
+        # this status comes from first principles of the environment and therefore does not require a state machine
+        ...
 
     def _process(self, env_objs, status):
         # return the current status
@@ -315,63 +307,71 @@ class DubinsFailureStatus(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
         # Initialize member variables from config
-        self.lead_distance = self.config["lead_distance"]
-        self.time_elapsed = self.config["time_elapsed"]
+        self.lead_distance_key = self.config["lead_distance"]
+        self.time_elapsed_key = self.config["time_elapsed"]
         self.safety_margin = self.config['safety_margin']
         self.timeout = self.config['timeout']
         self.max_goal_dist = self.config['max_goal_distance']
 
-        # self.failure = False
+        # Initialize state vars
+        self.lead_distance = 0
+        self.time_elapsed = 0
 
-    def generate_status(self, status):
-        lead_distance = status[self.lead_distance]
-        time_elapsed = status[self.time_elapsed]
-
+    def generate_status(self):
+        # process current state variables and return failure status
         failure = False
-
-        if lead_distance < self.safety_margin['aircraft']:
+        if self.lead_distance < self.safety_margin['aircraft']:
             failure = 'crash'
-        elif time_elapsed > self.timeout:
+        elif self.time_elapsed > self.timeout:
             failure = 'timeout'
-        elif lead_distance >= self.max_goal_dist:
+        elif self.lead_distance >= self.max_goal_dist:
             failure = 'distance'
 
         return failure
 
+    def reset(self, env_objs, status):
+        # reset state and return status
+        self.lead_distance = status[self.lead_distance_key]
+        self.time_elapsed = status[self.time_elapsed_key]
+        return self.generate_status()
+
     def _increment(self, env_objs, timestep, status):
-        # update status and return
-        return self.generate_status(status)
+        # update state
+        self.lead_distance = status[self.lead_distance_key]
+        self.time_elapsed = status[self.time_elapsed_key]
 
     def _process(self, env_objs, status):
-        # return the current status
-        return self.generate_status(status)
+        # process state and return status
+        return self.generate_status()
 
 
 class DubinsSuccessStatus(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
         # Initialize member variables from config
-        self.rejoin_time = self.config["rejoin_time"]
+        self.rejoin_time_key = self.config["rejoin_time"]
         self.success_time = self.config["success_time"]
 
-    def generate_status(self, status):
-        rejoin_time = status[self.rejoin_time]
+        # Initialize state var
+        self.rejoin_time = 0
 
+    def generate_status(self):
         success = False
 
-        if rejoin_time > self.success_time:
+        if self.rejoin_time > self.success_time:
             success = True
 
         return success
 
+    def reset(self, env_objs, status):
+        # reset state and process new status
+        self.rejoin_time = status[self.rejoin_time_key]
+        return self.generate_status()
+
     def _increment(self, env_objs, timestep, status):
-        # update status and return
-        return self.generate_status(status)
+        # update state
+        self.rejoin_time = status[self.rejoin_time_key]
 
     def _process(self, env_objs, status):
-        # return the current status
-        return self.generate_status(status)
-
-#TODO:
-# abstract all RewardProcessor's _process()?
-#
+        # return new status
+        return self.generate_status()
