@@ -1,0 +1,20 @@
+env: DockingEnv
+env_config:
+  agent: deputy
+  env_objs:
+  - "!file:./env_objs/deputy.yaml"
+  - "!file:./env_objs/chief.yaml"
+  - "!file:./env_objs/docking_region.yaml"
+  observation:
+  - "!file:./processors/observation/observation.yaml"
+  reward:
+  - "!file:./processors/reward/dist_change.yaml"
+  - "!file:./processors/reward/time.yaml"
+  - "!file:./processors/reward/failure.yaml"
+  - "!file:./processors/reward/success.yaml"
+  status:
+  - "!file:./processors/status/docking.yaml"
+  - "!file:./processors/status/docking_distance.yaml"
+  - "!file:./processors/status/failure.yaml"
+  - "!file:./processors/status/success.yaml"
+  verbose: false

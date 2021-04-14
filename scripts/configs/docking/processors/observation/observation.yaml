@@ -1,0 +1,5 @@
+class: DockingObservationProcessor
+config:
+  deputy: deputy
+  mode: 2d
+name: observation_processor

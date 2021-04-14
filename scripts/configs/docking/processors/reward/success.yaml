@@ -1,0 +1,5 @@
+class: SuccessRewardProcessor
+config:
+  reward: 1
+  success_status: success
+name: success_reward

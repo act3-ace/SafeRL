@@ -1,0 +1,4 @@
+class: SuccessStatusProcessor
+config:
+  docking_status: docking_status
+name: success

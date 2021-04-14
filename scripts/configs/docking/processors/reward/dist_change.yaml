@@ -1,0 +1,6 @@
+class: DistanceChangeRewardProcessor
+config:
+  deputy: deputy
+  docking_region: docking_region
+  reward: -1.0e-05
+name: dist_change_reward
