@@ -66,6 +66,7 @@ class StatusManager(Manager):
         self.status = {}
         for p in self.processors:
             self.status[p.name] = p.reset(env_objs, self.status)
+        return self.status
 
     def _generate_info(self) -> dict:
         info = {

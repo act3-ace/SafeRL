@@ -99,7 +99,7 @@ class StatusProcessor(Processor):
 
     @abc.abstractmethod
     def reset(self, env_objs, status):
-        # update internal state and return new status value
+        # reset internal state and return new status value
         raise NotImplementedError
 
     def _generate_info(self) -> dict:
@@ -136,7 +136,6 @@ class RewardProcessor(Processor):
             "total": self.total_value
         }
         return info
-
 
     def step(self, env_objs, timestep, status):
         # two stage wrapper which encapsulates the transition between states of size 'timestep'
