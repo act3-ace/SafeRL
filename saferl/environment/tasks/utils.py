@@ -9,7 +9,6 @@ def draw_from_rand_bounds_dict(rand_dict):
             draw = draw_from_rand_bounds_dict(val)
         else:
             if type(val) == list:
-                val = np.squeeze(val)
                 draw = np.random.uniform(val[0], val[1])
             else:
                 draw = val
