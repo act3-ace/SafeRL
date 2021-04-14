@@ -81,8 +81,8 @@ class YAMLParser:
             target = self.process_str(target)
         elif isinstance(target, list):
             # Remove redundant dimensions
-            if len(target) == 1 and isinstance(target[0], list):
-                target = target[0]
+            # if len(target) == 1 and isinstance(target[0], list):
+            #     target = target[0]
             target = [self.process_yaml_items(i) for i in target]
         return target
 
