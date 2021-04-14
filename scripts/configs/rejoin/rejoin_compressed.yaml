@@ -2,24 +2,24 @@ env: DubinsRejoin
 env_config:
   agent: wingman
   env_objs:
-  - "!./env_objs/wingman.yaml"
-  - "!./env_objs/lead.yaml"
-  - "!./env_objs/rejoin_region.yaml"
+  - "!file:./env_objs/wingman.yaml"
+  - "!file:./env_objs/lead.yaml"
+  - "!file:./env_objs/rejoin_region.yaml"
   observation:
-  - "!./processors/observation/observation_processor.yaml"
+  - "!file:./processors/observation/observation_processor.yaml"
   reward:
-  - "!./processors/reward/rejoin.yaml"
-  - "!./processors/reward/rejoin_first.yaml"
-  - "!./processors/reward/time.yaml"
-  - "!./processors/reward/distance_change.yaml"
-  - "!./processors/reward/failure.yaml"
-  - "!./processors/reward/success.yaml"
+  - "!file:./processors/reward/rejoin.yaml"
+  - "!file:./processors/reward/rejoin_first.yaml"
+  - "!file:./processors/reward/time.yaml"
+  - "!file:./processors/reward/distance_change.yaml"
+  - "!file:./processors/reward/failure.yaml"
+  - "!file:./processors/reward/success.yaml"
   status:
-  - "!./processors/status/in_rejoin.yaml"
-  - "!./processors/status/in_rejoin_prev.yaml"
-  - "!./processors/status/rejoin_time.yaml"
-  - "!./processors/status/time_elapsed.yaml"
-  - "!./processors/status/lead_distance.yaml"
-  - "!./processors/status/failure.yaml"
-  - "!./processors/status/success.yaml"
+  - "!file:./processors/status/in_rejoin.yaml"
+  - "!file:./processors/status/in_rejoin_prev.yaml"
+  - "!file:./processors/status/rejoin_time.yaml"
+  - "!file:./processors/status/time_elapsed.yaml"
+  - "!file:./processors/status/lead_distance.yaml"
+  - "!file:./processors/status/failure.yaml"
+  - "!file:./processors/status/success.yaml"
   verbose: false

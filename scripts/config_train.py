@@ -15,7 +15,7 @@ from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeC
 
 from saferl import lookup
 
-from saferl.environment.utils import parse_env_config
+from saferl.environment.utils import YAMLParser
 
 
 # Training defaults
@@ -87,7 +87,8 @@ def experiment_setup(args):
                                                                   contents=CONTENTS)])
 
     # Setup custom config
-    env, env_config = parse_env_config(config_yaml=args.config, lookup=lookup)
+    parser = YAMLParser(yaml_file=args.config, lookup=lookup)
+    env, env_config = parser.parse_env()
     config['env'] = env
     config['env_config'] = env_config
 

@@ -8,9 +8,6 @@ import numpy as np
 from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
 
 
-PATH_CHAR = '!'
-
-
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
     ret_str = False
     if output_stream is None:
@@ -53,34 +50,55 @@ def setup_env_objs_from_config(config):
     return agent, env_objs
 
 
-def parse_env_config(config_yaml, lookup):
-    config_path = os.path.abspath(config_yaml)
-    config_dir = os.path.dirname(config_path)
+class YAMLParser:
 
-    with open(config_path, 'r') as f:
-        config = yaml.load(f)
-    env_str = config["env"]
-    env_config = config["env_config"]
-    env = lookup[env_str]
-    env_config = process_yaml_items(env_config, lookup, working_dir=config_dir)
-    return env, env_config
+    COMMAND_CHAR = '!'
 
+    def __init__(self, yaml_file, lookup):
+        self.commands = {
+            "file": self.file_command
+        }
+        self.yaml_path = os.path.abspath(yaml_file)
+        self.working_dir = os.path.dirname(self.yaml_path)
+        self.lookup = lookup
 
-def process_yaml_items(target, lookup, working_dir):
-    if isinstance(target, dict):
-        for k, v in target.items():
-            target[k] = process_yaml_items(v, lookup, working_dir=working_dir)
-    elif isinstance(target, str):
-        if target[0] == PATH_CHAR:
-            # Value is path to yaml config
-            path_str = target[1:]
-            path = os.path.abspath(os.path.join(working_dir, path_str))
-            with open(path, 'r') as f:
-                contents = yaml.load(f)
-            target = process_yaml_items(contents, lookup, working_dir=os.path.dirname(path))
-        elif target in lookup.keys():
-            target = lookup[target]
-    elif isinstance(target, list):
-        target = [process_yaml_items(i, lookup, working_dir=working_dir) for i in target]
+    def parse_env(self):
+        with open(self.yaml_path, 'r') as f:
+            config = yaml.load(f)
+        assert "env" in config.keys(), "environment config missing required field: env"
+        assert "env_config" in config.keys(), "environment config missing required field: env_config"
+        env_str = config["env"]
+        env_config = config["env_config"]
+        env = self.lookup[env_str]
+        env_config = self.process_yaml_items(env_config)
+        return env, env_config
 
-    return target
+    def process_yaml_items(self, target):
+        if isinstance(target, dict):
+            for k, v in target.items():
+                target[k] = self.process_yaml_items(v)
+        elif isinstance(target, str):
+            target = self.process_str(target)
+        elif isinstance(target, list):
+            target = [self.process_yaml_items(i) for i in target]
+        return target
+
+    def process_str(self, input_str):
+        if input_str[0] == "!":
+            command, value = input_str[1:].split(":", 1)
+            value = self.commands[command](value)
+        elif input_str in self.lookup.keys():
+            value = self.lookup[input_str]
+        else:
+            value = input_str
+        return value
+
+    def file_command(self, value):
+        path = os.path.abspath(os.path.join(self.working_dir, value))
+        old_working_dir = self.working_dir
+        self.working_dir = os.path.dirname(path)
+        with open(path, 'r') as f:
+            contents = yaml.load(f)
+        target = self.process_yaml_items(contents)
+        self.working_dir = old_working_dir
+        return target
