@@ -78,11 +78,6 @@ class RejoinRewardProcessor(RewardProcessor):
         self.rejoin_status = self.config["rejoin_status"]
         self.rejoin_prev_status = self.config["rejoin_prev_status"]
 
-        # # Initialize state vars         #TODO: redundant?
-        # self.timestep_size = 0
-        # self.in_rejoin_for_timestep = False
-        # self.left_rejoin = False
-
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
         self.timestep_size = 0
@@ -122,11 +117,6 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-        # # Initialize state vars
-        # self.rejoin_first_time = False
-        # self.rejoin_first_time_applied = False
-        # self.rejoin_first_time_applied = False
-
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
         self.rejoin_first_time = False
@@ -156,17 +146,11 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
 class RejoinDistanceChangeRewardProcessor(RewardProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        # self.prev_distance = 0
 
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
         self.wingman = self.config["wingman"]
         self.rejoin_region = self.config["rejoin_region"]
-
-        # # Initialize state vars
-        # self.prev_distance = 0
-        # self.cur_distance = 0
-        # self.in_rejoin = False
 
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
@@ -215,10 +199,6 @@ class DubinsInRejoinPrev(StatusProcessor):
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-        # # Initialize state vars
-        # self.in_rejoin_prev = False
-        # self.in_rejoin_current = False
-
     def reset(self, env_objs, status):
         self.in_rejoin_prev = False
         self.in_rejoin_current = status[self.rejoin_status]
@@ -238,10 +218,6 @@ class DubinsRejoinTime(StatusProcessor):
         super().__init__(config=config)
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
-
-        # # Initialize state vars
-        # self.rejoin_time = 0
-        # self.in_rejoin = False
 
     def reset(self, env_objs, status):
         self.rejoin_time = 0
@@ -263,9 +239,6 @@ class DubinsRejoinTime(StatusProcessor):
 class DubinsTimeElapsed(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-
-        # # Initialize state var
-        # self.time_elapsed = 0
 
     def reset(self, env_objs, status):
         self.time_elapsed = 0
@@ -309,10 +282,6 @@ class DubinsFailureStatus(StatusProcessor):
         self.timeout = self.config['timeout']
         self.max_goal_dist = self.config['max_goal_distance']
 
-        # # Initialize state vars
-        # self.lead_distance = 0
-        # self.time_elapsed = 0
-
     def reset(self, env_objs, status):
         # reset state
         self.lead_distance = status[self.lead_distance_key]
@@ -342,9 +311,6 @@ class DubinsSuccessStatus(StatusProcessor):
         # Initialize member variables from config
         self.rejoin_time_key = self.config["rejoin_time"]
         self.success_time = self.config["success_time"]
-
-        # # Initialize state var
-        # self.rejoin_time = 0
 
     def reset(self, env_objs, status):
         # reset state
