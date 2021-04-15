@@ -29,7 +29,6 @@ env_config:
   - class: RelativeCircle
     config:
       aspect_angle: 60
-      init: {}
       r_offset: 500
       radius: 150
       ref: lead
