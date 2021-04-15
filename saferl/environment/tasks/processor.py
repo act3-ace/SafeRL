@@ -8,7 +8,7 @@ class Processor(abc.ABC):
         self.name = config["name"]
 
     @abc.abstractmethod
-    def reset(self, env_objs):
+    def reset(self, env_objs, status):
         """Reset the processor instance"""
         raise NotImplementedError
 
@@ -16,7 +16,6 @@ class Processor(abc.ABC):
     def _generate_info(self) -> dict:
         """Create and return an info dict"""
         raise NotImplementedError
-
 
     def step(self, env_objs, timestep, status):
         # two stage wrapper which encapsulates the transition between states of size 'timestep'
@@ -73,7 +72,7 @@ class ObservationProcessor(Processor):
         self.observation_space = None
         # TODO: add normalization and clipping, pre- and post- processors
 
-    def reset(self, env_objs):
+    def reset(self, env_objs, status):
         self.obs = None
 
     def _generate_info(self) -> dict:
@@ -126,7 +125,7 @@ class RewardProcessor(Processor):
         self.total_value = 0
         self.reward = self.config["reward"]
 
-    def reset(self, env_objs):
+    def reset(self, env_objs, status):
         self.step_value = 0
         self.total_value = 0
 

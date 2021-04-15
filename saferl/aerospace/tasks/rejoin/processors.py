@@ -78,7 +78,13 @@ class RejoinRewardProcessor(RewardProcessor):
         self.rejoin_status = self.config["rejoin_status"]
         self.rejoin_prev_status = self.config["rejoin_prev_status"]
 
-        # Initialize state vars
+        # # Initialize state vars         #TODO: redundant?
+        # self.timestep_size = 0
+        # self.in_rejoin_for_timestep = False
+        # self.left_rejoin = False
+
+    def reset(self, env_objs, status):
+        super().reset(env_objs=env_objs, status=status)
         self.timestep_size = 0
         self.in_rejoin_for_timestep = False
         self.left_rejoin = False
@@ -112,24 +118,23 @@ class RejoinRewardProcessor(RewardProcessor):
 class RejoinFirstTimeRewardProcessor(RewardProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        self.rejoin_first_time_applied = False
 
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-        # Initialize state vars
-        self.rejoin_first_time = False
-        self.rejoin_first_time_applied = False
+        # # Initialize state vars
+        # self.rejoin_first_time = False
+        # self.rejoin_first_time_applied = False
+        # self.rejoin_first_time_applied = False
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
+        super().reset(env_objs=env_objs, status=status)
         self.rejoin_first_time = False
         self.rejoin_first_time_applied = False
-        # TODO: handle init in rejoin case
+        self.in_rejoin = status[self.rejoin_status]
 
     def _increment(self, env_objs, timestep, status):
         # return step_value of reward accumulated during interval of size timestep
-
         if self.rejoin_first_time:
             # if first time flag true, first time reward has already been applied
             self.rejoin_first_time_applied = True
@@ -151,22 +156,23 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
 class RejoinDistanceChangeRewardProcessor(RewardProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        self.prev_distance = 0
+        # self.prev_distance = 0
+
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
         self.wingman = self.config["wingman"]
         self.rejoin_region = self.config["rejoin_region"]
 
-        # Initialize state vars
-        self.prev_distance = 0
-        self.cur_distance = 0
-        self.in_rejoin = False
+        # # Initialize state vars
+        # self.prev_distance = 0
+        # self.cur_distance = 0
+        # self.in_rejoin = False
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
+        super().reset(env_objs=env_objs, status=status)
         self.prev_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
         self.cur_distance = self.prev_distance
-        # TODO: handle init in rejoin case
+        self.in_rejoin = status[self.rejoin_status]
 
     def _increment(self, env_objs, timestep, status):
         # Update state variables
@@ -190,12 +196,8 @@ class DubinsInRejoin(StatusProcessor):
         self.wingman = self.config["wingman"]
         self.rejoin_region = self.config["rejoin_region"]
 
-    def generate_status(self, env_objs):
-        in_rejoin = env_objs[self.rejoin_region].contains(env_objs[self.wingman])
-        return in_rejoin
-
     def reset(self, env_objs, status):
-        return self.generate_status(env_objs)
+        ...
 
     def _increment(self, env_objs, timestep, status):
         # this status comes from first principles of the environment and therefore does not require a state machine
@@ -203,7 +205,8 @@ class DubinsInRejoin(StatusProcessor):
 
     def _process(self, env_objs, status):
         # return the current status
-        return self.generate_status(env_objs)
+        in_rejoin = env_objs[self.rejoin_region].contains(env_objs[self.wingman])
+        return in_rejoin
 
 
 class DubinsInRejoinPrev(StatusProcessor):
@@ -212,14 +215,13 @@ class DubinsInRejoinPrev(StatusProcessor):
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-        # Initialize state vars
-        self.in_rejoin_prev = False
-        self.in_rejoin_current = False
+        # # Initialize state vars
+        # self.in_rejoin_prev = False
+        # self.in_rejoin_current = False
 
     def reset(self, env_objs, status):
         self.in_rejoin_prev = False
         self.in_rejoin_current = status[self.rejoin_status]
-        return self.in_rejoin_prev
 
     def _increment(self, env_objs, timestep, status):
         # update rejoin region state variables
@@ -234,18 +236,16 @@ class DubinsInRejoinPrev(StatusProcessor):
 class DubinsRejoinTime(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        self.rejoin_time = 0
         # Initialize member variables from config
         self.rejoin_status = self.config["rejoin_status"]
 
-        # Initialize state vars
-        self.rejoin_time = 0
-        self.in_rejoin = False
+        # # Initialize state vars
+        # self.rejoin_time = 0
+        # self.in_rejoin = False
 
     def reset(self, env_objs, status):
         self.rejoin_time = 0
         self.in_rejoin = status[self.rejoin_status]
-        return self.rejoin_time
 
     def _increment(self, env_objs, timestep, status):
         # update state
@@ -264,12 +264,11 @@ class DubinsTimeElapsed(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
 
-        # Initialize state var
-        self.time_elapsed = 0
+        # # Initialize state var
+        # self.time_elapsed = 0
 
     def reset(self, env_objs, status):
         self.time_elapsed = 0
-        return self.time_elapsed
 
     def _increment(self, env_objs, timestep, status):
         # update status
@@ -287,12 +286,8 @@ class DubinsLeadDistance(StatusProcessor):
         self.wingman = self.config["wingman"]
         self.lead = self.config["lead"]
 
-    def generate_status(self, env_objs):
-        lead_distance = distance(env_objs[self.wingman], env_objs[self.lead])
-        return lead_distance
-
     def reset(self, env_objs, status):
-        return self.generate_status(env_objs)
+        ...
 
     def _increment(self, env_objs, timestep, status):
         # this status comes from first principles of the environment and therefore does not require a state machine
@@ -300,7 +295,8 @@ class DubinsLeadDistance(StatusProcessor):
 
     def _process(self, env_objs, status):
         # return the current status
-        return self.generate_status(env_objs)
+        lead_distance = distance(env_objs[self.wingman], env_objs[self.lead])
+        return lead_distance
 
 
 class DubinsFailureStatus(StatusProcessor):
@@ -313,11 +309,21 @@ class DubinsFailureStatus(StatusProcessor):
         self.timeout = self.config['timeout']
         self.max_goal_dist = self.config['max_goal_distance']
 
-        # Initialize state vars
-        self.lead_distance = 0
-        self.time_elapsed = 0
+        # # Initialize state vars
+        # self.lead_distance = 0
+        # self.time_elapsed = 0
 
-    def generate_status(self):
+    def reset(self, env_objs, status):
+        # reset state
+        self.lead_distance = status[self.lead_distance_key]
+        self.time_elapsed = status[self.time_elapsed_key]
+
+    def _increment(self, env_objs, timestep, status):
+        # update state
+        self.lead_distance = status[self.lead_distance_key]
+        self.time_elapsed = status[self.time_elapsed_key]
+
+    def _process(self, env_objs, status):
         # process current state variables and return failure status
         failure = False
         if self.lead_distance < self.safety_margin['aircraft']:
@@ -329,21 +335,6 @@ class DubinsFailureStatus(StatusProcessor):
 
         return failure
 
-    def reset(self, env_objs, status):
-        # reset state and return status
-        self.lead_distance = status[self.lead_distance_key]
-        self.time_elapsed = status[self.time_elapsed_key]
-        return self.generate_status()
-
-    def _increment(self, env_objs, timestep, status):
-        # update state
-        self.lead_distance = status[self.lead_distance_key]
-        self.time_elapsed = status[self.time_elapsed_key]
-
-    def _process(self, env_objs, status):
-        # process state and return status
-        return self.generate_status()
-
 
 class DubinsSuccessStatus(StatusProcessor):
     def __init__(self, config):
@@ -352,26 +343,20 @@ class DubinsSuccessStatus(StatusProcessor):
         self.rejoin_time_key = self.config["rejoin_time"]
         self.success_time = self.config["success_time"]
 
-        # Initialize state var
-        self.rejoin_time = 0
-
-    def generate_status(self):
-        success = False
-
-        if self.rejoin_time > self.success_time:
-            success = True
-
-        return success
+        # # Initialize state var
+        # self.rejoin_time = 0
 
     def reset(self, env_objs, status):
-        # reset state and process new status
+        # reset state
         self.rejoin_time = status[self.rejoin_time_key]
-        return self.generate_status()
 
     def _increment(self, env_objs, timestep, status):
         # update state
         self.rejoin_time = status[self.rejoin_time_key]
 
     def _process(self, env_objs, status):
-        # return new status
-        return self.generate_status()
+        # process state and return new status
+        success = False
+        if self.rejoin_time > self.success_time:
+            success = True
+        return success
