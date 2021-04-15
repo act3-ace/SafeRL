@@ -28,10 +28,10 @@ env_config:
     name: lead
   - class: RelativeCircle
     config:
+      ref: lead
       aspect_angle: 60
       r_offset: 500
       radius: 150
-      ref: lead
       track_orientation: true
     name: rejoin_region
   observation:

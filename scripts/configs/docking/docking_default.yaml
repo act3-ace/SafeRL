@@ -30,10 +30,10 @@ env_config:
     name: chief
   - class: RelativeCircle
     config:
-      radius: 20
       ref: chief
       x_offset: 0
       y_offset: 0
+      radius: 20
     name: docking_region
   observation:
   - class: DockingObservationProcessor
