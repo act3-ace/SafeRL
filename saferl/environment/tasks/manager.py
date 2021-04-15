@@ -9,9 +9,9 @@ class Manager(abc.ABC):
         # Register and initialize processors
         self.processors = [p_config["class"](config=p_config) for p_config in config]
 
-    def reset(self, env_objs):
+    def reset(self, env_objs, status):
         for p in self.processors:
-            p.reset(env_objs)
+            p.reset(env_objs, status)
 
     @abc.abstractmethod
     def step(self, env_objs, timestep, status):
@@ -61,11 +61,12 @@ class StatusManager(Manager):
         super().__init__(config=config)
         self.status = {}
 
-    def reset(self, env_objs):
+    def reset(self, env_objs, status):
         # construct new status from initial environment
         self.status = {}
         for p in self.processors:
-            self.status[p.name] = p.reset(env_objs, self.status)
+            p.reset(env_objs, self.status)
+            self.status[p.name] = p.process(env_objs, self.status)
         return self.status
 
     def _generate_info(self) -> dict:
@@ -93,8 +94,8 @@ class RewardManager(Manager):
         self.step_value = 0
         self.total_value = 0
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
+        super().reset(env_objs=env_objs, status=status)
 
     def generate_components(self):
         """helper method to organize reward components"""
