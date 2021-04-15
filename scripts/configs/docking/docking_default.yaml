@@ -30,7 +30,6 @@ env_config:
     name: chief
   - class: RelativeCircle
     config:
-      init: {}
       radius: 20
       ref: chief
       x_offset: 0
