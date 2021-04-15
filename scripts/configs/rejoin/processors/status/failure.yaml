@@ -1,3 +1,4 @@
+name: failure
 class: DubinsFailureStatus
 config:
   lead_distance: lead_distance
@@ -6,4 +7,3 @@ config:
     aircraft: 100
   time_elapsed: time_elapsed
   timeout: 1000
-name: failure

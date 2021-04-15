@@ -1,3 +1,4 @@
+name: chief
 class: CWHSpacecraft2d
 config:
   init:
@@ -5,4 +6,3 @@ config:
     x_dot: 0
     y: 0
     y_dot: 0
-name: chief

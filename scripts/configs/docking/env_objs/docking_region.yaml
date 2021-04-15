@@ -1,7 +1,7 @@
+name: docking_region
 class: RelativeCircle
 config:
   ref: chief
   x_offset: 0
   y_offset: 0
   radius: 20
-name: docking_region

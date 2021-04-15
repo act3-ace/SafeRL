@@ -1,5 +1,5 @@
+name: in_rejoin
 class: DubinsInRejoin
 config:
   rejoin_region: rejoin_region
   wingman: wingman
-name: in_rejoin

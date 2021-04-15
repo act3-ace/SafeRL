@@ -1,3 +1,4 @@
+name: observation_processor
 class: DubinsObservationProcessor
 config:
   lead: lead
@@ -5,4 +6,3 @@ config:
   reference: wingman
   rejoin_region: rejoin_region
   wingman: wingman
-name: observation_processor

@@ -1,5 +1,5 @@
+name: success
 class: DubinsSuccessStatus
 config:
   rejoin_time: rejoin_time
   success_time: 20
-name: success

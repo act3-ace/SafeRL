@@ -1,3 +1,4 @@
+name: rejoin_region
 class: RelativeCircle
 config:
   ref: lead
@@ -5,4 +6,3 @@ config:
   r_offset: 500
   radius: 150
   track_orientation: true
-name: rejoin_region

@@ -2,7 +2,8 @@ env: DubinsRejoin
 env_config:
   agent: wingman
   env_objs:
-  - class: Dubins2dPlatform
+  - name: wingman
+    class: Dubins2dPlatform
     config:
       controller:
         actuators:
@@ -17,91 +18,91 @@ env_config:
         v: [10, 100]
         x: [-4000, 4000]
         y: [-4000, 4000]
-    name: wingman
-  - class: Dubins2dPlatform
+  - name: lead
+    class: Dubins2dPlatform
     config:
       init:
         heading: [0, 6.283185307179586]
         v: [40, 60]
         x: [-4000, 4000]
         y: [-4000, 4000]
-    name: lead
-  - class: RelativeCircle
+  - name: rejoin_region
+    class: RelativeCircle
     config:
       ref: lead
       aspect_angle: 60
       r_offset: 500
       radius: 150
       track_orientation: true
-    name: rejoin_region
   observation:
-  - class: DubinsObservationProcessor
+  - name: observation_processor
+    class: DubinsObservationProcessor
     config:
       lead: lead
       mode: magnorm
       reference: wingman
       rejoin_region: rejoin_region
       wingman: wingman
-    name: observation_processor
   reward:
-  - class: RejoinRewardProcessor
+  - name: rejoin_reward
+    class: RejoinRewardProcessor
     config:
       rejoin_prev_status: in_rejoin_prev
       rejoin_status: in_rejoin
       reward: 0.1
-    name: rejoin_reward
-  - class: RejoinFirstTimeRewardProcessor
+  - name: rejoin_first_time_reward
+    class: RejoinFirstTimeRewardProcessor
     config:
       rejoin_status: in_rejoin
       reward: 0.25
-    name: rejoin_first_time_reward
-  - class: TimeRewardProcessor
+  - name: time_reward
+    class: TimeRewardProcessor
     config:
       reward: -0.01
-    name: time_reward
-  - class: RejoinDistanceChangeRewardProcessor
+  - name: rejoin_dist_change_reward
+    class: RejoinDistanceChangeRewardProcessor
     config:
       rejoin_region: rejoin_region
       rejoin_status: in_rejoin
       reward: -1.0e-05
       wingman: wingman
-    name: rejoin_dist_change_reward
-  - class: FailureRewardProcessor
+  - name: failure_reward
+    class: FailureRewardProcessor
     config:
       failure_status: failure
       reward:
         crash: -1
         distance: -1
         timeout: -1
-    name: failure_reward
-  - class: SuccessRewardProcessor
+  - name: success_reward
+    class: SuccessRewardProcessor
     config:
       reward: 1
       success_status: success
-    name: success_reward
   status:
-  - class: DubinsInRejoin
+  - name: in_rejoin
+    class: DubinsInRejoin
     config:
       rejoin_region: rejoin_region
       wingman: wingman
-    name: in_rejoin
-  - class: DubinsInRejoinPrev
+  - name: in_rejoin_prev
+    class: DubinsInRejoinPrev
     config:
       rejoin_status: in_rejoin
-    name: in_rejoin_prev
-  - class: DubinsRejoinTime
+  - name: rejoin_time
+    class: DubinsRejoinTime
     config:
       rejoin_status: in_rejoin
-    name: rejoin_time
-  - class: DubinsTimeElapsed
+  - name: time_elapsed
+    class: DubinsTimeElapsed
     config: {}
-    name: time_elapsed
-  - class: DubinsLeadDistance
+  - name: lead_distance
+    class: DubinsLeadDistance
     config:
       lead: lead
       wingman: wingman
-    name: lead_distance
-  - class: DubinsFailureStatus
+  - name: failure
+    class: DubinsFailureStatus
     config:
       lead_distance: lead_distance
       max_goal_distance: 40000
@@ -109,10 +110,9 @@ env_config:
         aircraft: 100
       time_elapsed: time_elapsed
       timeout: 1000
-    name: failure
-  - class: DubinsSuccessStatus
+  - name: success
+    class: DubinsSuccessStatus
     config:
       rejoin_time: rejoin_time
       success_time: 20
-    name: success
   verbose: false

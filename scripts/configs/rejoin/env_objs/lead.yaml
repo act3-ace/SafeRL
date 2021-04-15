@@ -1,3 +1,4 @@
+name: lead
 class: Dubins2dPlatform
 config:
   init:
@@ -5,4 +6,3 @@ config:
     v: [40, 60]
     x: [-4000, 4000]
     y: [-4000, 4000]
-name: lead
