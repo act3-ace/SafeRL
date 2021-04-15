@@ -1,5 +1,5 @@
+name: docking_status
 class: DockingStatusProcessor
 config:
   deputy: deputy
   docking_region: docking_region
-name: docking_status

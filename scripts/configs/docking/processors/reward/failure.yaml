@@ -1,3 +1,4 @@
+name: failure_reward
 class: FailureRewardProcessor
 config:
   failure_status: failure
@@ -5,4 +6,3 @@ config:
     crash: -1
     distance: -1
     timeout: -1
-name: failure_reward

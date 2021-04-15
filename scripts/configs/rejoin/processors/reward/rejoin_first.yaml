@@ -1,5 +1,5 @@
+name: rejoin_first_time_reward
 class: RejoinFirstTimeRewardProcessor
 config:
   rejoin_status: in_rejoin
   reward: 0.25
-name: rejoin_first_time_reward

@@ -1,4 +1,4 @@
+name: in_rejoin_prev
 class: DubinsInRejoinPrev
 config:
   rejoin_status: in_rejoin
-name: in_rejoin_prev

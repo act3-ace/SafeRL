@@ -1,3 +1,4 @@
+name: wingman
 class: Dubins2dPlatform
 config:
   controller:
@@ -13,4 +14,3 @@ config:
     v: [10, 100]
     x: [-4000, 4000]
     y: [-4000, 4000]
-name: wingman
