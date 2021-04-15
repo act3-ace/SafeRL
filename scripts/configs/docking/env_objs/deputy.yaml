@@ -2,14 +2,14 @@ class: CWHSpacecraft2d
 config:
   controller:
     actuators:
-    - bounds: [-10, 10]
-      name: thrust_x
-      points: 11
-      space: discrete
-    - bounds: [-10, 10]
-      name: thrust_y
-      points: 11
-      space: discrete
+      - name: thrust_x
+        space: discrete
+        points: 11
+        bounds: [-10, 10]
+      - name: thrust_y
+        space: discrete
+        points: 11
+        bounds: [-10, 10]
   init:
     x: [-2000, 2000]
     x_dot: 0

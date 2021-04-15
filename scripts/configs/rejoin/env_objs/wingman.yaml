@@ -2,12 +2,12 @@ class: Dubins2dPlatform
 config:
   controller:
     actuators:
-    - name: rudder
-      points: 5
-      space: discrete
-    - name: throttle
-      points: 5
-      space: discrete
+      - name: rudder
+        space: discrete
+        points: 5
+      - name: throttle
+        space: discrete
+        points: 5
   init:
     heading: [0, 6.283185307179586]
     v: [10, 100]
