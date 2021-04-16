@@ -11,4 +11,4 @@ processor_mems = inspect.getmembers(processor, inspect.isclass)
 utils_mems = inspect.getmembers(utils, inspect.isclass)
 mems = env_mems + manager_mems + utils_mems + processor_mems
 
-lookup = {k: v for k, v in mems}
+lookup = {v.__module__ + "." + k: v for k, v in mems if "saferl" in str(v)}

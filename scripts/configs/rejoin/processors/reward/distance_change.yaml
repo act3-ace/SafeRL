@@ -1,5 +1,5 @@
 name: rejoin_dist_change_reward
-class: RejoinDistanceChangeRewardProcessor
+class: saferl.aerospace.tasks.rejoin.processors.RejoinDistanceChangeRewardProcessor
 config:
   rejoin_region: rejoin_region
   rejoin_status: in_rejoin

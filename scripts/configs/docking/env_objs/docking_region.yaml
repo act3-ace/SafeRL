@@ -1,5 +1,5 @@
 name: docking_region
-class: RelativeCircle
+class: saferl.environment.models.geometry.RelativeCircle
 config:
   ref: chief
   x_offset: 0

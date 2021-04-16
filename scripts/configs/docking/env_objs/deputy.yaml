@@ -1,5 +1,5 @@
 name: deputy
-class: CWHSpacecraft2d
+class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
 config:
   controller:
     actuators:

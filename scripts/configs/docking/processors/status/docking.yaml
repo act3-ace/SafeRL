@@ -1,5 +1,5 @@
 name: docking_status
-class: DockingStatusProcessor
+class: saferl.aerospace.tasks.docking.processors.DockingStatusProcessor
 config:
   deputy: deputy
   docking_region: docking_region

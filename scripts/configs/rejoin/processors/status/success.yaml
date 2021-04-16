@@ -1,5 +1,5 @@
 name: success
-class: DubinsSuccessStatus
+class: saferl.aerospace.tasks.rejoin.processors.DubinsSuccessStatus
 config:
   rejoin_time: rejoin_time
   success_time: 20
