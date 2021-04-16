@@ -1,5 +1,5 @@
 name: observation_processor
-class: DubinsObservationProcessor
+class: saferl.aerospace.tasks.rejoin.processors.DubinsObservationProcessor
 config:
   lead: lead
   mode: magnorm

@@ -1,4 +1,5 @@
 import inspect
 import saferl.aerospace.models.cwhspacecraft.platforms
 
-lookup = {k: v for k, v in inspect.getmembers(platforms, inspect.isclass)}
+mems = inspect.getmembers(platforms, inspect.isclass)
+lookup = {v.__module__ + "." + k: v for k, v in mems if "saferl" in str(v)}

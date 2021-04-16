@@ -1,5 +1,5 @@
 name: lead
-class: Dubins2dPlatform
+class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
 config:
   init:
     heading: [0, 6.283185307179586]

@@ -1,4 +1,4 @@
 name: success
-class: SuccessStatusProcessor
+class: saferl.aerospace.tasks.docking.processors.SuccessStatusProcessor
 config:
   docking_status: docking_status

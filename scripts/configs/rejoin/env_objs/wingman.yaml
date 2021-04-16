@@ -1,5 +1,5 @@
 name: wingman
-class: Dubins2dPlatform
+class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
 config:
   controller:
     actuators:

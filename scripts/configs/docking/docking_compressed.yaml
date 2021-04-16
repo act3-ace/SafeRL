@@ -1,4 +1,4 @@
-env: DockingEnv
+env: saferl.aerospace.tasks.docking.task.DockingEnv
 env_config:
   agent: deputy
   env_objs:

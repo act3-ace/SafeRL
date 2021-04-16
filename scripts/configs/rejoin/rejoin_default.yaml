@@ -1,9 +1,9 @@
-env: DubinsRejoin
+env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
 env_config:
   agent: wingman
   env_objs:
   - name: wingman
-    class: Dubins2dPlatform
+    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
       controller:
         actuators:
@@ -19,7 +19,7 @@ env_config:
         x: [-4000, 4000]
         y: [-4000, 4000]
   - name: lead
-    class: Dubins2dPlatform
+    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
       init:
         heading: [0, 6.283185307179586]
@@ -27,7 +27,7 @@ env_config:
         x: [-4000, 4000]
         y: [-4000, 4000]
   - name: rejoin_region
-    class: RelativeCircle
+    class: saferl.environment.models.geometry.RelativeCircle
     config:
       ref: lead
       aspect_angle: 60
@@ -36,7 +36,7 @@ env_config:
       track_orientation: true
   observation:
   - name: observation_processor
-    class: DubinsObservationProcessor
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsObservationProcessor
     config:
       lead: lead
       mode: magnorm
@@ -45,29 +45,29 @@ env_config:
       wingman: wingman
   reward:
   - name: rejoin_reward
-    class: RejoinRewardProcessor
+    class: saferl.aerospace.tasks.rejoin.processors.RejoinRewardProcessor
     config:
       rejoin_prev_status: in_rejoin_prev
       rejoin_status: in_rejoin
       reward: 0.1
   - name: rejoin_first_time_reward
-    class: RejoinFirstTimeRewardProcessor
+    class: saferl.aerospace.tasks.rejoin.processors.RejoinFirstTimeRewardProcessor
     config:
       rejoin_status: in_rejoin
       reward: 0.25
   - name: time_reward
-    class: TimeRewardProcessor
+    class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
     config:
       reward: -0.01
   - name: rejoin_dist_change_reward
-    class: RejoinDistanceChangeRewardProcessor
+    class: saferl.aerospace.tasks.rejoin.processors.RejoinDistanceChangeRewardProcessor
     config:
       rejoin_region: rejoin_region
       rejoin_status: in_rejoin
       reward: -1.0e-05
       wingman: wingman
   - name: failure_reward
-    class: FailureRewardProcessor
+    class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
     config:
       failure_status: failure
       reward:
@@ -75,34 +75,34 @@ env_config:
         distance: -1
         timeout: -1
   - name: success_reward
-    class: SuccessRewardProcessor
+    class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
     config:
       reward: 1
       success_status: success
   status:
   - name: in_rejoin
-    class: DubinsInRejoin
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsInRejoin
     config:
       rejoin_region: rejoin_region
       wingman: wingman
   - name: in_rejoin_prev
-    class: DubinsInRejoinPrev
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsInRejoinPrev
     config:
       rejoin_status: in_rejoin
   - name: rejoin_time
-    class: DubinsRejoinTime
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsRejoinTime
     config:
       rejoin_status: in_rejoin
   - name: time_elapsed
-    class: DubinsTimeElapsed
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsTimeElapsed
     config: {}
   - name: lead_distance
-    class: DubinsLeadDistance
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsLeadDistance
     config:
       lead: lead
       wingman: wingman
   - name: failure
-    class: DubinsFailureStatus
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsFailureStatus
     config:
       lead_distance: lead_distance
       max_goal_distance: 40000
@@ -111,7 +111,7 @@ env_config:
       time_elapsed: time_elapsed
       timeout: 1000
   - name: success
-    class: DubinsSuccessStatus
+    class: saferl.aerospace.tasks.rejoin.processors.DubinsSuccessStatus
     config:
       rejoin_time: rejoin_time
       success_time: 20

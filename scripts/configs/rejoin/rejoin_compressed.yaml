@@ -1,4 +1,4 @@
-env: DubinsRejoin
+env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
 env_config:
   agent: wingman
   env_objs:

@@ -1,5 +1,5 @@
 name: failure
-class: DubinsFailureStatus
+class: saferl.aerospace.tasks.rejoin.processors.DubinsFailureStatus
 config:
   lead_distance: lead_distance
   max_goal_distance: 40000

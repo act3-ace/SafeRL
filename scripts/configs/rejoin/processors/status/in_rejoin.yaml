@@ -1,5 +1,5 @@
 name: in_rejoin
-class: DubinsInRejoin
+class: saferl.aerospace.tasks.rejoin.processors.DubinsInRejoin
 config:
   rejoin_region: rejoin_region
   wingman: wingman

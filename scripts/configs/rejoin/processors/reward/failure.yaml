@@ -1,5 +1,5 @@
 name: failure_reward
-class: FailureRewardProcessor
+class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
 config:
   failure_status: failure
   reward:
