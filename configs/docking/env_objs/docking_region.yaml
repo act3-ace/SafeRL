@@ -1,0 +1,7 @@
+name: docking_region
+class: saferl.environment.models.geometry.RelativeCircle
+config:
+  ref: chief
+  x_offset: 0
+  y_offset: 0
+  radius: 20

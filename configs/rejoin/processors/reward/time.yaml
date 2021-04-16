@@ -1,0 +1,4 @@
+name: time_reward
+class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
+config:
+  reward: -0.01
