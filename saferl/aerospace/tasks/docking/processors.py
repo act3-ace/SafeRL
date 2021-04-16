@@ -27,6 +27,34 @@ class DockingObservationProcessor(ObservationProcessor):
         obs = env_objs['deputy'].state.vector
         return obs
 
+class DockingObservationProcessorOriented(ObservationProcessor):
+    def __init__(self, config):
+        super().__init__(config=config)
+
+        # Initialize member variables from config
+        self.mode = self.config["mode"]
+        self.deputy = self.config["deputy"]
+
+        low = np.finfo(np.float32).min
+        high = np.finfo(np.float32).max
+
+        if self.config['mode'] == '2d':
+            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
+            self.norm_const = np.array([1000, 1000, np.pi, 100, 100, 0.4, 500])
+        elif self.config['mode'] == '3d':
+            raise NotImplementedError
+        else:
+            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.config['mode']))
+
+    def generate_observation(self, env_objs):
+        obs = env_objs['deputy'].state.vector
+
+        # if self.config['mode'] == '2d':
+        #     obs[2]
+
+        obs = obs / self.norm_const
+        return obs
+
 
 class TimeRewardProcessor(RewardProcessor):
     def __init__(self, config):
