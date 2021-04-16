@@ -418,14 +418,154 @@ docking_config = {
     "verbose": False
 }
 
+docking_oriented_config = {
+    "env_objs": [
+        {
+            "name": "deputy",
+            "class": CWHSpacecraftOriented2d,
+            "config": {
+                'controller': {
+                    'actuators': [
+                        {
+                            'name': 'thrust',
+                            'space': 'discrete',
+                            'points': 11,
+                            'bounds': [-10, 10]
+                        },
+                        {
+                            'name': 'reaction_wheel',
+                            'space': 'discrete',
+                            'points': 11,
+                        },
+                    ]
+                },
+                "init": {
+                    'x': -1000,
+                    'y': 0,
+                    'theta': [0, 2*np.pi],
+                    'x_dot': 0,
+                    'y_dot': 0,
+                }
+            },
+        },
+        {
+            "name": "chief",
+            "class": CWHSpacecraft2d,
+            "config": {
+                "init": {
+                    'x': 0,
+                    'y': 0,
+                    'x_dot': 0,
+                    'y_dot': 0,
+                }
+            },
+
+        },
+        {
+            "name": "docking_region",
+            "class": RelativeCircle,
+            "config": {
+                'ref': 'chief',
+                'x_offset': 0,
+                'y_offset': 0,
+                'radius': 50,
+                "init": {}
+            },
+        },
+    ],
+    "agent": "deputy",
+    "status": [
+        {
+            "name": "docking_status",
+            "class": DockingStatusProcessor,
+            "config": {
+                "docking_region": "docking_region",
+                "deputy": "deputy"
+            }
+        },
+        {
+            "name": "docking_distance",
+            "class": DockingDistanceStatusProcessor,
+            "config": {
+                "docking_region": "docking_region",
+                "deputy": "deputy"
+            }
+        },
+        {
+            "name": "failure",
+            "class": FailureStatusProcessor,
+            "config": {
+                'timeout': 1000,
+                "docking_distance": "docking_distance",
+                "max_goal_distance": 40000
+            }
+        },
+        {
+            "name": "success",
+            "class": SuccessStatusProcessor,
+            "config": {
+                "docking_status": "docking_status",
+            }
+        },
+    ],
+    "observation": [
+        {
+            "name": "observation_processor",
+            "class": DockingObservationProcessorOriented,
+            "config": {
+                'deputy': 'deputy',
+                'mode': '2d',
+            }
+        }
+    ],
+    "reward": [
+        {
+            "name": "time_reward",
+            "class": TimeRewardProcessor,
+            "config": {
+                'reward': -0.01,
+            }
+        },
+        {
+            "name": "dist_change_reward",
+            "class": DistanceChangeRewardProcessor,
+            "config": {
+                "deputy": "deputy",
+                "docking_region": "docking_region",
+                'reward': -0.001,
+            }
+        },
+        {
+            "name": "failure_reward",
+            "class": FailureRewardProcessor,
+            "config": {
+                "failure_status": "failure",
+                "reward": {
+                    'timeout': -1,
+                    'crash': -1,
+                    'distance': -1,
+                }
+            }
+        },
+        {
+            "name": "success_reward",
+            "class": SuccessRewardProcessor,
+            "config": {
+                "success_status": "success",
+                'reward': 1,
+            }
+        },
+    ],
+    "verbose": False
+}
 
 # --------------- Register environment ----------------------
 
-config['env_config'] = rejoin_config
-config['env'] = DubinsRejoin
+config['env_config'] = docking_oriented_config
+config['env'] = DockingEnv
 
 stop_dict = {
-    'training_iteration': 200,
+    'training_iteration': 1000,
 }
 
 
@@ -461,6 +601,6 @@ if __name__ == "__main__":
     from abc import ABCMeta
     Representer.add_representer(ABCMeta, Representer.represent_name)
 
-    DEBUG = True
+    DEBUG = False
 
     main(debug=DEBUG)
