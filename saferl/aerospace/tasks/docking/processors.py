@@ -23,7 +23,11 @@ class DockingObservationProcessor(ObservationProcessor):
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.config['mode']))
 
-    def generate_observation(self, env_objs):
+    # def generate_observation(self, env_objs):
+    #     obs = env_objs['deputy'].state.vector
+    #     return obs
+
+    def _process(self, env_objs, status):
         obs = env_objs['deputy'].state.vector
         return obs
 
@@ -44,18 +48,28 @@ class TimeRewardProcessor(RewardProcessor):
 class DistanceChangeRewardProcessor(RewardProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        self.prev_distance = 0
+        # self.prev_distance = 0
         self.deputy = self.config["deputy"]
         self.docking_region = self.config["docking_region"]
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
+        super().reset(env_objs=env_objs, status=status)
+        self.cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
         self.prev_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
 
-    def generate_reward(self, env_objs, timestep, status):
-        cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
-        dist_change = cur_distance - self.prev_distance
-        self.prev_distance = cur_distance
+    # def generate_reward(self, env_objs, timestep, status):
+    #     cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
+    #     dist_change = cur_distance - self.prev_distance
+    #     self.prev_distance = cur_distance
+    #     step_reward = dist_change * self.reward
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        self.prev_distance = self.cur_distance
+        self.cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
+
+    def _process(self, env_objs, status):
+        dist_change = self.cur_distance - self.prev_distance
         step_reward = dist_change * self.reward
         return step_reward
 
@@ -63,18 +77,28 @@ class DistanceChangeRewardProcessor(RewardProcessor):
 class DistanceChangeZRewardProcessor(RewardProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        self.prev_distance = 0
+        # self.prev_distance = 0
         self.deputy = self.config["deputy"]
         self.docking_region = self.config["docking_region"]
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
-        self.prev_distance = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
+    def reset(self, env_objs, status):
+        super().reset(env_objs=env_objs, status=status)
+        self.prev_z_distance = 0
+        self.cur_z_distance = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
 
-    def generate_reward(self, env_objs, timestep, status):
-        cur_distance_z = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
-        dist_z_change = cur_distance_z - self.prev_distance
-        self.prev_distance = cur_distance_z
+    # def generate_reward(self, env_objs, timestep, status):
+    #     cur_distance_z = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
+    #     dist_z_change = cur_distance_z - self.prev_distance
+    #     self.prev_distance = cur_distance_z
+    #     step_reward = dist_z_change * self.reward
+    #     return step_reward
+
+    def _increment(self, env_objs, timestep, status):
+        self.prev_z_distance = self.cur_z_distance
+        self.cur_z_distance = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
+
+    def _process(self, env_objs, status):
+        dist_z_change = self.cur_z_distance - self.prev_z_distance
         step_reward = dist_z_change * self.reward
         return step_reward
 
@@ -117,7 +141,18 @@ class DockingStatusProcessor(StatusProcessor):
         self.docking_region = self.config["docking_region"]
         self.deputy = self.config["deputy"]
 
-    def generate_status(self, env_objs, timestep, status, old_status):
+    # def generate_status(self, env_objs, timestep, status, old_status):
+    #     in_docking = env_objs[self.docking_region].contains(env_objs[self.deputy])
+    #     return in_docking
+
+    def reset(self, env_objs, status):
+        ...
+
+    def _increment(self, env_objs, timestep, status):
+        # status derived directly from simulation state. No state machine necessary
+        ...
+
+    def _process(self, env_objs, status):
         in_docking = env_objs[self.docking_region].contains(env_objs[self.deputy])
         return in_docking
 
@@ -128,7 +163,18 @@ class DockingDistanceStatusProcessor(StatusProcessor):
         self.docking_region = self.config["docking_region"]
         self.deputy = self.config["deputy"]
 
-    def generate_status(self, env_objs, timestep, status, old_status):
+    # def generate_status(self, env_objs, timestep, status, old_status):
+    #     docking_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
+    #     return docking_distance
+
+    def reset(self, env_objs, status):
+        ...
+
+    def _increment(self, env_objs, timestep, status):
+        # status derived directly from simulation state. No state machine necessary
+        ...
+
+    def _process(self, env_objs, status):
         docking_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
         return docking_distance
 
@@ -136,18 +182,33 @@ class DockingDistanceStatusProcessor(StatusProcessor):
 class FailureStatusProcessor(StatusProcessor):
     def __init__(self, config):
         super().__init__(config=config)
-        self.time_elapsed = 0
+        # self.time_elapsed = 0
         self.timeout = self.config["timeout"]
         self.docking_distance = self.config["docking_distance"]
         self.max_goal_distance = self.config["max_goal_distance"]
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
+        # super().reset(env_objs=env_objs)
         self.time_elapsed = 0
 
-    def generate_status(self, env_objs, timestep, status, old_status):
+    # def generate_status(self, env_objs, timestep, status, old_status):
+    #     self.time_elapsed += timestep
+    #
+    #     if self.time_elapsed > self.timeout:
+    #         failure = 'timeout'
+    #     elif status[self.docking_distance] >= self.max_goal_distance:
+    #         failure = 'distance'
+    #     else:
+    #         failure = False
+    #
+    #     return failure
+
+    def _increment(self, env_objs, timestep, status):
+        # increment internal state
         self.time_elapsed += timestep
 
+    def _process(self, env_objs, status):
+        # process state and return status
         if self.time_elapsed > self.timeout:
             failure = 'timeout'
         elif status[self.docking_distance] >= self.max_goal_distance:
@@ -164,5 +225,17 @@ class SuccessStatusProcessor(StatusProcessor):
         self.docking_status = self.config["docking_status"]
 
     def generate_status(self, env_objs, timestep, status, old_status):
+        success = status[self.docking_status]
+        return success
+
+    def reset(self, env_objs, status):
+        ...
+
+    def _increment(self, env_objs, timestep, status):
+        # status derived directly from simulation state, therefore no state machine needed
+        ...
+
+    def _process(self, env_objs, status):
+        # process stare and return status
         success = status[self.docking_status]
         return success
