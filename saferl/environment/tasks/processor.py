@@ -98,7 +98,7 @@ class StatusProcessor(Processor):
 
     @abc.abstractmethod
     def reset(self, env_objs, status):
-        # reset internal state and return new status value
+        # reset internal state
         raise NotImplementedError
 
     def _generate_info(self) -> dict:
