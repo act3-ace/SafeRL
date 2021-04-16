@@ -53,7 +53,7 @@ class DistanceChangeRewardProcessor(RewardProcessor):
         self.prev_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
 
     def generate_reward(self, env_objs, timestep, status):
-        cur_distance = distance(env_objs[self.docking_region], env_objs[self.docking_region])
+        cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
         step_reward = dist_change * self.reward
