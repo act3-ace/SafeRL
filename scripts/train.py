@@ -20,6 +20,7 @@ from saferl.environment.utils import YAMLParser
 
 # Training defaults
 
+CONFIG = '../configs/docking_default.yaml'
 OUTPUT_DIR = './output'
 NUM_LOGGING_WORKERS = 1
 LOGGING_INTERVAL = 10  # log every 10th episode
@@ -39,18 +40,19 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # Add parser arguments
-    parser.add_argument('--config', type=str)
-    parser.add_argument('--debug', default=False, action="store_true")
-    parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR)
-    parser.add_argument('--logging_workers', type=int, default=NUM_LOGGING_WORKERS)
-    parser.add_argument('--log_interval', type=int, default=LOGGING_INTERVAL)
-    parser.add_argument('--checkpoint_freq', type=int, default=CHECKPOINT_FREQUENCY)
-    parser.add_argument('--cuda_visible', type=str, default=CUDA_VISIBLE_DEVICES)
-    parser.add_argument('--gpus', type=int, default=NUM_GPUS)
-    parser.add_argument('--workers', type=int, default=NUM_WORKERS)
-    parser.add_argument('--fake_gpus', default=False, action="store_true")
-    parser.add_argument('--seed', type=int, default=SEED)
-    parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION)
+    parser.add_argument('--config', type=str, default=CONFIG, help="path to configuration file")
+    parser.add_argument('--debug', default=False, action="store_true", help="set debug state to True")
+    parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR, help="path to output directory")
+    parser.add_argument('--logging_workers', type=int, default=NUM_LOGGING_WORKERS,
+                        help="number of workers for logging")
+    parser.add_argument('--log_interval', type=int, default=LOGGING_INTERVAL, help="number of episodes between logging")
+    parser.add_argument('--checkpoint_freq', type=int, default=CHECKPOINT_FREQUENCY, help="tune checkpoint frequency")
+    parser.add_argument('--cuda_visible', type=str, default=CUDA_VISIBLE_DEVICES, help="list of cuda visible devices")
+    parser.add_argument('--gpus', type=int, default=NUM_GPUS, help="number of gpus used for training")
+    parser.add_argument('--workers', type=int, default=NUM_WORKERS, help="number of cpu workers used for training")
+    parser.add_argument('--fake_gpus', default=False, action="store_true", help="use simulated gpus")
+    parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
+    parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
 
     args = parser.parse_args()
 
