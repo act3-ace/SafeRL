@@ -1,0 +1,5 @@
+name: observation_processor
+class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
+config:
+  deputy: deputy
+  mode: 2d
