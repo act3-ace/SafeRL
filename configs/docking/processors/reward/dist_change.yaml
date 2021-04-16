@@ -3,4 +3,4 @@ class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
 config:
   deputy: deputy
   docking_region: docking_region
-  reward: -1.0e-05
+  reward: -1.0e-03
