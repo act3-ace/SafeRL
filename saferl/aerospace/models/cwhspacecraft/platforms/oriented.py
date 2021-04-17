@@ -3,7 +3,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import copy
 
-from saferl.environment.models import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
+from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
     BaseActuatorSet, BaseLinearODESolverDynamics
 
 class CWHSpacecraftOriented2d(BasePlatform):

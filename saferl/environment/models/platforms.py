@@ -262,7 +262,10 @@ class BasePlatform(BaseEnvObj):
         if config is None:
             self.init_dict = None
         else:
-            self.init_dict = config["init"]
+            if "init" in config.keys():
+                self.init_dict = config["init"]
+            else:
+                self.init_dict = {}
 
         self.reset(**kwargs)
 
