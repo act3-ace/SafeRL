@@ -1,0 +1,5 @@
+name: lead_distance
+class: saferl.aerospace.tasks.rejoin.processors.DubinsLeadDistance
+config:
+  lead: lead
+  wingman: wingman

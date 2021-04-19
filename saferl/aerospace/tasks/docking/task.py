@@ -1,4 +1,4 @@
-from saferl.environment import BaseEnv
+from saferl.environment.tasks.env import BaseEnv
 from saferl.environment.utils import setup_env_objs_from_config
 
 

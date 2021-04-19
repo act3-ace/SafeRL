@@ -4,8 +4,8 @@ import math
 
 from scipy.spatial.transform import Rotation
 
-from saferl.environment.tasks import ObservationProcessor, RewardProcessor, StatusProcessor
-from saferl.environment.models import distance
+from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
+from saferl.environment.models.geometry import distance
 
 
 class DubinsObservationProcessor(ObservationProcessor):

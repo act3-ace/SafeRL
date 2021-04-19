@@ -1,0 +1,25 @@
+env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
+env_config:
+  agent: wingman
+  env_objs:
+  - "!file:./env_objs/wingman.yaml"
+  - "!file:./env_objs/lead.yaml"
+  - "!file:./env_objs/rejoin_region.yaml"
+  observation:
+  - "!file:./processors/observation/observation_processor.yaml"
+  reward:
+  - "!file:./processors/reward/rejoin.yaml"
+  - "!file:./processors/reward/rejoin_first.yaml"
+  - "!file:./processors/reward/time.yaml"
+  - "!file:./processors/reward/distance_change.yaml"
+  - "!file:./processors/reward/failure.yaml"
+  - "!file:./processors/reward/success.yaml"
+  status:
+  - "!file:./processors/status/in_rejoin.yaml"
+  - "!file:./processors/status/in_rejoin_prev.yaml"
+  - "!file:./processors/status/rejoin_time.yaml"
+  - "!file:./processors/status/time_elapsed.yaml"
+  - "!file:./processors/status/lead_distance.yaml"
+  - "!file:./processors/status/failure.yaml"
+  - "!file:./processors/status/success.yaml"
+  verbose: false
