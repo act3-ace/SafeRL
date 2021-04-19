@@ -1,0 +1,6 @@
+name: rejoin_reward
+class: saferl.aerospace.tasks.rejoin.processors.RejoinRewardProcessor
+config:
+  rejoin_prev_status: in_rejoin_prev
+  rejoin_status: in_rejoin
+  reward: 0.1
