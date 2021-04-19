@@ -1,8 +1,8 @@
 import gym.spaces
 import numpy as np
 
-from saferl.environment.tasks import ObservationProcessor, RewardProcessor, StatusProcessor
-from saferl.environment.models import distance
+from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
+from saferl.environment.models.geometry import distance
 
 
 class DockingObservationProcessor(ObservationProcessor):
@@ -49,7 +49,7 @@ class DistanceChangeRewardProcessor(RewardProcessor):
         self.prev_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
 
     def generate_reward(self, env_objs, timestep, status):
-        cur_distance = distance(env_objs[self.docking_region], env_objs[self.docking_region])
+        cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
         dist_change = cur_distance - self.prev_distance
         self.prev_distance = cur_distance
         step_reward = dist_change * self.reward

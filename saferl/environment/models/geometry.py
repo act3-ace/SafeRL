@@ -204,7 +204,10 @@ class RelativeGeometry(BaseEnvObj):
 
         self.shape = shape
 
-        self.init_dict = init
+        if init is None:
+            self.init_dict = {}
+        else:
+            self.init_dict = init
 
         self.ref.register_dependent_obj(self)
         self.update()
