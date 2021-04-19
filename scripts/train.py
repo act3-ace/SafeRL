@@ -20,7 +20,7 @@ from saferl.environment.utils import YAMLParser
 
 # Training defaults
 
-CONFIG = '../configs/docking_default.yaml'
+CONFIG = '../configs/docking/docking_default.yaml'
 OUTPUT_DIR = './output'
 NUM_LOGGING_WORKERS = 1
 LOGGING_INTERVAL = 10  # log every 10th episode
