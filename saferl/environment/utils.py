@@ -1,7 +1,11 @@
-import numpy as np
 import io
+import os
 
-from saferl.environment.models import BaseGeometry, RelativeGeometry, geo_from_config
+import yaml
+
+import numpy as np
+
+from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
 
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
@@ -44,3 +48,60 @@ def setup_env_objs_from_config(config):
             agent = obj
 
     return agent, env_objs
+
+
+class YAMLParser:
+
+    COMMAND_CHAR = '!'
+
+    def __init__(self, yaml_file, lookup):
+        self.commands = {
+            "file": self.file_command
+        }
+        self.yaml_path = os.path.abspath(yaml_file)
+        self.working_dir = os.path.dirname(self.yaml_path)
+        self.lookup = lookup
+
+    def parse_env(self):
+        with open(self.yaml_path, 'r') as f:
+            config = yaml.load(f)
+        assert "env" in config.keys(), "environment config missing required field: env"
+        assert "env_config" in config.keys(), "environment config missing required field: env_config"
+        env_str = config["env"]
+        env_config = config["env_config"]
+        env = self.lookup[env_str]
+        env_config = self.process_yaml_items(env_config)
+        return env, env_config
+
+    def process_yaml_items(self, target):
+        if isinstance(target, dict):
+            for k, v in target.items():
+                target[k] = self.process_yaml_items(v)
+        elif isinstance(target, str):
+            target = self.process_str(target)
+        elif isinstance(target, list):
+            # Remove redundant dimensions
+            # if len(target) == 1 and isinstance(target[0], list):
+            #     target = target[0]
+            target = [self.process_yaml_items(i) for i in target]
+        return target
+
+    def process_str(self, input_str):
+        if input_str[0] == "!":
+            command, value = input_str[1:].split(":", 1)
+            value = self.commands[command](value)
+        elif input_str in self.lookup.keys():
+            value = self.lookup[input_str]
+        else:
+            value = input_str
+        return value
+
+    def file_command(self, value):
+        path = os.path.abspath(os.path.join(self.working_dir, value))
+        old_working_dir = self.working_dir
+        self.working_dir = os.path.dirname(path)
+        with open(path, 'r') as f:
+            contents = yaml.load(f)
+        target = self.process_yaml_items(contents)
+        self.working_dir = old_working_dir
+        return target

@@ -1,0 +1,5 @@
+name: rejoin_first_time_reward
+class: saferl.aerospace.tasks.rejoin.processors.RejoinFirstTimeRewardProcessor
+config:
+  rejoin_status: in_rejoin
+  reward: 0.25
