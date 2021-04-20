@@ -37,6 +37,10 @@ class ObservationManager(Manager):
         # All processors should have same observation space
         self.observation_space = self.processors[0].observation_space
 
+    def reset(self, env_objs, status):
+        super().reset(env_objs, status)
+        self.obs = None
+        
     def _generate_info(self) -> dict:
         info = {}
         return info
@@ -96,6 +100,7 @@ class RewardManager(Manager):
 
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
+        self.step_value = 0
         self.total_value = 0
 
     def generate_components(self):
