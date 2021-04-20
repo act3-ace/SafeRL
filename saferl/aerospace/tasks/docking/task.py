@@ -29,6 +29,7 @@ class DockingEnv(BaseEnv):
             'success': self.status_dict['success'],
             'status': self.status_dict,
             'reward': self.reward_manager._generate_info(),
+            'timestep_size': self.timestep
         }
 
         return info

@@ -68,7 +68,7 @@ class RewardComponentsCallback:
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        env_index: int, **kwargs):
         ep_info = episode.last_info_for()
-        for reward_comp_name, reward_comp_val in ep_info['reward']['component_totals'].items():
+        for reward_comp_name, reward_comp_val in ep_info['reward']['components']['total'].items():
             episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val
 
 

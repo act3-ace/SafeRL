@@ -30,6 +30,7 @@ class BaseEnv(gym.Env):
 
         self.timestep = 1  # TODO
 
+        self.status_dict = {}
         self.reset()
 
     def seed(self, seed=None):
@@ -68,13 +69,10 @@ class BaseEnv(gym.Env):
             init_dict_draw = draw_from_rand_bounds_dict(init_dict)
             obj.reset(**init_dict_draw)
 
-        # reset processor objects
-        self.reward_manager.reset(env_objs=self.env_objs)
-        self.observation_manager.reset(env_objs=self.env_objs)
-        self.status_manager.reset(env_objs=self.env_objs)
-
-        # reset status dict
-        self.status_dict = self.status_manager.status
+        # reset processor objects and status_dict
+        self.status_dict = self.status_manager.reset(env_objs=self.env_objs, status=self.status_dict)
+        self.reward_manager.reset(env_objs=self.env_objs, status=self.status_dict)
+        self.observation_manager.reset(env_objs=self.env_objs, status=self.status_dict)
 
         # generate reset state observations
         obs = self._generate_obs()
@@ -100,8 +98,7 @@ class BaseEnv(gym.Env):
         self.observation_manager.step(
             env_objs=self.env_objs,
             timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            status=deepcopy(self.status_dict)
         )
         return self.observation_manager.obs
 
@@ -109,8 +106,7 @@ class BaseEnv(gym.Env):
         self.reward_manager.step(
             env_objs=self.env_objs,
             timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            status=deepcopy(self.status_dict)
         )
         return self.reward_manager.step_value
 
@@ -118,8 +114,7 @@ class BaseEnv(gym.Env):
         self.status_manager.step(
             env_objs=self.env_objs,
             timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            status=deepcopy(self.status_dict)
         )
         return self.status_manager.status
 
