@@ -96,6 +96,7 @@ class RewardManager(Manager):
 
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
+        self.total_value = 0
 
     def generate_components(self):
         """helper method to organize reward components"""
