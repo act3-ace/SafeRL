@@ -99,7 +99,7 @@ class RewardManager(Manager):
         self.total_value = 0
 
     def reset(self, env_objs, status):
-        super().reset(env_objs=env_objs, status=status)
+        super().reset(env_objs, status)
         self.step_value = 0
         self.total_value = 0
 
