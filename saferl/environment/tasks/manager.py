@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 
 
 class Manager(abc.ABC):
@@ -8,19 +9,14 @@ class Manager(abc.ABC):
         # Register and initialize processors
         self.processors = [p_config["class"](config=p_config) for p_config in config]
 
-    def reset(self, env_objs):
+    def reset(self, env_objs, status):
         for p in self.processors:
-            p.reset(env_objs)
+            p.reset(env_objs, status)
 
-    def step(self, env_objs, timestep, status, old_status):
-        for processor in self.processors:
-            self._handle_processor(
-                processor=processor,
-                env_objs=env_objs,
-                timestep=timestep,
-                status=status,
-                old_status=old_status
-            )
+    @abc.abstractmethod
+    def step(self, env_objs, timestep, status):
+        """increment and process processors and return resulting value"""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def _generate_info(self) -> dict:
@@ -28,8 +24,8 @@ class Manager(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        """Handle processor"""
+    def process(self, env_objs, status):
+        """iteratively process processors and return resulting value"""
         raise NotImplementedError
 
 
@@ -41,19 +37,27 @@ class ObservationManager(Manager):
         # All processors should have same observation space
         self.observation_space = self.processors[0].observation_space
 
+    def reset(self, env_objs, status):
+        super().reset(env_objs, status)
+        self.obs = None
+        
     def _generate_info(self) -> dict:
         info = {}
         return info
 
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        # TODO: Implement multiple observations stored in self.obs
-        processor.step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        self.obs = processor.obs
+    def step(self, env_objs, timestep, status):
+        obs_list = []
+        for processor in self.processors:
+            obs_list.append(processor.step(env_objs, timestep, status))
+        self.obs = np.concatenate(obs_list)
+        return self.obs
+
+    def process(self, env_objs, status):
+        obs_list = []
+        for processor in self.processors:
+            obs_list.append(processor.process(env_objs, status))
+        obs = np.concatenate(obs_list)
+        return obs
 
 
 class StatusManager(Manager):
@@ -61,9 +65,13 @@ class StatusManager(Manager):
         super().__init__(config=config)
         self.status = {}
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
+    def reset(self, env_objs, status):
+        # construct new status from initial environment
         self.status = {}
+        for p in self.processors:
+            p.reset(env_objs, self.status)
+            self.status[p.name] = p.process(env_objs, self.status)
+        return self.status
 
     def _generate_info(self) -> dict:
         info = {
@@ -71,14 +79,17 @@ class StatusManager(Manager):
         }
         return info
 
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        processor.step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        self.status = status
+    def step(self, env_objs, timestep, status):
+        self.status = {}
+        for processor in self.processors:
+            self.status[processor.name] = processor.step(env_objs, timestep, self.status)
+        return self.status
+
+    def process(self, env_objs, status):
+        status = {}
+        for processor in self.processors:
+            status[processor.name] = processor.process(env_objs, status)
+        return status
 
 
 class RewardManager(Manager):
@@ -87,38 +98,37 @@ class RewardManager(Manager):
         self.step_value = 0
         self.total_value = 0
 
-        # Initialize components
-        self.components = {p.name: 0 for p in self.processors}
+    def reset(self, env_objs, status):
+        super().reset(env_objs, status)
+        self.step_value = 0
+        self.total_value = 0
 
-    def reset(self, env_objs):
-        super().reset(env_objs=env_objs)
-        self.components = {p.name: 0 for p in self.processors}
+    def generate_components(self):
+        """helper method to organize reward components"""
+        components = {"step": {}, "total": {}}
+        for p in self.processors:
+            components["step"][p.name] = p.get_step_value()
+            components["total"][p.name] = p.get_total_value()
+        return components
 
     def _generate_info(self):
         info = {
             'step': self.step_value,
-            'component_totals': self.components,
+            'components': self.generate_components(),
             'total': self.total_value,
         }
 
         return info
 
-    def step(self, env_objs, timestep, status, old_status):
+    def step(self, env_objs, timestep, status):
         self.step_value = 0
-        super().step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
+        for processor in self.processors:
+            self.step_value += processor.step(env_objs, timestep, status)
         self.total_value += self.step_value
+        return self.step_value
 
-    def _handle_processor(self, processor, env_objs, timestep, status, old_status):
-        processor.step(
-            env_objs=env_objs,
-            timestep=timestep,
-            status=status,
-            old_status=old_status
-        )
-        self.step_value += processor.step_value
-        self.components[processor.name] += processor.step_value
+    def process(self, env_objs, status):
+        step_value = 0
+        for processor in self.processors:
+            step_value += processor.process(env_objs, status)
+        return step_value
