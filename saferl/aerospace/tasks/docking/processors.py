@@ -37,9 +37,9 @@ class TimeRewardProcessor(RewardProcessor):
         self.previous_step_size = 0
 
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # update state
-        self.previous_step_size = timestep
+        self.previous_step_size = step_size
 
     def _process(self, env_objs, status):
         step_reward = self.previous_step_size * self.reward
@@ -57,7 +57,7 @@ class DistanceChangeRewardProcessor(RewardProcessor):
         self.cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
         self.prev_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         self.prev_distance = self.cur_distance
         self.cur_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
 
@@ -78,7 +78,7 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
         self.prev_z_distance = 0
         self.cur_z_distance = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         self.prev_z_distance = self.cur_z_distance
         self.cur_z_distance = abs(env_objs[self.deputy].z - env_objs[self.docking_region].z)
 
@@ -93,7 +93,7 @@ class SuccessRewardProcessor(RewardProcessor):
         super().__init__(config=config)
         self.success_status = self.config["success_status"]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # reward derived straight from status dict, therefore no state machine necessary
         ...
 
@@ -109,7 +109,7 @@ class FailureRewardProcessor(RewardProcessor):
         super().__init__(config=config)
         self.failure_status = self.config["failure_status"]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # reward derived straight from status dict, therefore no state machine necessary
         ...
 
@@ -129,7 +129,7 @@ class DockingStatusProcessor(StatusProcessor):
     def reset(self, env_objs, status):
         ...
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # status derived directly from simulation state. No state machine necessary
         ...
 
@@ -147,7 +147,7 @@ class DockingDistanceStatusProcessor(StatusProcessor):
     def reset(self, env_objs, status):
         ...
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # status derived directly from simulation state. No state machine necessary
         ...
 
@@ -166,9 +166,9 @@ class FailureStatusProcessor(StatusProcessor):
     def reset(self, env_objs, status):
         self.time_elapsed = 0
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # increment internal state
-        self.time_elapsed += timestep
+        self.time_elapsed += step_size
 
     def _process(self, env_objs, status):
         # process state and return status
@@ -190,7 +190,7 @@ class SuccessStatusProcessor(StatusProcessor):
     def reset(self, env_objs, status):
         ...
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # status derived directly from simulation state, therefore no state machine needed
         ...
 

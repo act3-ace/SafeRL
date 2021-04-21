@@ -28,7 +28,7 @@ class BaseEnv(gym.Env):
         self._setup_action_space()
         self._setup_obs_space()
 
-        self.timestep = 1  # TODO
+        self.step_size = 1  # TODO
 
         self.status_dict = {}
         self.reset()
@@ -97,7 +97,7 @@ class BaseEnv(gym.Env):
         # TODO: Handle multiple observations
         self.observation_manager.step(
             env_objs=self.env_objs,
-            timestep=self.timestep,
+            step_size=self.step_size,
             status=deepcopy(self.status_dict)
         )
         return self.observation_manager.obs
@@ -105,7 +105,7 @@ class BaseEnv(gym.Env):
     def _generate_reward(self):
         self.reward_manager.step(
             env_objs=self.env_objs,
-            timestep=self.timestep,
+            step_size=self.step_size,
             status=deepcopy(self.status_dict)
         )
         return self.reward_manager.step_value
@@ -113,7 +113,7 @@ class BaseEnv(gym.Env):
     def _generate_constraint_status(self):
         self.status_manager.step(
             env_objs=self.env_objs,
-            timestep=self.timestep,
+            step_size=self.step_size,
             status=deepcopy(self.status_dict)
         )
         return self.status_manager.status
