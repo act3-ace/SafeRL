@@ -28,8 +28,9 @@ class BaseEnv(gym.Env):
         self._setup_action_space()
         self._setup_obs_space()
 
-        self.timestep = 1  # TODO
+        self.step_size = 1  # TODO
 
+        self.status_dict = {}
         self.reset()
 
     def seed(self, seed=None):
@@ -68,13 +69,10 @@ class BaseEnv(gym.Env):
             init_dict_draw = draw_from_rand_bounds_dict(init_dict)
             obj.reset(**init_dict_draw)
 
-        # reset processor objects
-        self.reward_manager.reset(env_objs=self.env_objs)
-        self.observation_manager.reset(env_objs=self.env_objs)
-        self.status_manager.reset(env_objs=self.env_objs)
-
-        # reset status dict
-        self.status_dict = self.status_manager.status
+        # reset processor objects and status_dict
+        self.status_dict = self.status_manager.reset(env_objs=self.env_objs, status=self.status_dict)
+        self.reward_manager.reset(env_objs=self.env_objs, status=self.status_dict)
+        self.observation_manager.reset(env_objs=self.env_objs, status=self.status_dict)
 
         # generate reset state observations
         obs = self._generate_obs()
@@ -99,27 +97,24 @@ class BaseEnv(gym.Env):
         # TODO: Handle multiple observations
         self.observation_manager.step(
             env_objs=self.env_objs,
-            timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            step_size=self.step_size,
+            status=deepcopy(self.status_dict)
         )
         return self.observation_manager.obs
 
     def _generate_reward(self):
         self.reward_manager.step(
             env_objs=self.env_objs,
-            timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            step_size=self.step_size,
+            status=deepcopy(self.status_dict)
         )
         return self.reward_manager.step_value
 
     def _generate_constraint_status(self):
         self.status_manager.step(
             env_objs=self.env_objs,
-            timestep=self.timestep,
-            status=deepcopy(self.status_dict),
-            old_status=deepcopy(self.status_dict)
+            step_size=self.step_size,
+            status=deepcopy(self.status_dict)
         )
         return self.status_manager.status
 
