@@ -343,7 +343,7 @@ class Dubins3dActuatorSet(BaseActuatorSet):
 
 class Dubins3dDynamics(BaseODESolverDynamics):
 
-    def __init__(self, v_min=100, v_max=1000, roll_min=-math.pi/2, roll_max=math.pi/2, *args, **kwargs):
+    def __init__(self, v_min=10, v_max=100, roll_min=-math.pi/2, roll_max=math.pi/2, *args, **kwargs):
         self.v_min = v_min
         self.v_max = v_max
         self.roll_min = roll_min
