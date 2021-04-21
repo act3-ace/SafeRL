@@ -6,7 +6,7 @@ class DockingEnv(BaseEnv):
 
     def __init__(self, config):
         super(DockingEnv, self).__init__(config)
-        self.timestep = 1
+        self.step_size = 1
 
     def _setup_env_objs(self):
         agent, env_objs = setup_env_objs_from_config(self.config)
@@ -17,8 +17,8 @@ class DockingEnv(BaseEnv):
         return super(DockingEnv, self).reset()
 
     def _step_sim(self, action):
-        self.env_objs['chief'].step(self.timestep)
-        self.env_objs['deputy'].step(self.timestep, action)
+        self.env_objs['chief'].step(self.step_size)
+        self.env_objs['deputy'].step(self.step_size, action)
 
     def _generate_info(self):
         info = {
@@ -29,6 +29,7 @@ class DockingEnv(BaseEnv):
             'success': self.status_dict['success'],
             'status': self.status_dict,
             'reward': self.reward_manager._generate_info(),
+            'timestep_size': self.step_size
         }
 
         return info
