@@ -6,7 +6,7 @@ class DubinsRejoin(BaseEnv):
 
     def __init__(self, config):
         super(DubinsRejoin, self).__init__(config)
-        self.timestep = 1
+        self.step_size = 1
 
     def _setup_env_objs(self):
         agent, env_objs = setup_env_objs_from_config(self.config)
@@ -17,8 +17,8 @@ class DubinsRejoin(BaseEnv):
         return super(DubinsRejoin, self).reset()
 
     def _step_sim(self, action):
-        self.env_objs['lead'].step(self.timestep)
-        self.env_objs['wingman'].step(self.timestep, action)
+        self.env_objs['lead'].step(self.step_size)
+        self.env_objs['wingman'].step(self.step_size, action)
 
     def _generate_info(self):
         info = {
@@ -29,7 +29,7 @@ class DubinsRejoin(BaseEnv):
             'success': self.status_dict['success'],
             'status': self.status_dict,
             'reward': self.reward_manager._generate_info(),
-            'timestep_size': self.timestep
+            'timestep_size': self.step_size
         }
 
         return info
