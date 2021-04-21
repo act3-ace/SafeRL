@@ -18,7 +18,7 @@ env_config:
           points: 5
       init:
         heading: [0, 0]
-        v: [100, 100]
+        v: [10, 100]
         x: [0, 0]
         y: [0, 0]
         z: [0, 0]
@@ -27,7 +27,7 @@ env_config:
     config:
       init:
         heading: [0, 0]
-        v: [150, 150]
+        v: [50, 50]
         x: [2000, 2000]
         y: [0, 0]
         z: [0, 0]
