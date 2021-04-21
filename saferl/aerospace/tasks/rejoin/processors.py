@@ -80,21 +80,21 @@ class RejoinRewardProcessor(RewardProcessor):
 
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
-        self.timestep_size = 0
-        self.in_rejoin_for_timestep = False
+        self.step_size = 0
+        self.in_rejoin_for_step = False
         self.left_rejoin = False
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # Update state variables
         self.left_rejoin = False
-        self.in_rejoin_for_timestep = False
-        self.timestep_size = timestep
+        self.in_rejoin_for_step = False
+        self.step_size = step_size
 
         in_rejoin = status[self.rejoin_status]
         in_rejoin_prev = status[self.rejoin_prev_status]
         if in_rejoin and in_rejoin_prev:
             # determine if agent was in rejoin for duration of timestep
-            self.in_rejoin_for_timestep = True
+            self.in_rejoin_for_step = True
         elif not in_rejoin and in_rejoin_prev:
             # if rejoin region is left, refund all accumulated rejoin reward
             #   this is to ensure that the agent doesn't infinitely enter and leave rejoin region
@@ -103,8 +103,8 @@ class RejoinRewardProcessor(RewardProcessor):
     def _process(self, env_objs, status):
         # process state variables and return appropriate reward
         step_reward = 0
-        if self.in_rejoin_for_timestep:
-            step_reward = self.reward * self.timestep_size
+        if self.in_rejoin_for_step:
+            step_reward = self.reward * self.step_size
         elif self.left_rejoin:
             step_reward = -1 * self.total_value
         return step_reward
@@ -123,7 +123,7 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
         self.rejoin_first_time_applied = False
         self.in_rejoin = status[self.rejoin_status]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # return step_value of reward accumulated during interval of size timestep
         if self.rejoin_first_time:
             # if first time flag true, first time reward has already been applied
@@ -158,7 +158,7 @@ class RejoinDistanceChangeRewardProcessor(RewardProcessor):
         self.cur_distance = self.prev_distance
         self.in_rejoin = status[self.rejoin_status]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # Update state variables
         self.prev_distance = self.cur_distance
         self.cur_distance = distance(env_objs[self.wingman], env_objs[self.rejoin_region])
@@ -183,7 +183,7 @@ class DubinsInRejoin(StatusProcessor):
     def reset(self, env_objs, status):
         ...
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # this status comes from first principles of the environment and therefore does not require a state machine
         ...
 
@@ -203,7 +203,7 @@ class DubinsInRejoinPrev(StatusProcessor):
         self.in_rejoin_prev = False
         self.in_rejoin_current = status[self.rejoin_status]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # update rejoin region state variables
         self.in_rejoin_prev = self.in_rejoin_current
         self.in_rejoin_current = status[self.rejoin_status]
@@ -223,11 +223,11 @@ class DubinsRejoinTime(StatusProcessor):
         self.rejoin_time = 0
         self.in_rejoin = status[self.rejoin_status]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # update state
         self.in_rejoin = status[self.rejoin_status]
         if self.in_rejoin:
-            self.rejoin_time += timestep
+            self.rejoin_time += step_size
         else:
             self.rejoin_time = 0
 
@@ -243,9 +243,9 @@ class DubinsTimeElapsed(StatusProcessor):
     def reset(self, env_objs, status):
         self.time_elapsed = 0
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # update status
-        self.time_elapsed += timestep
+        self.time_elapsed += step_size
 
     def _process(self, env_objs, status):
         # return the current status
@@ -262,7 +262,7 @@ class DubinsLeadDistance(StatusProcessor):
     def reset(self, env_objs, status):
         ...
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # this status comes from first principles of the environment and therefore does not require a state machine
         ...
 
@@ -287,7 +287,7 @@ class DubinsFailureStatus(StatusProcessor):
         self.lead_distance = status[self.lead_distance_key]
         self.time_elapsed = status[self.time_elapsed_key]
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # update state
         self.lead_distance = status[self.lead_distance_key]
         self.time_elapsed = status[self.time_elapsed_key]
