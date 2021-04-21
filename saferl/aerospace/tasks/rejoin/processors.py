@@ -20,6 +20,68 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.mode = self.config["mode"]
 
         if self.mode == 'rect':
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
+            self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
+        elif self.mode == 'magnorm':
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
+            self.obs_norm_const = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+
+    def generate_observation(self, env_objs):
+        def vec2magnorm(vec):
+            norm = np.linalg.norm(vec)
+            mag_norm_vec = np.concatenate(([norm], vec / norm))
+            return mag_norm_vec
+
+        wingman_lead_r = env_objs[self.lead].position - env_objs[self.wingman].position
+        wingman_rejoin_r = env_objs[self.rejoin_region].position - env_objs[self.wingman].position
+
+        wingman_vel = env_objs[self.wingman].velocity
+        lead_vel = env_objs[self.lead].velocity
+
+        reference_rotation = Rotation.from_quat([0, 0, 0, 1])
+        if self.reference == 'wingman':
+            reference_rotation = env_objs[self.wingman].orientation.inv()
+
+        wingman_lead_r = reference_rotation.apply(wingman_lead_r)
+        wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
+
+        wingman_vel = reference_rotation.apply(wingman_vel)
+        lead_vel = reference_rotation.apply(lead_vel)
+
+        if self.mode == 'magnorm':
+            wingman_lead_r = vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
+
+            wingman_vel = vec2magnorm(wingman_vel)
+            lead_vel = vec2magnorm(lead_vel)
+
+        obs = np.concatenate([
+            wingman_lead_r,
+            wingman_rejoin_r,
+            wingman_vel,
+            lead_vel
+        ])
+
+        # normalize observation
+        obs = np.divide(obs, self.obs_norm_const)
+
+        obs = np.clip(obs, -1, 1)
+
+        return obs
+
+
+class Dubins3dObservationProcessor(ObservationProcessor):
+    def __init__(self, config):
+        super().__init__(config=config)
+
+        # Initialize member variables from config
+        self.lead = self.config["lead"]
+        self.wingman = self.config["wingman"]
+        self.rejoin_region = self.config["rejoin_region"]
+        self.reference = self.config["reference"]
+        self.mode = self.config["mode"]
+
+        if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
             self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi], dtype=np.float64)
         elif self.mode == 'magnorm':
