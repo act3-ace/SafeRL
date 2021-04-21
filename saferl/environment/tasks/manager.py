@@ -14,7 +14,7 @@ class Manager(abc.ABC):
             p.reset(env_objs, status)
 
     @abc.abstractmethod
-    def step(self, env_objs, timestep, status):
+    def step(self, env_objs, step_size, status):
         """increment and process processors and return resulting value"""
         raise NotImplementedError
 
@@ -45,10 +45,10 @@ class ObservationManager(Manager):
         info = {}
         return info
 
-    def step(self, env_objs, timestep, status):
+    def step(self, env_objs, step_size, status):
         obs_list = []
         for processor in self.processors:
-            obs_list.append(processor.step(env_objs, timestep, status))
+            obs_list.append(processor.step(env_objs, step_size, status))
         self.obs = np.concatenate(obs_list)
         return self.obs
 
@@ -79,10 +79,10 @@ class StatusManager(Manager):
         }
         return info
 
-    def step(self, env_objs, timestep, status):
+    def step(self, env_objs, step_size, status):
         self.status = {}
         for processor in self.processors:
-            self.status[processor.name] = processor.step(env_objs, timestep, self.status)
+            self.status[processor.name] = processor.step(env_objs, step_size, self.status)
         return self.status
 
     def process(self, env_objs, status):
@@ -120,10 +120,10 @@ class RewardManager(Manager):
 
         return info
 
-    def step(self, env_objs, timestep, status):
+    def step(self, env_objs, step_size, status):
         self.step_value = 0
         for processor in self.processors:
-            self.step_value += processor.step(env_objs, timestep, status)
+            self.step_value += processor.step(env_objs, step_size, status)
         self.total_value += self.step_value
         return self.step_value
 

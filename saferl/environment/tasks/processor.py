@@ -17,29 +17,29 @@ class Processor(abc.ABC):
         """Create and return an info dict"""
         raise NotImplementedError
 
-    def step(self, env_objs, timestep, status):
-        # two stage wrapper which encapsulates the transition between states of size 'timestep'
-        self.increment(env_objs, timestep, status)
+    def step(self, env_objs, step_size, status):
+        # two stage wrapper which encapsulates the transition between states of size 'step_size'
+        self.increment(env_objs, step_size, status)
         return self.process(env_objs, status)
 
-    def increment(self, env_objs, timestep, status):
-        # method to expose the progression of internal status proportional to timestep size
-        self._increment(env_objs, timestep, status)
+    def increment(self, env_objs, step_size, status):
+        # method to expose the progression of internal status proportional to step size
+        self._increment(env_objs, step_size, status)
 
     def process(self, env_objs, status):
         # method to expose internal state
         return self._process(env_objs, status)
 
     @abc.abstractmethod
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         """
-        A method to progress and update internal state proportional to the given timestep size.
+        A method to progress and update internal state proportional to the given step size.
 
         Parameters
         ----------
         env_objs : dict
             environment state
-        timestep : float
+        step_size : float
             size of time increment
         status : dict
             status values derived from the environment state relevent for computation or metrics
@@ -81,7 +81,7 @@ class ObservationProcessor(Processor):
         }
         return info
 
-    def _increment(self, env_objs, timestep, status):
+    def _increment(self, env_objs, step_size, status):
         # observation processors will not have a state to update by default
         ...
 
@@ -108,8 +108,8 @@ class StatusProcessor(Processor):
         return info
 
     @abc.abstractmethod
-    def _increment(self, env_objs, timestep, status):
-        # update state values from environment at the current timestep
+    def _increment(self, env_objs, step_size, status):
+        # update internal state over step transition
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -136,16 +136,17 @@ class RewardProcessor(Processor):
         }
         return info
 
-    def step(self, env_objs, timestep, status):
-        # two stage wrapper which encapsulates the transition between states of size 'timestep'
-        self.increment(env_objs, timestep, status)
+    def step(self, env_objs, step_size, status):
+        # two stage wrapper which encapsulates the transition between states
+        #   and computation of output
+        self.increment(env_objs, step_size, status)
         self.step_value = self.process(env_objs, status)
         self.total_value += self.step_value
         return self.step_value
 
     @abc.abstractmethod
-    def _increment(self, env_objs, timestep, status):
-        # update state from environment at current timestep
+    def _increment(self, env_objs, step_size, status):
+        # update internal state over step transition
         raise NotImplementedError
 
     @abc.abstractmethod
