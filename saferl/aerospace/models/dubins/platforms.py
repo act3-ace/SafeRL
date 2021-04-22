@@ -313,7 +313,7 @@ class Dubins3dState(BaseDubinsState):
 
     @property
     def orientation(self):
-        return Rotation.from_euler('x', self.roll) * Rotation.from_euler('y', self.pitch) * Rotation.from_euler('z', self.yaw)
+        return Rotation.from_euler('ZYX', [self.yaw, self.pitch, self.roll])
 
 
 class Dubins3dActuatorSet(BaseActuatorSet):
