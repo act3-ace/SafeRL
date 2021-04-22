@@ -1,7 +1,4 @@
-import saferl.environment.utils
-import saferl.environment.models
-import saferl.environment.tasks
-import saferl.environment.callbacks
+from saferl.environment import utils, models, tasks, callbacks
 
 import inspect
 

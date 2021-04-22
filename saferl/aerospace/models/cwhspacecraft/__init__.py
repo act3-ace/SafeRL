@@ -1,5 +1,5 @@
 import inspect
-import saferl.aerospace.models.cwhspacecraft.platforms
+from saferl.aerospace.models.cwhspacecraft import platforms
 
 mems = inspect.getmembers(platforms, inspect.isclass)
 
