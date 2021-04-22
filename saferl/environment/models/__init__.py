@@ -1,5 +1,4 @@
-import saferl.environment.models.platforms
-import saferl.environment.models.geometry
+from saferl.environment.models import platforms, geometry
 
 import inspect
 

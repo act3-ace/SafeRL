@@ -1,5 +1,4 @@
-import saferl.aerospace.tasks.rejoin.processors
-import saferl.aerospace.tasks.rejoin.task
+from saferl.aerospace.tasks.rejoin import processors, task
 
 import inspect
 
