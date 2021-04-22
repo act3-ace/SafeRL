@@ -1,5 +1,4 @@
-import saferl.aerospace.tasks.docking.processors
-import saferl.aerospace.tasks.docking.task
+from saferl.aerospace.tasks.docking import processors, task
 
 import inspect
 
