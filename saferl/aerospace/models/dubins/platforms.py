@@ -343,11 +343,12 @@ class Dubins3dActuatorSet(BaseActuatorSet):
 
 class Dubins3dDynamics(BaseODESolverDynamics):
 
-    def __init__(self, v_min=10, v_max=100, roll_min=-math.pi/2, roll_max=math.pi/2, *args, **kwargs):
+    def __init__(self, v_min=10, v_max=100, roll_min=-math.pi/2, roll_max=math.pi/2, g=32.17, *args, **kwargs):
         self.v_min = v_min
         self.v_max = v_max
         self.roll_min = roll_min
         self.roll_max = roll_max
+        self.g = g
 
         super().__init__(*args, **kwargs)
 
@@ -387,7 +388,7 @@ class Dubins3dDynamics(BaseODESolverDynamics):
 
         gamma_dot = elevator
         roll_dot = ailerons
-        heading_dot = (32.17 / v) * math.tan(roll)                      # g = 32.17 ft/s^2
+        heading_dot = (self.g / v) * math.tan(roll)                      # g = 32.17 ft/s^2
         v_dot = throttle
 
         dx_vec = np.array([x_dot, y_dot, z_dot, heading_dot, gamma_dot, roll_dot, v_dot], dtype=np.float64)
