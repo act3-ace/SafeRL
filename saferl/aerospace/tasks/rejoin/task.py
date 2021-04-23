@@ -1,5 +1,4 @@
 from saferl.environment.tasks.env import BaseEnv
-from saferl.environment.utils import setup_env_objs_from_config
 
 
 class DubinsRejoin(BaseEnv):
@@ -7,11 +6,6 @@ class DubinsRejoin(BaseEnv):
     def __init__(self, config):
         super(DubinsRejoin, self).__init__(config)
         self.step_size = 1
-
-    def _setup_env_objs(self):
-        agent, env_objs = setup_env_objs_from_config(self.config)
-
-        return agent, env_objs
 
     def reset(self):
         return super(DubinsRejoin, self).reset()
