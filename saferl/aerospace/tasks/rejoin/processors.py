@@ -56,10 +56,10 @@ class DubinsObservationProcessor(ObservationProcessor):
             lead_vel = self.vec2magnorm(lead_vel)
 
         obs = np.concatenate([
-            wingman_lead_r,
-            wingman_rejoin_r,
-            wingman_vel,
-            lead_vel
+            wingman_lead_r[0:3],
+            wingman_rejoin_r[0:3],
+            wingman_vel[0:3],
+            lead_vel[0:3]
         ])
 
         # normalize observation

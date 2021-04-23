@@ -17,20 +17,20 @@ env_config:
           space: discrete
           points: 5
       init:
-        heading: [0, 0]
+        heading: [-0.785398163, 0.785398163]
         v: [10, 100]
-        x: [0, 0]
-        y: [0, 0]
-        z: [0, 0]
+        x: [-4000, 0]
+        y: [2000, 2000]
+        z: [2000, 2000]
   - name: lead
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
       init:
         heading: [0, 0]
-        v: [50, 50]
-        x: [2000, 2000]
-        y: [0, 0]
-        z: [0, 0]
+        v: [20, 90]
+        x: [0000, 4000]
+        y: [2000, 2000]
+        z: [2000, 2000]
   - name: rejoin_region
     class: saferl.environment.models.geometry.RelativeCylinder
     config:
