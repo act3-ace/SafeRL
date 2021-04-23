@@ -8,9 +8,12 @@ import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
 from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
+from saferl.environment.tasks.utils import setup_env_objs_from_config
 
 
 class BaseEnv(gym.Env):
+
+
     def __init__(self, config):
         # save config
         self.config = config
@@ -83,9 +86,8 @@ class BaseEnv(gym.Env):
         return obs
 
     def _setup_env_objs(self):
-        self.env_objs = {}
-        self.agent = None
-        raise NotImplementedError
+        agent, env_objs = setup_env_objs_from_config(self.config)
+        return agent, env_objs
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space
