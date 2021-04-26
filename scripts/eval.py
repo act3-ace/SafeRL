@@ -1,10 +1,10 @@
 import numpy as np
 import os
 import argparse
-# import pickle
-import pickle5 as pickle
+import pickle
+# import pickle5 as pickle
 import tqdm
-import tensorflow as tf
+# import tensorflow as tf
 # tf.compat.v1.disable_eager_execution()
 # import tensorflow.keras as keras
 
@@ -67,11 +67,17 @@ def run_rollouts(agent, env, num_rollouts=1):
 
     return rollout_seq
 
-## get paths and params
+# process args
 # args = get_args()
+# expr_dir_path = args.dir #TODO: ensure exists, complete path
+# ckpt_num = args.ckpt_num
+# if ckpt_num is None:
 
+
+# get paths
 ckpt_num = 200
 expr_dir_path = '/home/john/AFRL/Dubins/have-deepsky/scripts/output/expr_20210426_093952/PPO_DockingEnv_e2f21_00000_0_2021-04-26_09-39-55'
+# expr_dir_path = args.dir
 eval_dir_path = os.path.join(expr_dir_path, 'eval')
 ckpt_eval_dir_path = os.path.join(eval_dir_path, 'ckpt_{}'.format(ckpt_num))
 
@@ -115,7 +121,7 @@ results = run_rollouts(agent, env, num_rollouts=1)
 # Backlog #
 
 # log performance (expr/eval/ckpt_<num>) w/o Tune
-# log performance with Tune (callback and tensorboard logs)
+# run eval and log performance with Tune (callback and tensorboard logs)
 # parse args intelligently
 # robust imports of Envs?
 # init ranges from args? env from args?
@@ -124,4 +130,4 @@ results = run_rollouts(agent, env, num_rollouts=1)
 # Done #
 
 # load model and env
-# run eval
+# run eval with std RLLib python api
