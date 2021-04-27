@@ -2,7 +2,7 @@ import numpy as np
 import os
 import argparse
 import pickle
-# import pickle5 as pickle
+import jsonlines
 import tqdm
 # import tensorflow as tf
 # tf.compat.v1.disable_eager_execution()
@@ -30,42 +30,34 @@ def get_args():
 
     return parser.parse_args()
 
-def run_rollouts(agent, env, num_rollouts=1):
-
-    rollout_seq = []
-
+def run_rollouts(agent, env, log_dir, num_rollouts=1):
+    
     for i in tqdm.tqdm(range(num_rollouts)):
-
-        info_history = []
-        obs_history = []
-        reward_history = []
-        action_history = []
-
         # run until episode ends
         episode_reward = 0
         done = False
         obs = env.reset()
-        while not done:
-            action = agent.compute_action(obs)
-            obs, reward, done, info = env.step(action)
-            episode_reward += reward
+        step_num = 0
 
-            info_history.append(info)
-            obs_history.append(obs)
-            reward_history.append(reward)
-            action_history.append(action)
+        with jsonlines.open(log_dir, "a") as writer:
+            while not done:
+                # progress environment state
+                action = agent.compute_action(obs)
+                obs, reward, done, info = env.step(action)
+                step_num += 1
+                episode_reward += reward
 
-        rollout_data = {
-            'episode_reward': episode_reward,
-            'info_history': info_history,
-            'obs_history': obs_history,
-            'reward_history': reward_history,
-            'action_history': action_history
-        }
+                # store log contents in state
+                state = {}
+                state["actions"] = action
+                state["obs"] = obs
+                state["info"] = info
+                state["rollout_num"] = i
+                state["step_number"] = step_num
+                state["episode_reward"] = episode_reward
 
-        rollout_seq.append(rollout_data)
-
-    return rollout_seq
+                # write state to file
+                writer.write(state)
 
 # process args
 # args = get_args()
@@ -107,8 +99,8 @@ agent.get_policy().config['explore'] = False
 
 # TODO: pass in init ranges from args?
 
-# run inference episodes
-results = run_rollouts(agent, env, num_rollouts=1)
+# run inference episodes and log results
+run_rollouts(agent, env, filesdfasdf, num_rollouts=3)
 
 # output results (tensorboard & logging)
 
