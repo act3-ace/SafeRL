@@ -11,17 +11,17 @@ class DubinsRejoin(BaseEnv):
         return super(DubinsRejoin, self).reset()
 
     def _step_sim(self, action):
-        self.env_objs['lead'].step(self.step_size)
-        self.env_objs['wingman'].step(self.step_size, action)
+        self.sim_state.env_objs['lead'].step(self.step_size)
+        self.sim_state.env_objs['wingman'].step(self.step_size, action)
 
     def _generate_info(self):
         info = {
             'wingman': self.env_objs['wingman']._generate_info(),
             'lead': self.env_objs['lead']._generate_info(),
             'rejoin_region': self.env_objs['rejoin_region']._generate_info(),
-            'failure': self.status_dict['failure'],
-            'success': self.status_dict['success'],
-            'status': self.status_dict,
+            'failure': self.status['failure'],
+            'success': self.status['success'],
+            'status': self.status,
             'reward': self.reward_manager._generate_info(),
             'timestep_size': self.step_size
         }

@@ -11,17 +11,17 @@ class DockingEnv(BaseEnv):
         return super(DockingEnv, self).reset()
 
     def _step_sim(self, action):
-        self.env_objs['chief'].step(self.step_size)
-        self.env_objs['deputy'].step(self.step_size, action)
+        self.sim_state.env_objs['chief'].step(self.step_size)
+        self.sim_state.env_objs['deputy'].step(self.step_size, action)
 
     def _generate_info(self):
         info = {
             'deputy': self.env_objs['deputy']._generate_info(),
             'chief': self.env_objs['chief']._generate_info(),
             'docking_region': self.env_objs['docking_region']._generate_info(),
-            'failure': self.status_dict['failure'],
-            'success': self.status_dict['success'],
-            'status': self.status_dict,
+            'failure': self.status['failure'],
+            'success': self.status['success'],
+            'status': self.status,
             'reward': self.reward_manager._generate_info(),
             'timestep_size': self.step_size
         }
