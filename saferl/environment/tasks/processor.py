@@ -8,7 +8,7 @@ class Processor(abc.ABC):
         self.name = config["name"]
 
     @abc.abstractmethod
-    def reset(self, env_objs, status):
+    def reset(self, sim_state):
         """Reset the processor instance"""
         raise NotImplementedError
 
@@ -17,47 +17,42 @@ class Processor(abc.ABC):
         """Create and return an info dict"""
         raise NotImplementedError
 
-    def step(self, env_objs, step_size, status):
+    def step(self, sim_state, step_size):
         # two stage wrapper which encapsulates the transition between states of size 'step_size'
-        self.increment(env_objs, step_size, status)
-        return self.process(env_objs, status)
+        self.increment(sim_state, step_size)
+        return self.process(sim_state)
 
-    def increment(self, env_objs, step_size, status):
+    def increment(self, sim_state, step_size):
         # method to expose the progression of internal status proportional to step size
-        self._increment(env_objs, step_size, status)
+        self._increment(sim_state, step_size)
 
-    def process(self, env_objs, status):
+    def process(self, sim_state):
         # method to expose internal state
-        return self._process(env_objs, status)
+        return self._process(sim_state)
 
     @abc.abstractmethod
-    def _increment(self, env_objs, step_size, status):
+    def _increment(self, sim_state, step_size):
         """
         A method to progress and update internal state proportional to the given step size.
 
         Parameters
         ----------
-        env_objs : dict
-            environment state
+        sim_state : SimulationState
+            simulation state member of parent environment
         step_size : float
             size of time increment
-        status : dict
-            status values derived from the environment state relevent for computation or metrics
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _process(self, env_objs, status):
+    def _process(self, sim_state):
         """
         A method to process internal state and return relevant value(s).
 
         Parameters
         ----------
-        env_objs : dict
-            environment state
-        status : dict
-            status values derived from the environment state relevent for computation or metrics
-
+        sim_state : SimulationState
+            simulation state member of parent environment
         Returns
         -------
         Processor-specific value (observations, reward value, status value, ect.) based off of current internal state.
@@ -72,7 +67,7 @@ class ObservationProcessor(Processor):
         self.observation_space = None
         # TODO: add normalization and clipping, pre- and post- processors
 
-    def reset(self, env_objs, status):
+    def reset(self, sim_state):
         self.obs = None
 
     def _generate_info(self) -> dict:
@@ -81,12 +76,12 @@ class ObservationProcessor(Processor):
         }
         return info
 
-    def _increment(self, env_objs, step_size, status):
+    def _increment(self, sim_state, step_size):
         # observation processors will not have a state to update by default
         ...
 
     @abc.abstractmethod
-    def _process(self, env_objs, status) -> np.ndarray:
+    def _process(self, sim_state) -> np.ndarray:
         # process state and return relevant observation array
         raise NotImplementedError
 
@@ -97,7 +92,7 @@ class StatusProcessor(Processor):
         self.status_value = None
 
     @abc.abstractmethod
-    def reset(self, env_objs, status):
+    def reset(self, sim_state):
         # reset internal state
         raise NotImplementedError
 
@@ -108,12 +103,12 @@ class StatusProcessor(Processor):
         return info
 
     @abc.abstractmethod
-    def _increment(self, env_objs, step_size, status):
+    def _increment(self, sim_state, step_size):
         # update internal state over step transition
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _process(self, env_objs, status):
+    def _process(self, sim_state):
         # process state values to return status
         raise NotImplementedError
 
@@ -125,7 +120,7 @@ class RewardProcessor(Processor):
         self.total_value = 0
         self.reward = self.config["reward"]
 
-    def reset(self, env_objs, status):
+    def reset(self, sim_state):
         self.step_value = 0
         self.total_value = 0
 
@@ -136,21 +131,21 @@ class RewardProcessor(Processor):
         }
         return info
 
-    def step(self, env_objs, step_size, status):
+    def step(self, sim_state, step_size):
         # two stage wrapper which encapsulates the transition between states
         #   and computation of output
-        self.increment(env_objs, step_size, status)
-        self.step_value = self.process(env_objs, status)
+        self.increment(sim_state, step_size)
+        self.step_value = self.process(sim_state)
         self.total_value += self.step_value
         return self.step_value
 
     @abc.abstractmethod
-    def _increment(self, env_objs, step_size, status):
+    def _increment(self, sim_state, step_size):
         # update internal state over step transition
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _process(self, env_objs, status):
+    def _process(self, sim_state):
         # calculate and return step value from current internal state
         raise NotImplementedError
 
