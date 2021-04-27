@@ -16,7 +16,7 @@ import ray.rllib.agents.ppo as ppo
 
 from saferl.aerospace.tasks.rejoin.task import DubinsRejoin
 from saferl.aerospace.tasks.docking.task import DockingEnv
-# from saferl.environment.utils import numpy_to_matlab_txt
+from saferl.environment.utils import jsonify, is_jsonable
 
 
 def get_args():
@@ -26,12 +26,12 @@ def get_args():
     parser.add_argument('--dir', type=str, default="", help="the path to the experiment directory", required=True)
     parser.add_argument('--ckpt_num', type=int, default=None, help="specify a checkpoint to load")
     parser.add_argument('--seed', type=int, default=None, help="the seed ")
-    parser.add_argument('--explore', type=bool, default=False, help="True if off-policy evaluation desired")    #?
+    parser.add_argument('--explore', type=bool, default=False, help="True if off-policy evaluation desired")
 
     return parser.parse_args()
 
 def run_rollouts(agent, env, log_dir, num_rollouts=1):
-    
+
     for i in tqdm.tqdm(range(num_rollouts)):
         # run until episode ends
         episode_reward = 0
@@ -49,9 +49,12 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
 
                 # store log contents in state
                 state = {}
-                state["actions"] = action
-                state["obs"] = obs
-                state["info"] = info
+                if is_jsonable(info) == True:
+                    state["info"] = info
+                else:
+                    state["info"] = jsonify(info)
+                state["actions"] = [float(i) for i in action]
+                state["obs"] = obs.tolist()
                 state["rollout_num"] = i
                 state["step_number"] = step_num
                 state["episode_reward"] = episode_reward
@@ -67,16 +70,21 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
 
 
 # get paths
+ckpt_num_str = "000200"
 ckpt_num = 200
-expr_dir_path = '/home/john/AFRL/Dubins/have-deepsky/scripts/output/expr_20210426_093952/PPO_DockingEnv_e2f21_00000_0_2021-04-26_09-39-55'
+expr_dir_path = '/home/john/AFRL/Dubins/have-deepsky/scripts/output/expr_20210427_141133/PPO_DockingEnv_0236e_00000_0_2021-04-27_14-11-38'
 # expr_dir_path = args.dir
 eval_dir_path = os.path.join(expr_dir_path, 'eval')
 ckpt_eval_dir_path = os.path.join(eval_dir_path, 'ckpt_{}'.format(ckpt_num))
 
 ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
-ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
+ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num_str)
 ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
 ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
+
+# make directories
+os.makedirs(eval_dir_path, exist_ok=True)
+os.makedirs(ckpt_eval_dir_path, exist_ok=True)
 
 ## load checkpoint
 with open(ray_config_path, 'rb') as ray_config_f:
@@ -100,7 +108,7 @@ agent.get_policy().config['explore'] = False
 # TODO: pass in init ranges from args?
 
 # run inference episodes and log results
-run_rollouts(agent, env, filesdfasdf, num_rollouts=3)
+run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=3)
 
 # output results (tensorboard & logging)
 

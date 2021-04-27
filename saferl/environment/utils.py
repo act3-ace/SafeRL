@@ -4,6 +4,7 @@ import os
 import yaml
 
 import numpy as np
+import json
 
 from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
 
@@ -105,3 +106,48 @@ class YAMLParser:
         target = self.process_yaml_items(contents)
         self.working_dir = old_working_dir
         return target
+
+
+def jsonify(map):
+    # Method to convert non-JSON serializable objects (numpy arrays) to JSON friendly data types inside a dictionary
+    for key in map.keys():
+        # iterate through dictionary, converting objects as needed
+        suspicious_object = map[key]
+        is_json_ready = is_jsonable(suspicious_object)
+
+        if is_json_ready == True:
+            # move along sir
+            continue
+        elif is_json_ready == TypeError:
+            if type(suspicious_object) is dict:
+                # recurse if we find sub-dictionaries
+                map[key] = jsonify(suspicious_object)
+            if type(suspicious_object) is np.ndarray:
+                # handle numpy array conversion
+                map[key] = suspicious_object.tolist()
+            elif type(suspicious_object) is np.bool_:
+                # handle numpy bool conversion
+                map[key] = bool(suspicious_object)
+            elif type(suspicious_object) is np.int64:
+                # handle int64 conversion
+                map[key] = int(suspicious_object)
+
+        elif is_json_ready == OverflowError:
+            raise OverflowError
+        elif is_json_ready == ValueError:
+            raise ValueError
+
+    return map
+
+def is_jsonable(object):
+    # Method to determine whether or not an object is JSON serializable
+    # If not, returns the error
+    try:
+        json.dumps(object)
+        return True
+    except TypeError:
+        return TypeError
+    except OverflowError:
+        return OverflowError
+    except ValueError:
+        return ValueError
