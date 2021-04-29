@@ -34,12 +34,12 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 
 ## Pulling an update from Gitlab
 If someone else has updated their files, and you want to pull the most recent changes without erasing your progress:  
-1. Navigate to the spacecraft docking folder `cd spacecraftdockingrl`  
+1. Navigate to the have-deepsky folder `cd have-deepsky`  
 2. `git fetch`  
 3. `git merge`  
 
 If you want to pull the latest changes and overwrite any changes you made:  
-1. Navigate to the spacecraft docking folder `cd spacecraftdockingrl`  
+1. Navigate to the have-deepsky folder `cd have-deepsky`  
 2. `git stash`  
 3. `git pull`  
 
@@ -47,11 +47,11 @@ If you want to pull the latest changes and overwrite any changes you made:
 These files assume that you have Anaconda or equivalent and standard Python packages installed.
 1. To run from the command line, open a terminal
 2. Activate your conda environment that you setup during the Installation step with `conda activate <env_name>`. This should make (<env_name>) show up before you username.
-3. Ensure the aerospaceSafeRL package is in your environment's PATH (if you ran `pip install -e .` during installation you can ignore this step).
-4. Decide what algorithm you'd like to run, e.g. run the vanilla policy gradient RL algorithm `python VPG.py`
+3. Ensure the saferl package is in your environment's PATH (if you ran `pip install -e .` during installation you can ignore this step).
+4. Decide what algorithm you'd like to run, e.g. train the PPO RL algorithm `python scripts/train.py`
 
 ## Uploading to GitLab
-If you want to add your files to the GitLab, navigate to the spacecraftdockingrl folder in your terminal and run the following commands (Update with your COMMENTS):  
+If you want to add your files to the GitLab, navigate to the have-deepsky folder in your terminal and run the following commands (Update with your COMMENTS):  
 `git add .`  
 `git commit -m 'COMMENTS'`  
 `git push -u origin master`
