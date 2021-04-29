@@ -86,7 +86,7 @@ class Dubins2dPlatform(BaseDubinsPlatform):
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'state': self.state.vector,
             'x': self.x,
