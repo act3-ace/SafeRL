@@ -46,7 +46,7 @@ class BaseGeometry(BaseEnvObj):
         ...
 
     @abc.abstractmethod
-    def _generate_info(self):
+    def generate_info(self):
         ...
 
 
@@ -92,7 +92,7 @@ class Point(BaseGeometry):
         is_contained = distance < POINT_CONTAINS_DISTANCE
         return is_contained
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'x': self.x,
             'y': self.y,
@@ -114,8 +114,8 @@ class Circle(Point):
         is_contained = radial_distance <= self.radius
         return is_contained
 
-    def _generate_info(self):
-        info = super()._generate_info()
+    def generate_info(self):
+        info = super().generate_info()
         info['radius'] = self.radius
 
         return info
@@ -143,8 +143,8 @@ class Cyclinder(Circle):
         is_contained = (radial_distance <= self.radius) and (axial_distance <= (self.height / 2))
         return is_contained
 
-    def _generate_info(self):
-        info = super()._generate_info()
+    def generate_info(self):
+        info = super().generate_info()
         info['height'] = self.height
 
         return info
@@ -233,8 +233,8 @@ class RelativeGeometry(BaseEnvObj):
     def reset(self):
         self.update()
 
-    def _generate_info(self):
-        return self.shape._generate_info()
+    def generate_info(self):
+        return self.shape.generate_info()
 
     @property
     def velocity(self):
