@@ -227,6 +227,9 @@ class RelativeGeometry(BaseEnvObj):
         if self.track_orientation:
             self.shape.orientation = self.ref.orientation
 
+    def pre_step(self, sim_state, *args, **kwargs):
+        pass
+
     def step(self, *args, **kwargs):
         self.update()
 
@@ -396,3 +399,6 @@ class RelativeCylinder(RelativeGeometry):
 
 def distance(a, b):
     return np.linalg.norm(a.position - b.position)
+
+def angle_wrap(angle):
+    return ( ( angle + math.pi ) % ( 2 * math.pi ) ) - math.pi

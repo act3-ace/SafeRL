@@ -239,7 +239,7 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, controller, state, config=None, **kwargs):
+    def __init__(self, dynamics, actuator_set, controller, state, rta_module=None, config=None, **kwargs):
 
         if config is None or 'controller' not in config:
             controller_config = None
@@ -258,6 +258,7 @@ class BasePlatform(BaseEnvObj):
         self.actuator_set = actuator_set
         self.controller = controller
         self.state = state
+        self.rta_module = rta_module
 
         if config is None:
             self.init_dict = None
@@ -272,20 +273,30 @@ class BasePlatform(BaseEnvObj):
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
 
-        self.actuation_cur = None
-        self.control_cur = None
+        self.current_actuation = {}
+        self.current_control = self.actuator_set.gen_control()
 
         for obj in self.dependent_objs:
             obj.reset()
 
-    def step(self, step_size, action=None):
+    def pre_step(self, sim_state, action=None):
+        
         actuation = self.controller.gen_actuation(self.state, action)
-
         control = self.actuator_set.gen_control(actuation)
 
+        if self.rta_module is not None:
+            control = self.rta_module.filter_control(sim_state, control)
+
         # save current actuation and control
-        self.actuation_cur = copy.deepcopy(actuation)
-        self.control_cur = copy.deepcopy(control)
+        self.current_actuation = copy.deepcopy(actuation)
+        self.current_control = copy.deepcopy(control)
+
+        for obj in self.dependent_objs:
+            obj.pre_step(sim_state, action=action)
+
+    def step(self, step_size):
+
+        control = self.current_control
 
         # compute new state if dynamics were applied
         new_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
