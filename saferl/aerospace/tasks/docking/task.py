@@ -11,8 +11,11 @@ class DockingEnv(BaseEnv):
         return super(DockingEnv, self).reset()
 
     def _step_sim(self, action):
+        self.sim_state.env_objs['chief'].pre_step(self.sim_state)
+        self.sim_state.env_objs['deputy'].pre_step(self.sim_state, action)
+
         self.sim_state.env_objs['chief'].step(self.step_size)
-        self.sim_state.env_objs['deputy'].step(self.step_size, action)
+        self.sim_state.env_objs['deputy'].step(self.step_size)
 
     def _generate_info(self):
         info = {
