@@ -18,25 +18,25 @@ def build_callbacks_caller(callbacks: []):
     class CallbacksCaller(DefaultCallbacks):
         def __init__(self, legacy_callbacks_dict: Dict[str, callable] = None):
             self.callbacks = callbacks
-            super(CallbacksCaller, self).__init__(legacy_callbacks_dict)
+            super().__init__(legacy_callbacks_dict)
 
         def on_episode_end(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_episode_end", None)):
                     callback.on_episode_end(*args, **kwargs)
-            super(CallbacksCaller, self).on_episode_end(*args, **kwargs)
+            super().on_episode_end(*args, **kwargs)
 
         def on_episode_step(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_episode_step", None)):
                     callback.on_episode_step(*args, **kwargs)
-            super(CallbacksCaller, self).on_episode_step(*args, **kwargs)
+            super().on_episode_step(*args, **kwargs)
 
         def on_postprocess_trajectory(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_postprocess_trajectory", None)):
                     callback.on_postprocess_trajectory(*args, **kwargs)
-            super(CallbacksCaller, self).on_postprocess_trajectory(*args, **kwargs)
+            super().on_postprocess_trajectory(*args, **kwargs)
 
     return CallbacksCaller
 

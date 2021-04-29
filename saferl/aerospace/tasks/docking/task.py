@@ -5,7 +5,7 @@ from saferl.environment.utils import setup_env_objs_from_config
 class DockingEnv(BaseEnv):
 
     def __init__(self, config):
-        super(DockingEnv, self).__init__(config)
+        super().__init__(config)
         self.step_size = 1
 
     def _setup_env_objs(self):
@@ -14,7 +14,7 @@ class DockingEnv(BaseEnv):
         return agent, env_objs
 
     def reset(self):
-        return super(DockingEnv, self).reset()
+        return super().reset()
 
     def _step_sim(self, action):
         self.env_objs['chief'].step(self.step_size)
