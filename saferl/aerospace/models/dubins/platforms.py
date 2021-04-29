@@ -192,7 +192,7 @@ class Dubins2dDynamics(BaseODESolverDynamics):
 
         # enforce velocity limits
         if state.v < self.v_min or state.v > self.v_max:
-            state.v = max( min(state.v, self.v_max), self.v_min)
+            state.v = max(min(state.v, self.v_max), self.v_min)
 
         return state
 
@@ -206,8 +206,8 @@ class Dubins2dDynamics(BaseODESolverDynamics):
         elif v >= self.v_max and throttle > 0:
             throttle = 0
 
-        x_dot = v * math.cos(heading) # x_dot
-        y_dot = v * math.sin(heading) # y_dot
+        x_dot = v * math.cos(heading)  # x_dot
+        y_dot = v * math.sin(heading)  # y_dot
         heading_dot = rudder
         v_dot = throttle
 
