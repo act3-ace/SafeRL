@@ -11,32 +11,32 @@ class BaseEnvObj(abc.ABC):
     @property
     @abc.abstractmethod
     def x(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def y(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def z(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def position(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def orientation(self) -> scipy.spatial.transform.Rotation:
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def velocity(self):
-        ...
+        raise NotImplementedError
 
 
 class BaseActuator(abc.ABC):
@@ -44,17 +44,17 @@ class BaseActuator(abc.ABC):
     @property
     @abc.abstractmethod
     def name(self) -> str:
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def space(self) -> str:
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def default(self):
-        ...
+        raise NotImplementedError
 
 
 class ContinuousActuator(BaseActuator):
@@ -91,7 +91,7 @@ class BaseController(abc.ABC):
 
     @abc.abstractmethod
     def gen_actuation(self, state, action=None):
-        ...
+        raise NotImplementedError
 
 
 class PassThroughController(BaseController):
@@ -186,7 +186,7 @@ class ActionPreprocessor(abc.ABC):
 
     @abc.abstractmethod
     def preprocess(self, action):
-        ...
+        raise NotImplementedError
 
     def __call__(self, action):
         return copy.deepcopy(self.name), self.preprocess(action)
@@ -331,7 +331,7 @@ class BasePlatformState(BaseEnvObj):
 
     @abc.abstractmethod
     def reset(self):
-        ...
+        raise NotImplementedError
 
 
 class BasePlatformStateVectorized(BasePlatformState):
@@ -349,7 +349,7 @@ class BasePlatformStateVectorized(BasePlatformState):
 
     @abc.abstractmethod
     def build_vector(self):
-        ...
+        raise NotImplementedError
 
     @property
     def vector_shape(self):
@@ -368,7 +368,7 @@ class BaseDynamics(abc.ABC):
 
     @abc.abstractmethod
     def step(self, step_size, state, control):
-        ...
+        raise NotImplementedError
 
 
 class BaseODESolverDynamics(BaseDynamics):
@@ -379,7 +379,7 @@ class BaseODESolverDynamics(BaseDynamics):
 
     @abc.abstractmethod
     def dx(self, t, state_vec, control):
-        ...
+        raise NotImplementedError
 
     def step(self, step_size, state, control):
 
@@ -404,7 +404,7 @@ class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
     @abc.abstractmethod
     def gen_dynamics_matrices(self):
-        ...
+        raise NotImplementedError
 
     def update_dynamics_matrices(self, state_vec):
         pass

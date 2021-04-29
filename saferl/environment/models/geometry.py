@@ -19,23 +19,23 @@ class BaseGeometry(BaseEnvObj):
     @property
     @abc.abstractmethod
     def position(self):
-        ...
+        raise NotImplementedError
 
     @position.setter
     @abc.abstractmethod
     def position(self, value):
-        ...
+        raise NotImplementedError
 
     # need to redefine orientation property to add a setter. Is it possible to avoid doing this?
     @property
     @abc.abstractmethod
     def orientation(self) -> Rotation:
-        ...
+        raise NotImplementedError
 
     @orientation.setter
     @abc.abstractmethod
     def orientation(self, value):
-        ...
+        raise NotImplementedError
 
     @property
     def velocity(self):
@@ -43,11 +43,11 @@ class BaseGeometry(BaseEnvObj):
 
     @abc.abstractmethod
     def contains(self, other):
-        ...
+        raise NotImplementedError
 
     @abc.abstractmethod
     def generate_info(self):
-        ...
+        raise NotImplementedError
 
 
 class Point(BaseGeometry):

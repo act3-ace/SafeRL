@@ -40,7 +40,7 @@ class BaseDubinsState(BasePlatformStateVectorized):
     @property
     @abc.abstractmethod
     def v(self):
-        ...
+        raise NotImplementedError
 
     @property
     def velocity(self):
@@ -62,17 +62,17 @@ class BaseDubinsState(BasePlatformStateVectorized):
     @property
     @abc.abstractmethod
     def roll(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def heading(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def gamma(self):
-        ...
+        raise NotImplementedError
 
 
 class Dubins2dPlatform(BaseDubinsPlatform):
