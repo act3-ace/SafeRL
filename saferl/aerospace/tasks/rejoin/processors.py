@@ -181,11 +181,11 @@ class DubinsInRejoin(StatusProcessor):
         self.rejoin_region = self.config["rejoin_region"]
 
     def reset(self, env_objs, status):
-        ...
+        pass
 
     def _increment(self, env_objs, step_size, status):
         # this status comes from first principles of the environment and therefore does not require a state machine
-        ...
+        pass
 
     def _process(self, env_objs, status):
         # return the current status
@@ -260,11 +260,11 @@ class DubinsLeadDistance(StatusProcessor):
         self.lead = self.config["lead"]
 
     def reset(self, env_objs, status):
-        ...
+        pass
 
     def _increment(self, env_objs, step_size, status):
         # this status comes from first principles of the environment and therefore does not require a state machine
-        ...
+        pass
 
     def _process(self, env_objs, status):
         # return the current status
