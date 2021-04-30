@@ -83,7 +83,7 @@ class ObservationProcessor(Processor):
 
     def _increment(self, env_objs, step_size, status):
         # observation processors will not have a state to update by default
-        ...
+        pass
 
     @abc.abstractmethod
     def _process(self, env_objs, status) -> np.ndarray:
