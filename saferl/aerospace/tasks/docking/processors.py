@@ -123,7 +123,7 @@ class SuccessRewardProcessor(RewardProcessor):
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
-        ...
+        pass
 
     def _process(self, sim_state):
         step_reward = 0
@@ -139,7 +139,7 @@ class FailureRewardProcessor(RewardProcessor):
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
-        ...
+        pass
 
     def _process(self, sim_state):
         step_reward = 0
@@ -155,11 +155,11 @@ class DockingStatusProcessor(StatusProcessor):
         self.deputy = self.config["deputy"]
 
     def reset(self, sim_state):
-        ...
+        pass
 
     def _increment(self, sim_state, step_size):
         # status derived directly from simulation state. No state machine necessary
-        ...
+        pass
 
     def _process(self, sim_state):
         in_docking = sim_state.env_objs[self.docking_region].contains(sim_state.env_objs[self.deputy])
@@ -173,11 +173,11 @@ class DockingDistanceStatusProcessor(StatusProcessor):
         self.deputy = self.config["deputy"]
 
     def reset(self, sim_state):
-        ...
+        pass
 
     def _increment(self, sim_state, step_size):
         # status derived directly from simulation state. No state machine necessary
-        ...
+        pass
 
     def _process(self, sim_state):
         docking_distance = distance(sim_state.env_objs[self.deputy], sim_state.env_objs[self.docking_region])
@@ -216,11 +216,11 @@ class SuccessStatusProcessor(StatusProcessor):
         self.docking_status = self.config["docking_status"]
 
     def reset(self, sim_state):
-        ...
+        pass
 
     def _increment(self, sim_state, step_size):
         # status derived directly from simulation state, therefore no state machine needed
-        ...
+        pass
 
     def _process(self, sim_state):
         # process stare and return status
