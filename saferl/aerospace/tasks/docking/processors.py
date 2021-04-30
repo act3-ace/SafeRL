@@ -123,7 +123,7 @@ class SuccessRewardProcessor(RewardProcessor):
 
     def _increment(self, env_objs, step_size, status):
         # reward derived straight from status dict, therefore no state machine necessary
-        ...
+        pass
 
     def _process(self, env_objs, status):
         step_reward = 0
@@ -139,7 +139,7 @@ class FailureRewardProcessor(RewardProcessor):
 
     def _increment(self, env_objs, step_size, status):
         # reward derived straight from status dict, therefore no state machine necessary
-        ...
+        pass
 
     def _process(self, env_objs, status):
         step_reward = 0
@@ -155,11 +155,11 @@ class DockingStatusProcessor(StatusProcessor):
         self.deputy = self.config["deputy"]
 
     def reset(self, env_objs, status):
-        ...
+        pass
 
     def _increment(self, env_objs, step_size, status):
         # status derived directly from simulation state. No state machine necessary
-        ...
+        pass
 
     def _process(self, env_objs, status):
         in_docking = env_objs[self.docking_region].contains(env_objs[self.deputy])
@@ -173,11 +173,11 @@ class DockingDistanceStatusProcessor(StatusProcessor):
         self.deputy = self.config["deputy"]
 
     def reset(self, env_objs, status):
-        ...
+        pass
 
     def _increment(self, env_objs, step_size, status):
         # status derived directly from simulation state. No state machine necessary
-        ...
+        pass
 
     def _process(self, env_objs, status):
         docking_distance = distance(env_objs[self.deputy], env_objs[self.docking_region])
@@ -216,11 +216,11 @@ class SuccessStatusProcessor(StatusProcessor):
         self.docking_status = self.config["docking_status"]
 
     def reset(self, env_objs, status):
-        ...
+        pass
 
     def _increment(self, env_objs, step_size, status):
         # status derived directly from simulation state, therefore no state machine needed
-        ...
+        pass
 
     def _process(self, env_objs, status):
         # process stare and return status

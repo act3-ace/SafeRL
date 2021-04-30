@@ -48,7 +48,7 @@ class BaseEnv(gym.Env):
 
         reward = self._generate_reward()
         obs = self._generate_obs()
-        info = self._generate_info()
+        info = self.generate_info()
 
         # determine if done
         if self.status_dict['success'] or self.status_dict['failure']:
@@ -78,7 +78,7 @@ class BaseEnv(gym.Env):
         obs = self._generate_obs()
 
         if self.verbose:
-            print("env reset with params {}".format(self._generate_info()))
+            print("env reset with params {}".format(self.generate_info()))
 
         return obs
 
@@ -118,12 +118,12 @@ class BaseEnv(gym.Env):
         )
         return self.status_manager.status
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'failure': self.status_dict['failure'],
             'success': self.status_dict['success'],
             'status': self.status_dict,
-            'reward': self.reward_manager._generate_info(),
+            'reward': self.reward_manager.generate_info(),
         }
 
         return info
