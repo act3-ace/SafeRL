@@ -20,7 +20,7 @@ class Manager(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         """Create and return an info dict"""
         raise NotImplementedError
 
@@ -42,7 +42,7 @@ class ObservationManager(Manager):
         super().reset(sim_state)
         self.obs = None
         
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         info = {}
         return info
 
@@ -76,7 +76,7 @@ class StatusManager(Manager):
     def process(self, sim_state):
         return self._compute_status(sim_state)
 
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         info = {
             'status': self.status
         }
@@ -119,7 +119,7 @@ class RewardManager(Manager):
             components["total"][p.name] = p.get_total_value()
         return components
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'step': self.step_value,
             'components': self.generate_components(),
