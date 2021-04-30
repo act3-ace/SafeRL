@@ -13,7 +13,7 @@ class Processor(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         """Create and return an info dict"""
         raise NotImplementedError
 
@@ -75,7 +75,7 @@ class ObservationProcessor(Processor):
     def reset(self, env_objs, status):
         self.obs = None
 
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         info = {
             "observation": self.obs
         }
@@ -83,7 +83,7 @@ class ObservationProcessor(Processor):
 
     def _increment(self, env_objs, step_size, status):
         # observation processors will not have a state to update by default
-        ...
+        pass
 
     @abc.abstractmethod
     def _process(self, env_objs, status) -> np.ndarray:
@@ -101,7 +101,7 @@ class StatusProcessor(Processor):
         # reset internal state
         raise NotImplementedError
 
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         info = {
             "status": self.status_value
         }
@@ -129,7 +129,7 @@ class RewardProcessor(Processor):
         self.step_value = 0
         self.total_value = 0
 
-    def _generate_info(self) -> dict:
+    def generate_info(self) -> dict:
         info = {
             "step": self.step_value,
             "total": self.total_value
