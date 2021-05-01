@@ -55,3 +55,13 @@ If you want to add your files to the GitLab, navigate to the spacecraftdockingrl
 `git add .`  
 `git commit -m 'COMMENTS'`  
 `git push -u origin master`
+
+## Documentation
+
+General code documentation guidelines:
+1. Use [SciPy/NumPy](https://numpydoc.readthedocs.io/en/latest/format.html) style docstrings for all front-facing classes and functions ([example](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html)).
+2. Use Python line comments to explain potentially obscure implementation details where they occur.
+3. Use descriptive variable names.
+4. Avoid using the same variable name for different purposes within the same scope.
+
+Instructions on setting the NumPy docstring format as your default in PyCharm can be found [here](https://www.jetbrains.com/help/pycharm/settings-tools-python-integrated-tools.html).
