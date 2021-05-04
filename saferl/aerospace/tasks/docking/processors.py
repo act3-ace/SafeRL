@@ -27,6 +27,7 @@ class DockingObservationProcessor(ObservationProcessor):
         obs = env_objs['deputy'].state.vector
         return obs
 
+
 class DockingObservationProcessorOriented(ObservationProcessor):
     def __init__(self, config):
         super().__init__(config=config)
@@ -63,7 +64,6 @@ class TimeRewardProcessor(RewardProcessor):
     def reset(self, env_objs, status):
         super().reset(env_objs=env_objs, status=status)
         self.previous_step_size = 0
-
 
     def _increment(self, env_objs, step_size, status):
         # update state

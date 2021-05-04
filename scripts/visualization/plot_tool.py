@@ -40,6 +40,7 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
             prev_ID = None
             prev_success = None
             prev_failure = None
+            prev_episode_number = None
 
             # iterate through json objects in log
             for state in log:
@@ -91,7 +92,7 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
         t_end = time.time()
         print("log read time.yaml: " + str(t_end - t_start))
     else:
-        with open(path_to_file, "rb") as file:         #this has issues with saves using "log" in beginning
+        with open(path_to_file, "rb") as file:         # this has issues with saves using "log" in beginning
             episode_dataframes = pickle.load(file)
 
         with open(path_to_file.strip("log")+"meta", "rb") as file:
@@ -255,7 +256,7 @@ def plot_variables(plot_name: str):
     main_axes.figure.savefig(plot_name)
 
 
-#TODO
+# TODO
 def to_numpy(data):
     """
     Helper func to convert array-like data to plottable type numpy.ndarray
@@ -274,8 +275,7 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use("TkAgg")
 
-
-    ### Consume log file and construct pandas tables TODO: relative paths
+    # Consume log file and construct pandas tables TODO: relative paths
     path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_085452/training_logs/worker_1.log"
     # path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_112211/training_logs/worker_1.log"
     path_to_save = "/media/john/HDD/Dubins_2D_preprocessed.log"
@@ -300,9 +300,6 @@ if __name__ == "__main__":
     }
     main_figure, main_axes = pyplot.subplots()
     plot_name = "test_save.png"
-
-
-
 
     # create UI
     menu = ConsoleMenu("AFRL RTA - Log Analysis Tool", "Enter a number from the list below:")

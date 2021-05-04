@@ -1,5 +1,4 @@
-import saferl.aerospace.models.dubins
-import saferl.aerospace.models.cwhspacecraft
+from saferl.aerospace.models import dubins, cwhspacecraft
 
 
 lookup = {**dubins.lookup, **cwhspacecraft.lookup}

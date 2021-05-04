@@ -4,7 +4,6 @@ import os
 import pickle
 
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
 import tensorflow.keras as keras
 
 from scipy.io import savemat
@@ -13,8 +12,10 @@ import ray
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.aerospace.tasks import DubinsRejoin
+from saferl.aerospace.tasks.rejoin.task import DubinsRejoin
 from saferl.environment.utils import numpy_to_matlab_txt
+
+tf.compat.v1.disable_eager_execution()
 
 # expr_dir = 'output/expr_20210210_152136/PPO_DubinsRejoin_b926e_00000_0_2021-02-10_15-21-37'
 # ckpt_num = 400
@@ -45,7 +46,7 @@ weights = policy.get_weights()
 obs = np.linspace(-.9, .9, 12)
 
 
-sess  = policy.get_session()
+sess = policy.get_session()
 tf.compat.v1.keras.backend.set_session(sess)
 
 for layer in model.layers:
@@ -68,7 +69,7 @@ with open(model_summary_save_path, 'w') as f:
 from collections import OrderedDict
 weights_formatted = OrderedDict()
 for name, mat in weights.items():
-    weights_formatted[name.replace("/","_")] = mat
+    weights_formatted[name.replace("/", "_")] = mat
 
 # save weights as matlab txt
 mat_txt_save_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}.txt'.format(ckpt_num))
@@ -107,7 +108,7 @@ i = 0
 while not done:
     print(i)
     i += 1
-    logits, value = model_rollout.predict(obs[None,:])
+    logits, value = model_rollout.predict(obs[None, :])
     action = agent.compute_action(obs)
 
     episode_obs.append(obs)
@@ -117,8 +118,8 @@ while not done:
 
     obs, reward, done, info = env.step(action)
 
-logits_mat = np.array(episode_logits)[:,0,:]
-values_mat = np.array(episode_value)[:,0,:]
+logits_mat = np.array(episode_logits)[:, 0, :]
+values_mat = np.array(episode_value)[:, 0, :]
 obs_mat = np.array(episode_obs)
 
 # save network inputs and outputs to npz file at mat file
@@ -126,7 +127,7 @@ model_test_io_npz_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.n
 model_test_io_mat_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.mat'.format(ckpt_num))
 
 np.savez(model_test_io_npz_path, logits=logits_mat, values=values_mat, obs=obs_mat)
-savemat(model_test_io_mat_path, {'logits':logits_mat, 'values':values_mat, 'obs':obs_mat})
+savemat(model_test_io_mat_path, {'logits': logits_mat, 'values': values_mat, 'obs': obs_mat})
 
 
-1+1
+1 + 1
