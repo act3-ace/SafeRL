@@ -1,6 +1,5 @@
 import gym.spaces
 import numpy as np
-import math
 
 from scipy.spatial.transform import Rotation
 

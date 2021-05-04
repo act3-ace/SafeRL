@@ -74,7 +74,7 @@ class Point(BaseGeometry):
     @position.setter
     def position(self, value):
         assert isinstance(value, np.ndarray) and value.shape == (
-        3,), "Position must be set in a numpy ndarray with shape=(3,)"
+            3,), "Position must be set in a numpy ndarray with shape=(3,)"
         self._center = copy.deepcopy(value)
 
     @property
@@ -172,12 +172,12 @@ class RelativeGeometry(BaseEnvObj):
 
         # check that only r_offset, theta_offset or x/y/z offset are specified
         assert ((r_offset is not None) or (theta_offset is not None) or (aspect_angle is not None)) != (
-                    (x_offset is not None) or (y_offset is not None)), \
+                (x_offset is not None) or (y_offset is not None)), \
             "user either polar or x/y relative position definiton, not both"
 
         # check that only theta_offset or aspect_angle is used
         assert ((theta_offset is None) or (
-                    aspect_angle is None)), "specify either theta_offset or aspect_angle, not both"
+                aspect_angle is None)), "specify either theta_offset or aspect_angle, not both"
 
         # convert aspect angle to theta
         if aspect_angle is not None:

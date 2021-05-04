@@ -7,7 +7,7 @@ import ray
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.aerospace.tasks import DockingEnv
+from saferl.aerospace.tasks.docking.task import DockingEnv
 
 
 def run_rollouts(agent, env_config, num_rollouts=1):
@@ -49,13 +49,13 @@ def run_rollouts(agent, env_config, num_rollouts=1):
 
     return rollout_seq
 
+
 def compare_rollouts(expr_dir, ckpt_nums):
     rollout_seq_set = []
 
     ray_config_path = os.path.join(expr_dir, 'params.pkl')
     with open(ray_config_path, 'rb') as ray_config_f:
         ray_config = pickle.load(ray_config_f)
-    env_config = ray_config['env_config']
 
     ckpt_dir_name = 'checkpoints_' + 'v'.join([str(a) for a in ckpt_nums])
 
@@ -71,18 +71,18 @@ def compare_rollouts(expr_dir, ckpt_nums):
         ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
         rollout_dir = os.path.join(expr_dir, 'rollouts', ckpt_dir_name)
         rollout_history_filepath = os.path.join(rollout_dir, "rollout_history.pickle")
-        rollout_seq = pickle.load( open( rollout_history_filepath, "rb" ) )
+        rollout_seq = pickle.load(open(rollout_history_filepath,"rb"))
         rollout_seq_set.append(rollout_seq)
 
     actuator_config = ray_config['env_config']['agent']['controller']['actuators']
 
     for i in tqdm.tqdm(range(len(rollout_seq_set[0]))):
-        
-        rollout_seq = [ rollout_seq[i] for rollout_seq in rollout_seq_set]
+        rollout_seq = [rollout_seq[i] for rollout_seq in rollout_seq_set]
 
-        animate_trajectories_docking(rollout_seq, os.path.join(output_anim_single_dir,'rollout_{:03d}.mp4'.format(i)), anim_rate=1, plot_docking_region=True, sq_axis=True, plot_estimated_trajectory=True, frame_interval=66,
-            plot_actuators=True, actuator_config=actuator_config, trail_length=20)
-
+        animate_trajectories_docking(rollout_seq, os.path.join(output_anim_single_dir, 'rollout_{:03d}.mp4'.format(i)),
+                                     anim_rate=1, plot_docking_region=True, sq_axis=True,
+                                     plot_estimated_trajectory=True, frame_interval=66,
+                                     plot_actuators=True, actuator_config=actuator_config, trail_length=20)
 
 
 if __name__ == '__main__':
@@ -114,8 +114,6 @@ if __name__ == '__main__':
     agent = ppo.PPOTrainer(config=ray_config, env=DockingEnv)
     agent.restore(ckpt_path)
 
-    
-
     output_dir = os.path.join(expr_dir, 'rollouts', ckpt_dir_name)
     output_anim_dir = os.path.join(output_dir, 'animations')
     if only_failures:
@@ -135,10 +133,10 @@ if __name__ == '__main__':
         rollout_seq = run_rollouts(agent, env_config, num_rollouts=20)
         print('finished running rollouts')
 
-        pickle.dump( rollout_seq, open( rollout_history_filepath, "wb" ) )
+        pickle.dump(rollout_seq, open(rollout_history_filepath, "wb"))
 
     else:
-        rollout_seq = pickle.load( open( rollout_history_filepath, "rb" ) )
+        rollout_seq = pickle.load(open(rollout_history_filepath, "rb"))
 
     failure_rollout_seq = []
 
@@ -154,15 +152,20 @@ if __name__ == '__main__':
             outcome_str = 'success'
             if only_failures:
                 continue
-        
-        animate_trajectories_docking([rollout], os.path.join(output_anim_single_dir,'rollout_{:03d}_{}.mp4'.format(i, outcome_str)), anim_rate=1, plot_docking_region=True, sq_axis=True, plot_estimated_trajectory=True, frame_interval=66,
-            plot_actuators=True, actuator_config=actuator_config, trail_length=20)
+
+        animate_trajectories_docking([rollout], os.path.join(output_anim_single_dir,
+                                                             'rollout_{:03d}_{}.mp4'.format(i, outcome_str)),
+                                     anim_rate=1, plot_docking_region=True, sq_axis=True,
+                                     plot_estimated_trajectory=True, frame_interval=66,
+                                     plot_actuators=True, actuator_config=actuator_config, trail_length=20)
 
     print('animating all rollouts')
 
     if not only_failures:
-        animate_trajectories_docking(rollout_seq, os.path.join(output_anim_dir,'all_trajectories.mp4'), anim_rate=1, plot_docking_region=True, sq_axis=True, plot_estimated_trajectory=False, frame_interval=66,
-                plot_actuators=True, actuator_config=actuator_config, trail_length=20)
-    
+        animate_trajectories_docking(rollout_seq, os.path.join(output_anim_dir, 'all_trajectories.mp4'),
+                                     anim_rate=1, plot_docking_region=True, sq_axis=True,
+                                     plot_estimated_trajectory=False, frame_interval=66,
+                                     plot_actuators=True, actuator_config=actuator_config, trail_length=20)
+
     # if len(failure_trajectory_data) > 0:
     #     animate_trajectories(failure_trajectory_data, os.path.join(output_anim_dir,'all_failure_trajectories.mp4'), plot_rejoin_region=True, rejoin_color_type='match')

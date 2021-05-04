@@ -110,9 +110,6 @@ class AgentController(BaseController):
         self.setup_action_space()
 
     def setup_action_space(self):
-
-        actuators = self.actuator_set.actuators
-
         self.action_preprocessors = []
         action_space_tup = ()
 

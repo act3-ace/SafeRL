@@ -40,7 +40,7 @@ class ObservationManager(Manager):
     def reset(self, env_objs, status):
         super().reset(env_objs, status)
         self.obs = None
-        
+
     def generate_info(self) -> dict:
         info = {}
         return info
