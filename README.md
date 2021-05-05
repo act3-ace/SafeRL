@@ -1,5 +1,5 @@
 # Intro
-The SafeRL library provides the components and tools to build modular, OpenAI Gym compatible Reinforement Learning environments with Run Time Assurance (RTA). SafeRL is designed to work best with ray/rllib.
+The SafeRL library provides the components and tools to build modular, OpenAI Gym compatible Reinforcement Learning environments with Run Time Assurance (RTA). SafeRL is designed to work best with ray/rllib.
 
 ## Installation
 Inside of the repo's root directory, simply install using the `setup.py` with:
@@ -18,11 +18,14 @@ SafeRL is built around using config files to define environments. The included t
 The following commands will train an rllib agent on one of our baseline environments
 ```shell
 # Dubins aircraft rejoin baseline
-python scripts/train.py configs/rejoin/rejoin_default.yaml
+python scripts/train.py --config configs/rejoin/rejoin_default.yaml
 
 # Clohessy-Wiltshire spacecraft Docking baseline
-python scripts/train.py configs/docking/docking_default.yaml
+python scripts/train.py --config configs/docking/docking_default.yaml
 ```
+
+See ```python scripts/train.py --help``` for more training options.
+
 
 ## Documentation
 
