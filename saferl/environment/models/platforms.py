@@ -124,7 +124,8 @@ class AgentController(BaseController):
                 raise ValueError("Actuator name {} not found in platform's actuator set".format(actuator_name))
 
             if actuator.space == 'continuous':
-                # determine upper and lower bounds of actuator range. Should be the intersection of the actuator object bounds and the actuator config bounds
+                # determine upper and lower bounds of actuator range.
+                # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
                     bounds_min = max(actuator.bounds[0], actuator_config['bounds'][0])
                     bounds_max = min(actuator.bounds[1], actuator_config['bounds'][1])
@@ -143,11 +144,13 @@ class AgentController(BaseController):
                     actuator_action_space = gym.spaces.Discrete(actuator_config['points'])
                 else:
                     raise ValueError(
-                        "Action Config for Actuator {} has invalid space of {}. Should be 'continuous' or 'discrete'".format(
+                        "Action Config for Actuator {} has invalid space of {}. "
+                        "Should be 'continuous' or 'discrete'".format(
                             actuator.name, actuator_config['space']))
 
             elif actuator.space == 'discrete':
-                # if the actuator is discrete, ignore actuator config. Use actuator defined points and pass through value to control
+                # if the actuator is discrete, ignore actuator config.
+                # Use actuator defined points and pass through value to control
                 raise NotImplementedError
 
             else:
