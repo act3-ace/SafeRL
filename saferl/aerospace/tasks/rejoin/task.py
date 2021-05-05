@@ -4,14 +4,9 @@ from saferl.aerospace.models.dubins.rta import RTADubins2dCollision
 class DubinsRejoin(BaseEnv):
 
     def __init__(self, config):
-<<<<<<< HEAD
-        super(DubinsRejoin, self).__init__(config)
+        super().__init__(config)
         self.step_size = 0.1
         self.sim_state.env_objs['wingman'].rta_module = RTADubins2dCollision()
-=======
-        super().__init__(config)
-        self.step_size = 1
->>>>>>> c49e6216869c2200e598a34f8e508c331e56cff6
 
     def reset(self):
         return super().reset()
@@ -32,14 +27,9 @@ class DubinsRejoin(BaseEnv):
             'failure': self.status['failure'],
             'success': self.status['success'],
             'status': self.status,
-<<<<<<< HEAD
-            'reward': self.reward_manager._generate_info(),
+            'reward': self.reward_manager.generate_info(),
             'timestep_size': self.step_size,
             'rta': self.env_objs['wingman'].rta_module.generate_info(),
-=======
-            'reward': self.reward_manager.generate_info(),
-            'timestep_size': self.step_size
->>>>>>> c49e6216869c2200e598a34f8e508c331e56cff6
         }
 
         return info
