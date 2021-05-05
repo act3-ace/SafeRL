@@ -71,7 +71,7 @@ def compare_rollouts(expr_dir, ckpt_nums):
         ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
         rollout_dir = os.path.join(expr_dir, 'rollouts', ckpt_dir_name)
         rollout_history_filepath = os.path.join(rollout_dir, "rollout_history.pickle")
-        rollout_seq = pickle.load(open(rollout_history_filepath,"rb"))
+        rollout_seq = pickle.load(open(rollout_history_filepath, "rb"))
         rollout_seq_set.append(rollout_seq)
 
     actuator_config = ray_config['env_config']['agent']['controller']['actuators']

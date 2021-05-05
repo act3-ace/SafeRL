@@ -15,6 +15,10 @@ import ray.rllib.agents.ppo as ppo
 from saferl.aerospace.tasks.rejoin.task import DubinsRejoin
 from saferl.environment.utils import numpy_to_matlab_txt
 
+from contextlib import redirect_stdout
+from collections import OrderedDict
+
+
 tf.compat.v1.disable_eager_execution()
 
 # expr_dir = 'output/expr_20210210_152136/PPO_DubinsRejoin_b926e_00000_0_2021-02-10_15-21-37'
@@ -59,14 +63,12 @@ keras_save_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}.h5'.format(ckpt_
 model.save(keras_save_path)
 
 # save model summary
-from contextlib import redirect_stdout
 model_summary_save_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_model_summary.txt'.format(ckpt_num))
 with open(model_summary_save_path, 'w') as f:
     with redirect_stdout(f):
         model.summary()
 
 # create new weight dict with weight names / --> _
-from collections import OrderedDict
 weights_formatted = OrderedDict()
 for name, mat in weights.items():
     weights_formatted[name.replace("/", "_")] = mat

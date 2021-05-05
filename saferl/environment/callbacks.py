@@ -14,7 +14,7 @@ import jsonlines
 from enum import Enum
 
 
-def build_callbacks_caller(callbacks: []):
+def build_callbacks_caller(callbacks: []):  # noqa C901
     class CallbacksCaller(DefaultCallbacks):
         def __init__(self, legacy_callbacks_dict: Dict[str, callable] = None):
             self.callbacks = callbacks

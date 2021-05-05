@@ -172,7 +172,7 @@ class RelativeGeometry(BaseEnvObj):
 
         # check that only r_offset, theta_offset or x/y/z offset are specified
         assert ((r_offset is not None) or (theta_offset is not None) or (aspect_angle is not None)) != (
-                (x_offset is not None) or (y_offset is not None)), \
+            (x_offset is not None) or (y_offset is not None)), \
             "user either polar or x/y relative position definiton, not both"
 
         # check that only theta_offset or aspect_angle is used
