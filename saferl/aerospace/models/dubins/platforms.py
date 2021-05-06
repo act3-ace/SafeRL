@@ -4,7 +4,7 @@ import numpy as np
 import math
 from scipy.spatial.transform import Rotation
 
-from saferl.environment.models import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
+from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
     BaseActuatorSet, BaseODESolverDynamics
 
 
@@ -40,7 +40,7 @@ class BaseDubinsState(BasePlatformStateVectorized):
     @property
     @abc.abstractmethod
     def v(self):
-        ...
+        raise NotImplementedError
 
     @property
     def velocity(self):
@@ -62,22 +62,22 @@ class BaseDubinsState(BasePlatformStateVectorized):
     @property
     @abc.abstractmethod
     def roll(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def heading(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def gamma(self):
-        ...
+        raise NotImplementedError
 
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, config=None, controller=None,  **kwargs):
+    def __init__(self, config=None, controller=None, **kwargs):
 
         dynamics = Dubins2dDynamics()
         actuator_set = Dubins2dActuatorSet()
@@ -86,7 +86,7 @@ class Dubins2dPlatform(BaseDubinsPlatform):
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'state': self.state.vector,
             'x': self.x,
@@ -192,7 +192,7 @@ class Dubins2dDynamics(BaseODESolverDynamics):
 
         # enforce velocity limits
         if state.v < self.v_min or state.v > self.v_max:
-            state.v = max( min(state.v, self.v_max), self.v_min)
+            state.v = max(min(state.v, self.v_max), self.v_min)
 
         return state
 
@@ -206,8 +206,8 @@ class Dubins2dDynamics(BaseODESolverDynamics):
         elif v >= self.v_max and throttle > 0:
             throttle = 0
 
-        x_dot = v * math.cos(heading) # x_dot
-        y_dot = v * math.sin(heading) # y_dot
+        x_dot = v * math.cos(heading)  # x_dot
+        y_dot = v * math.sin(heading)  # y_dot
         heading_dot = rudder
         v_dot = throttle
 

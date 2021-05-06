@@ -1,0 +1,5 @@
+name: success_reward
+class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
+config:
+  reward: 1
+  success_status: success

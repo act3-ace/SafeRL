@@ -1,1 +1,3 @@
-import saferl.environment
+from saferl import environment, aerospace
+
+lookup = {**aerospace.lookup, **environment.lookup}
