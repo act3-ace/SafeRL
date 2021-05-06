@@ -1,0 +1,10 @@
+[flake8]
+max-line-length =120
+exclude =
+    .git,
+    __pycache__,
+    visualization,
+    convert_model.py,
+    run_rollout.py,
+    run_rollout_docking.py
+max-complexity = 10

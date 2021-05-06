@@ -1,4 +1,3 @@
-import saferl.aerospace.tasks.rejoin
-import saferl.aerospace.tasks.docking
+from saferl.aerospace.tasks import rejoin, docking
 
 lookup = {**rejoin.lookup, **docking.lookup}
