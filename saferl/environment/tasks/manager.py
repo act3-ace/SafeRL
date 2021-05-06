@@ -96,7 +96,7 @@ class StatusManager(Manager):
                 sim_state_new.status[processor.name] = processor.process(sim_state_new)
             else:
                 sim_state_new.status[processor.name] = processor.step(sim_state_new, step_size)
-        
+
         return sim_state_new.status
 
 
