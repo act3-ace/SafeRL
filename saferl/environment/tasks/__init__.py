@@ -1,7 +1,4 @@
-import saferl.environment.tasks.env
-import saferl.environment.tasks.manager
-import saferl.environment.tasks.processor
-import saferl.environment.tasks.utils
+from saferl.environment.tasks import env, manager, processor, utils
 
 import inspect
 
