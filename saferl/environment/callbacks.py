@@ -14,29 +14,29 @@ import jsonlines
 from enum import Enum
 
 
-def build_callbacks_caller(callbacks: []):
+def build_callbacks_caller(callbacks: []):  # noqa C901
     class CallbacksCaller(DefaultCallbacks):
         def __init__(self, legacy_callbacks_dict: Dict[str, callable] = None):
             self.callbacks = callbacks
-            super(CallbacksCaller, self).__init__(legacy_callbacks_dict)
+            super().__init__(legacy_callbacks_dict)
 
         def on_episode_end(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_episode_end", None)):
                     callback.on_episode_end(*args, **kwargs)
-            super(CallbacksCaller, self).on_episode_end(*args, **kwargs)
+            super().on_episode_end(*args, **kwargs)
 
         def on_episode_step(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_episode_step", None)):
                     callback.on_episode_step(*args, **kwargs)
-            super(CallbacksCaller, self).on_episode_step(*args, **kwargs)
+            super().on_episode_step(*args, **kwargs)
 
         def on_postprocess_trajectory(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_postprocess_trajectory", None)):
                     callback.on_postprocess_trajectory(*args, **kwargs)
-            super(CallbacksCaller, self).on_postprocess_trajectory(*args, **kwargs)
+            super().on_postprocess_trajectory(*args, **kwargs)
 
     return CallbacksCaller
 
@@ -68,7 +68,7 @@ class RewardComponentsCallback:
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        env_index: int, **kwargs):
         ep_info = episode.last_info_for()
-        for reward_comp_name, reward_comp_val in ep_info['reward']['component_totals'].items():
+        for reward_comp_name, reward_comp_val in ep_info['reward']['components']['total'].items():
             episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val
 
 
@@ -133,7 +133,7 @@ class LoggingCallback:
         # handle logging options
         # self.episodes.add(episode_id)
         if worker_index <= self.num_logging_workers and self.worker_episode_numbers[
-            episode_id] % self.episode_log_interval == 0 and step_num:
+                episode_id] % self.episode_log_interval == 0 and step_num:
             state = {}
             if self.log_actions:
                 state["actions"] = episode.last_action_for(
@@ -144,7 +144,7 @@ class LoggingCallback:
                 # check if jsonable and convert if necessary
                 info = episode.last_info_for('agent0')
 
-                if self.is_jsonable(info) == True:
+                if self.is_jsonable(info) is True:
                     state["info"] = info
                 else:
                     state["info"] = self.jsonify(info)
@@ -170,7 +170,7 @@ class LoggingCallback:
             suspicious_object = map[key]
             is_json_ready = self.is_jsonable(suspicious_object)
 
-            if is_json_ready == True:
+            if is_json_ready is True:
                 # move along sir
                 continue
             elif is_json_ready == TypeError:

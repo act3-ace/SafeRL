@@ -1,0 +1,4 @@
+name: in_rejoin_prev
+class: saferl.aerospace.tasks.rejoin.processors.DubinsInRejoinPrev
+config:
+  rejoin_status: in_rejoin

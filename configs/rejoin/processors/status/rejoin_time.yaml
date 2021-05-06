@@ -1,0 +1,4 @@
+name: rejoin_time
+class: saferl.aerospace.tasks.rejoin.processors.DubinsRejoinTime
+config:
+  rejoin_status: in_rejoin

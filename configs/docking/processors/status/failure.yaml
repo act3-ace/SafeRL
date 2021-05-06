@@ -1,0 +1,6 @@
+name: failure
+class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
+config:
+  docking_distance: docking_distance
+  max_goal_distance: 40000
+  timeout: 1000

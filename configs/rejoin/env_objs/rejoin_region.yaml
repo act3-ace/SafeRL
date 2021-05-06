@@ -1,0 +1,8 @@
+name: rejoin_region
+class: saferl.environment.models.geometry.RelativeCircle
+config:
+  ref: lead
+  aspect_angle: 60
+  r_offset: 500
+  radius: 150
+  track_orientation: true

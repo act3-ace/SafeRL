@@ -9,7 +9,7 @@ import matplotlib.patches as mpatches
 
 import tqdm
 
-from saferl.aerospace.models import CWHSpacecraft2d
+from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d
 
 
 def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', frame_interval=50, anim_rate=4, trail_length=40, plot_docking_region=False, plot_safety_region=False, color_type='g', sq_axis=False, extra_time=2, plot_estimated_trajectory=False, plot_actuators=False, actuator_config=None):
@@ -20,8 +20,10 @@ def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', f
     writer = Writer(metadata=dict(artist='Umberto Ravaioli'), bitrate=1800)
 
     # compute axis dimensions
-    all_xs = [ info['deputy']['x'] for rollout in rollout_seq for info in rollout['info_history'] ] + [ info['chief']['x'] for rollout in rollout_seq for info in rollout['info_history'] ]
-    all_ys = [ info['deputy']['y'] for rollout in rollout_seq for info in rollout['info_history'] ] + [ info['chief']['y'] for rollout in rollout_seq for info in rollout['info_history'] ]
+    all_xs = [info['deputy']['x'] for rollout in rollout_seq for info in rollout['info_history']] + [
+        info['chief']['x'] for rollout in rollout_seq for info in rollout['info_history']]
+    all_ys = [info['deputy']['y'] for rollout in rollout_seq for info in rollout['info_history']] + [
+        info['chief']['y'] for rollout in rollout_seq for info in rollout['info_history']]
 
     max_x = max(all_xs)
     min_x = min(all_xs)
@@ -29,20 +31,20 @@ def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', f
     min_y = min(all_ys)
 
     fig = plt.figure()
-    ax = plt.axes(xlim=(min_x-50, max_x+50), ylim=(min_y-50, max_y+50))
+    ax = plt.axes(xlim=(min_x - 50, max_x + 50), ylim=(min_y - 50, max_y + 50))
 
     if sq_axis:
         ax.set_aspect('equal', adjustable='box')
 
     max_time = max([len(rollout['info_history']) for rollout in rollout_seq])
 
-    max_time = int(max_time + extra_time*1000/frame_interval*anim_rate)
+    max_time = int(max_time + extra_time * 1000 / frame_interval * anim_rate)
 
     num_rollouts = len(rollout_seq)
     cmap = cm.get_cmap(colormap)
 
     # save location history of deputy for trails
-    deputy_trails = [ ([], []) for i in range(num_rollouts) ]
+    deputy_trails = [([], []) for i in range(num_rollouts)]
 
     if plot_estimated_trajectory:
         trajectory_spacecraft = CWHSpacecraft2d()
@@ -50,14 +52,17 @@ def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', f
     for t_idx in range(0, max_time, anim_rate):
         time_artists = []
         for rollout_idx, rollout in enumerate(rollout_seq):
-            
             traj_len = len(rollout['info_history'])
-            traj_time = min(t_idx, traj_len-1)
+            traj_time = min(t_idx, traj_len - 1)
             info = rollout['info_history'][traj_time]
 
             deputy_pos = (info['deputy']['x'], info['deputy']['y'])
             chief_pos = (info['chief']['x'], info['chief']['y'])
-            docking_region_params = (info['docking_region']['x'], info['docking_region']['y'], info['docking_region']['radius'])
+            docking_region_params = (
+                info['docking_region']['x'],
+                info['docking_region']['y'],
+                info['docking_region']['radius']
+            )
 
             # save to trail
             deputy_trails[rollout_idx][0].append(deputy_pos[0])
@@ -93,9 +98,9 @@ def animate_trajectories_docking(rollout_seq, output_filename, colormap='jet', f
                 trajectory_spacecraft.state = info['deputy']['state']
                 estimated_traj = trajectory_spacecraft.estimate_trajectory(time_window=200, num_points=100)
 
-                estimated_traj_artist = plt.plot(estimated_traj[0,:], estimated_traj[1,:], ':', color=fp_color)
+                estimated_traj_artist = plt.plot(estimated_traj[0, :], estimated_traj[1, :], ':', color=fp_color)
 
-                time_artists += estimated_traj_artist          
+                time_artists += estimated_traj_artist
 
             deputy_plot = plt.plot(deputy_pos[0], deputy_pos[1], color=fp_color, marker=deputy_marker)
             chief_plot = plt.plot(chief_pos[0], chief_pos[1], color=chief_color, marker=chief_marker)

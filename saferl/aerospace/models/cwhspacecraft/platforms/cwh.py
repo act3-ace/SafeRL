@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import copy
 
-from saferl.environment.models import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
+from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
     BaseActuatorSet, BaseLinearODESolverDynamics
 
 
@@ -16,7 +16,7 @@ class CWHSpacecraft2d(BasePlatform):
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'state': self.state.vector,
             'x': self.x,
@@ -46,7 +46,7 @@ class CWHSpacecraft3d(BasePlatform):
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'state': self.state.vector,
             'x': self.x,

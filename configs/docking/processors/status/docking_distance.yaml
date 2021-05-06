@@ -1,0 +1,5 @@
+name: docking_distance
+class: saferl.aerospace.tasks.docking.processors.DockingDistanceStatusProcessor
+config:
+  deputy: deputy
+  docking_region: docking_region
