@@ -129,7 +129,7 @@ class Sphere(Circle):
         return is_contained
 
 
-class Cyclinder(Circle):
+class Cylinder(Circle):
 
     def __init__(self, x=0, y=0, z=0, radius=1, height=1):
         self.height = height
@@ -370,7 +370,7 @@ class RelativeCylinder(RelativeGeometry):
                  aspect_angle=None,
                  init=None,
                  **kwargs):
-        shape = Cyclinder(**kwargs)
+        shape = Cylinder(**kwargs)
 
         super().__init__(
             ref,
