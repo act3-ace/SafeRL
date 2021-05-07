@@ -215,9 +215,11 @@ class Dubins2dDynamics(BaseODESolverDynamics):
 
         return dx_vec
 
+
 """
 3D Dubins Implementation
 """
+
 
 class Dubins3dPlatform(BaseDubinsPlatform):
 
