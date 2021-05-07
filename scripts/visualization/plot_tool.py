@@ -1,5 +1,7 @@
 """
-This script implements the API used by the plot_notebook.ipynb Jupyter notebook in order to provide quick and powerful insight into experiment log data. In the future, running this script directly will launch a simplified plotting tool, however currently such a feature is not implemented.
+This script implements the API used by the plot_notebook.ipynb Jupyter notebook in order to provide quick and powerful
+insight into experiment log data. In the future, running this script directly will launch a simplified plotting tool,
+however currently such a feature is not implemented.
 
 Note: requires flatten_json package amd console-menu
         (pip install flatten_json
@@ -30,7 +32,9 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
         "episode_success": [],
         "episode_failure": []
     }
-    episode_dictionaries = {}                # index (row #) -> dict (flattened state dict) [step_number | episode_ID | wingman_x | ... ]
+
+    # index (row #) -> dict (flattened state dict) [step_number | episode_ID | wingman_x | ... ]
+    episode_dictionaries = {}
 
     t_start = time.time()
     # open log file
@@ -101,10 +105,6 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
     return metadata_df, episode_dataframes
 
 
-def display_metadata():
-    print(metadata_df)
-
-
 def display_selected_episode():
     print(selected_episode)
 
@@ -126,7 +126,7 @@ def set_selected_episode():
         print("Entered ID does not match any in current log")
 
 
-def manipulate_variables():
+def manipulate_variables(available_variables):
     print("Available Variables:\n")
     print(available_variables)
     print()
@@ -270,71 +270,7 @@ def to_numpy(data):
 
 
 if __name__ == "__main__":
-    from consolemenu import *
-    from consolemenu.items import *
-    import matplotlib
-    matplotlib.use("TkAgg")
-
-    # Consume log file and construct pandas tables TODO: relative paths
-    path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_085452/training_logs/worker_1.log"
-    # path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_112211/training_logs/worker_1.log"
-    path_to_save = "/media/john/HDD/Dubins_2D_preprocessed.log"
-    blacklist = ["obs", "time.yaml"]  # list of log keys to omit from pandas table
-    load = True
-
-    metadata_df, episode_dataframes = process_log(path_to_save, blacklist, is_jsonlines=False)
-    # print(metadata_df)
-
-    ### Create UI menu
-    ## define global vars and functions
-    selected_episode = next(iter(episode_dataframes.keys()))
-    available_variables = next(iter(episode_dataframes.values())).columns.values
-    x_vars = {"step_number"}
-    # y_vars = set()
-    y_vars = {"info_wingman_x"}
-    z_vars = set()
-    var_map = {
-        "x": x_vars,
-        "y": y_vars,
-        "z": z_vars
-    }
-    main_figure, main_axes = pyplot.subplots()
-    plot_name = "test_save.png"
-
-    # create UI
-    menu = ConsoleMenu("AFRL RTA - Log Analysis Tool", "Enter a number from the list below:")
-
-    # Create some items
-    """
-        + sub plots? (whats so special about sub plots / why not just make 2 plots / how to implement?)
-        + manipulate data (invoke lambda expression on plot vars for more complex analysis...)
-    """
-
-    metadata_item = FunctionItem("View Metadata Table", display_metadata)
-
-    episode_menu = FunctionItem("Select Episode", set_selected_episode)
-
-    display_variables_item = FunctionItem("Display Current Variables", display_variables)
-    clear_variables_item = FunctionItem("Clear variables", clear_variables)
-    set_variables_item = FunctionItem("Set or Remove Variables", manipulate_variables)
-    create_variables_item = FunctionItem("Create Custom Variables", create_variables)
-    plot_variables_item = FunctionItem("Plot Variables", plot_variables, [plot_name])
-    graph_menu = ConsoleMenu("Graph Maker")
-
-    graph_menu_item = SubmenuItem("Make a Graph", graph_menu, menu)
-
-    # Once we're done creating them, we just add the items to the menu
-    graph_menu.append_item(display_variables_item)
-    graph_menu.append_item(set_variables_item)
-    graph_menu.append_item(create_variables_item)
-    graph_menu.append_item(plot_variables_item)
-
-    menu.append_item(metadata_item)
-    menu.append_item(episode_menu)
-    menu.append_item(graph_menu_item)
-
-    # Finally, we call show to show the menu and allow the user to interact
-    menu.show()
+    pass
 
 """
 BACKLOG:
