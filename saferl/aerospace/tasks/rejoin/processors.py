@@ -1,4 +1,5 @@
 import gym.spaces
+import math
 import numpy as np
 
 from scipy.spatial.transform import Rotation
@@ -58,7 +59,79 @@ class DubinsObservationProcessor(ObservationProcessor):
             wingman_lead_r[0:3],
             wingman_rejoin_r[0:3],
             wingman_vel[0:3],
-            lead_vel[0:3],
+            lead_vel[0:3]
+        ])
+
+        # normalize observation
+        obs = np.divide(obs, self.obs_norm_const)
+
+        obs = np.clip(obs, -1, 1)
+
+        return obs
+
+
+class Dubins3dObservationProcessor(ObservationProcessor):
+    def __init__(self, config):
+        super().__init__(config=config)
+
+        # Initialize member variables from config
+        self.lead = self.config["lead"]
+        self.wingman = self.config["wingman"]
+        self.rejoin_region = self.config["rejoin_region"]
+        self.reference = self.config["reference"]
+        self.mode = self.config["mode"]
+
+        if self.mode == 'rect':
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
+            self.obs_norm_const = np.array(
+                [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi],
+                dtype=np.float64)
+        elif self.mode == 'magnorm':
+            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
+            self.obs_norm_const = np.array(
+                [10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi],
+                dtype=np.float64)
+
+    def vec2magnorm(self, vec):
+        norm = np.linalg.norm(vec)
+        mag_norm_vec = np.concatenate(([norm], vec / norm))
+        return mag_norm_vec
+
+    def _process(self, sim_state):
+        wingman_lead_r = sim_state.env_objs[self.lead].position - sim_state.env_objs[self.wingman].position
+        wingman_rejoin_r = sim_state.env_objs[self.rejoin_region].position - sim_state.env_objs[self.wingman].position
+
+        wingman_vel = sim_state.env_objs[self.wingman].velocity
+        lead_vel = sim_state.env_objs[self.lead].velocity
+
+        reference_rotation = Rotation.from_quat([0, 0, 0, 1])
+        if self.reference == 'wingman':
+            reference_rotation = sim_state.env_objs[self.wingman].orientation.inv()
+
+        wingman_lead_r = reference_rotation.apply(wingman_lead_r)
+        wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
+
+        wingman_vel = reference_rotation.apply(wingman_vel)
+        lead_vel = reference_rotation.apply(lead_vel)
+
+        if self.mode == 'magnorm':
+            wingman_lead_r = self.vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
+
+            wingman_vel = self.vec2magnorm(wingman_vel)
+            lead_vel = self.vec2magnorm(lead_vel)
+
+        # gamma and roll for 3d orientation info
+        roll = np.array([sim_state.env_objs["wingman"].roll], dtype=np.float64)
+        gamma = np.array([sim_state.env_objs["wingman"].gamma], dtype=np.float64)
+
+        obs = np.concatenate([
+            wingman_lead_r,
+            wingman_rejoin_r,
+            wingman_vel,
+            lead_vel,
+            roll,
+            gamma
         ])
 
         # normalize observation
