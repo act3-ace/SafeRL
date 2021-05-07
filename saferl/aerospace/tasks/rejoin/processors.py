@@ -1,4 +1,5 @@
 import gym.spaces
+import math
 import numpy as np
 
 from scipy.spatial.transform import Rotation
@@ -82,10 +83,14 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
-            self.obs_norm_const = np.array([10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi], dtype=np.float64)
+            self.obs_norm_const = np.array(
+                [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi],
+                dtype=np.float64)
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            self.obs_norm_const = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi], dtype=np.float64)
+            self.obs_norm_const = np.array(
+                [10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi],
+                dtype=np.float64)
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
