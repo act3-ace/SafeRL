@@ -373,7 +373,7 @@ class BaseDynamics(abc.ABC):
 
 class BaseODESolverDynamics(BaseDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.integration_method = integration_method
         super().__init__()
 
@@ -398,7 +398,7 @@ class BaseODESolverDynamics(BaseDynamics):
 
 class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.A, self.B = self.gen_dynamics_matrices()
         super().__init__(integration_method=integration_method)
 
