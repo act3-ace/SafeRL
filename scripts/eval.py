@@ -12,13 +12,21 @@ from saferl.aerospace.tasks.rejoin.task import DubinsRejoin
 from saferl.aerospace.tasks.docking.task import DockingEnv
 from saferl.environment.utils import jsonify, is_jsonable
 
+from glob import glob
 
 class InvalidExperimentDirStructure(Exception):
     pass
 
 
 def get_args():
-    # function to process script args
+    """
+    function to process script args
+
+    Returns
+    -------
+    type?
+        Collection of command line arguments
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir', type=str, default="", help="the path to the experiment directory", required=True)
@@ -91,29 +99,27 @@ def verify_experiment_dir(expr_dir_path):
     The full path to the experiment run directory (containing the params.pkl file).
     """
 
-    params_found = False
-    params_dir_path = None
-    if not os.path.isfile(os.path.join(expr_dir_path, 'params.pkl')):
-        # if params.pkl not in dir (given path is experiment root dir), check its child dirs
-        for child_dir_name in next(os.walk(expr_dir_path))[1]:
-            child_dir_path = os.path.join(expr_dir_path, child_dir_name)
-            if os.path.isfile(os.path.join(child_dir_path, 'params.pkl')):
-                if params_found:
-                    # there should only be one dir with params.pkl file
-                    raise InvalidExperimentDirStructure("More than one params.pkl file found!")
+    # look for params in given path
+    params_file = "/params.pkl"
+    given = glob(expr_dir_path + params_file)
+    # look for params in child dirs
+    children = glob(expr_dir_path + "/*" + params_file)
 
-                params_found = True
-                params_dir_path = child_dir_path
-
-        if params_dir_path is not None:
-            expr_dir_path = params_dir_path
-        else:
+    if len(given) == 0:
+        # params file not in given dir
+        if len(children) == 0:
             raise InvalidExperimentDirStructure("No params.pkl file found!")
+        elif len(children) > 1:
+            raise InvalidExperimentDirStructure("More than one params.pkl file found!")
+        else:
+            # params file found in child dir
+            size = len(children[0])
+            expr_dir_path = children[0][:size - len(params_file)]
 
     return expr_dir_path
 
 
-def find_checkpoint_dir(ckpt_num):
+def find_checkpoint_dir(expr_dir_path, ckpt_num):
     """
     A function to locate the checkpoint and trailing identifying numbers of a checkpoint file.
 
@@ -127,75 +133,78 @@ def find_checkpoint_dir(ckpt_num):
     ckpt_num : int
         The specified ckpt number (or the number of the latest saved checkpoint, if no ckpt_num was specifed).
     ckpt_num_str : str
-        The leading numbers of the checkpoint directory corresponding to the desired checkpoint.
+        The trailing numbers of the checkpoint directory corresponding to the desired checkpoint.
     """
     ckpt_num_str = None
 
     # find checkpoint dir
     if ckpt_num is not None:
-        # ckpt specified
-        for ckpt_dir_name in next(os.walk(expr_dir_path))[1]:
-            if "_" in ckpt_dir_name:
-                ckpt_num_str = ckpt_dir_name.split("_")[1]
-                if ckpt_num == int(ckpt_num_str):
-                    # handling nuance of ckpt dirs formatting numbers with leading zeroes
-                    ckpt_num = int(ckpt_num_str)
-                    break
+        ckpt_dirs = glob(expr_dir_path + "/checkpoint_*" + str(ckpt_num))
+        if len(ckpt_dirs) == 1:
+            ckpt_num_str = ckpt_dirs[0].split("_")[-1]
+        else:
+            raise FileNotFoundError("Checkpoint {} file not found".format(ckpt_num))
+
+
     else:
         ckpt_num = -1
-        for ckpt_dir_name in next(os.walk(expr_dir_path))[1]:
-            if "_" in ckpt_dir_name:
-                file_num = ckpt_dir_name.split("_")[1]
-                if ckpt_num < int(file_num):
-                    ckpt_num = int(file_num)
-                    ckpt_num_str = file_num
+        ckpt_dirs = glob(expr_dir_path + "/checkpoint_*")
+        for ckpt_dir_name in ckpt_dirs:
+            file_num = ckpt_dir_name.split("_")[-1]
+            if ckpt_num < int(file_num):
+                ckpt_num = int(file_num)
+                ckpt_num_str = file_num
+
 
     return ckpt_num, ckpt_num_str
 
 
-## process args
-args = get_args()
+if __name__ == "__main__":
+    ## process args
+    args = get_args()
 
-# assume full path passed in
-expr_dir_path = args.dir
+    # assume full path passed in
+    expr_dir_path = args.dir
 
-# verify experiment run dir
-expr_dir_path = verify_experiment_dir(expr_dir_path)
+    # verify experiment run dir
+    expr_dir_path = verify_experiment_dir(expr_dir_path)
 
-# get checkpoint num
-ckpt_num, ckpt_num_str = find_checkpoint_dir(args.ckpt_num)
+    # get checkpoint num
+    ckpt_num, ckpt_num_str = find_checkpoint_dir(expr_dir_path, args.ckpt_num)
 
-# set paths
-eval_dir_path = os.path.join(expr_dir_path, 'eval')
-ckpt_eval_dir_path = os.path.join(eval_dir_path, 'ckpt_{}'.format(ckpt_num))
-
-ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
-ckpt_dir = 'checkpoint_{}'.format(ckpt_num_str)
-ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
-ckpt_path = os.path.join(expr_dir_path, ckpt_dir, ckpt_filename)
-
-# user specified output
-if args.output_dir is not None:
-    eval_dir_path = args.output_dir
+    # set paths
+    eval_dir_path = os.path.join(expr_dir_path, 'eval')
     ckpt_eval_dir_path = os.path.join(eval_dir_path, 'ckpt_{}'.format(ckpt_num))
 
-# make directories
-os.makedirs(eval_dir_path, exist_ok=True)
-os.makedirs(ckpt_eval_dir_path, exist_ok=True)
+    ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
+    ckpt_dir = 'checkpoint_{}'.format(ckpt_num_str)
+    ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
+    ckpt_path = os.path.join(expr_dir_path, ckpt_dir, ckpt_filename)
 
-## load checkpoint
-with open(ray_config_path, 'rb') as ray_config_f:
-    ray_config = pickle.load(ray_config_f)
+    # user specified output
+    if args.output_dir is not None:
+        eval_dir_path = args.output_dir
+        ckpt_eval_dir_path = os.path.join(eval_dir_path, 'ckpt_{}'.format(ckpt_num))
 
-ray.init()
-env_config = ray_config['env_config']
-agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
-agent.restore(ckpt_path)
-env = ray_config['env'](config=env_config)
+    # make directories
+    os.makedirs(eval_dir_path, exist_ok=True)
+    os.makedirs(ckpt_eval_dir_path, exist_ok=True)
 
-seed = args.seed if args.seed is not None else ray_config['seed']
-env.seed(seed)
-agent.get_policy().config['explore'] = args.explore
+    ## load checkpoint
+    with open(ray_config_path, 'rb') as ray_config_f:
+        ray_config = pickle.load(ray_config_f)
 
-## run inference episodes and log results
-run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts)
+    ray.init()
+    # load policy and env
+    env_config = ray_config['env_config']
+    agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
+    agent.restore(ckpt_path)
+    env = ray_config['env'](config=env_config)
+    # set seed and explore
+    seed = args.seed if args.seed is not None else ray_config['seed']
+    env.seed(seed)
+
+    agent.get_policy().config['explore'] = args.explore
+
+    ## run inference episodes and log results
+    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts)
