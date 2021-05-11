@@ -2,7 +2,7 @@ import io
 import os
 
 import yaml
-
+import jsonlines
 import numpy as np
 import json
 
@@ -108,8 +108,39 @@ class YAMLParser:
         return target
 
 
+def log_to_jsonlines(contents, output_dir, jsonline_filename):
+    """
+    A helper function to handle writing to a file in JSONlines format.
+
+    Parameters
+    ----------
+    contents : dict
+        The JSON-friendly contents to be appended to the file
+    output_dir : str
+        The path to the parent directory containing the JSONlines file.
+    jsonline_filename : str
+        The name of the JSONlines formatted file to append given contents to.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    with jsonlines.open(output_dir + jsonline_filename, mode='a') as writer:
+        writer.write(contents)
+
 def jsonify(map):
-    # Method to convert non-JSON serializable objects (numpy arrays) to JSON friendly data types inside a dictionary
+    """
+    A function to convert non-JSON serializable objects (numpy arrays and data types) within a dictionary to JSON friendly
+    data types.
+
+    Parameters
+    ----------
+    map : dict
+        The dictionary which may or may not contain non-JSON serializable values
+
+    Returns
+    -------
+    map : dict
+        The same dictionary passed in from parameters, but with converted values
+    """
+
     for key in map.keys():
         # iterate through dictionary, converting objects as needed
         suspicious_object = map[key]
@@ -140,8 +171,19 @@ def jsonify(map):
     return map
 
 def is_jsonable(object):
-    # Method to determine whether or not an object is JSON serializable
-    # If not, returns the error
+    """
+    A helper function to determine whether or not an object is JSON serializable.
+
+    Parameters
+    ----------
+    object
+        The object in question
+
+    Returns
+    -------
+    bool or Error
+        True if object is JSON serializable, otherwise the specific error encountered
+    """
     try:
         json.dumps(object)
         return True
