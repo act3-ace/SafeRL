@@ -29,12 +29,12 @@ class InvalidExperimentDirStructure(Exception):
 
 def get_args():
     """
-    function to process script args
+    A function to process script args.
 
     Returns
     -------
-    type?
-        Collection of command line arguments
+    argparse.Namespace
+        Collection of command line arguments and their values
     """
     parser = argparse.ArgumentParser()
 
