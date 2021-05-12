@@ -47,7 +47,7 @@ git clone https://git.act3-ace.com/rta/have-deepsky.git
 
 ```shell
 cd path/to/have-deepsky/
-pip install .
+pip --default-timeout=1000 install .
 ```
 
 or perform an editable install if you will be changing the saferl
@@ -55,5 +55,9 @@ package code:
 
 ```shell
 cd path/to/have-deepsky/
-pip install -e .
+pip --default-timeout=1000 install -e .
 ```
+
+NOTE: The default timeout argument in pip is a workaround for
+the on-prem instance having long read times. This will be the default
+behavior of pip in a future release of ACE Hub.
