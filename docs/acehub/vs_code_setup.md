@@ -7,7 +7,7 @@ VS Code environment hosted on ACE Hub for use with saferl.
 into ACE Hub and setting up your User Configuration. 
    
 2. Create a new environment using the ```vscode-server``` launch
-template, assigning your need resources to the environment.
+template, assigning your needed resources to the environment.
    
 3. Once the new environment is ready, click the "Open UI" button to
 launch the VS Code Editor in your browser.
