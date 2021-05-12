@@ -3,6 +3,30 @@
 The following are instructions for setting up the default
 VS Code environment hosted on ACE Hub for use with saferl.
 
+## Quickstart Commands
+
+For a quick way to get a VS Code environment running the saferl
+package, follow the instructions [here](acehub_quickstart.md) for logging
+into ACE Hub, setting up your User Configuration, and launching your VS Code environment.
+Then, just copy and paste the following into your ACE Hub VS Code environment's
+terminal:
+
+```shell
+conda init bash && exec bash
+export GIT_ASKPASS="/ace/hub/envfile/GIT_ASKPASS" 
+conda create -y -n saferl_env python=3.7 pip
+conda activate saferl_env
+git clone https://git.act3-ace.com/rta/have-deepsky.git
+cd have-deepsky/
+pip --default-timeout=1000 install .
+```
+
+
+## Step-by-step Instructions
+
+The following are step-by-step instructions for creating a VS Code environment
+in ACE Hub for use with the saferl package.
+
 1. Follow the instructions [here](acehub_quickstart.md) for logging
 into ACE Hub and setting up your User Configuration. 
    
