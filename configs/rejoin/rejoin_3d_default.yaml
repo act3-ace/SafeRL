@@ -1,6 +1,7 @@
 env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
 env_config:
   agent: wingman
+  step_size: 1
   env_objs:
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
