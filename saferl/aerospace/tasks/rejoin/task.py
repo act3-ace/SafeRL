@@ -5,7 +5,6 @@ class DubinsRejoin(BaseEnv):
 
     def __init__(self, config):
         super().__init__(config)
-        self.step_size = 1
 
     def reset(self):
         return super().reset()

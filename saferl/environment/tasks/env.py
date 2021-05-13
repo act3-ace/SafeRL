@@ -14,6 +14,12 @@ class BaseEnv(gym.Env):
     def __init__(self, config):
         # save config
         self.config = config
+
+        if 'step_size' in self.config:
+            self.step_size = self.config['step_size']
+        else:
+            self.step_size = 1
+
         self.sim_state = SimulationState()
 
         if 'verbose' in config:
@@ -29,8 +35,6 @@ class BaseEnv(gym.Env):
 
         self._setup_action_space()
         self._setup_obs_space()
-
-        self.step_size = 1  # TODO
 
         self.reset()
 
