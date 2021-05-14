@@ -124,17 +124,25 @@ class LoggingCallback:
         # get environment instance and set up log path
         episode_id = episode.episode_id
         worker_index = worker.worker_index
-        output_dir = worker._original_kwargs["log_dir"] + "../training_logs/"
+
+        # determine output location
+        output_dir = None
+        if worker.policy_config["in_evaluation"]:
+            output_dir = worker._original_kwargs["log_dir"] + "../evaluation_logs/"
+        else:
+            output_dir = worker._original_kwargs["log_dir"] + "../training_logs/"
+
         worker_file = "worker_" + str(worker_index) + ".log"
         step_num = episode.length
 
         # handle logging options
-        if worker_index <= self.num_logging_workers and self.worker_episode_numbers[
-            episode_id] % self.episode_log_interval == 0 and step_num:
+        if worker_index <= self.num_logging_workers \
+                and self.worker_episode_numbers[episode_id] % self.episode_log_interval == 0 \
+                and step_num:
+
             state = {}
             if self.log_actions:
-                state["actions"] = episode.last_action_for(
-                    'agent0').tolist()  # TODO: 'agent0' should not be hardcoded
+                state["actions"] = episode.last_action_for('agent0').tolist()  # TODO: 'agent0' should not be hardcoded
             if self.log_obs:
                 state["obs"] = episode.last_raw_obs_for('agent0').tolist()
             if self.log_info:
