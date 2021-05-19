@@ -13,10 +13,10 @@ from saferl.aerospace.tasks.docking.task import DockingEnv
 from saferl.environment.utils import jsonify, is_jsonable
 
 """
-This script loads an agent's policy from a saved checkpoint in the specified experiment directory. It randomly initializes
-the environment said policy was trained on and runs the specified number of evaluation rollouts. These evaluation
-rollout episodes are logged to a jsonlines eval.log file (found in experiment_dir/eval/chpt_<number> by default). Currently,
-only DubinsRejoin and DockingEnv are supported.
+This script loads an agent's policy from a saved checkpoint in the specified experiment directory. It randomly 
+initializes the environment said policy was trained on and runs the specified number of evaluation rollouts. These 
+evaluation rollout episodes are logged to a jsonlines eval.log file (found in experiment_dir/eval/chpt_<number> by 
+default). Currently, only DubinsRejoin and DockingEnv are supported.
 
 Author: John McCarroll
 """
@@ -37,12 +37,13 @@ def get_args():
     """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dir', type=str, default="", help="the path to the experiment directory", required=True)
-    parser.add_argument('--ckpt_num', type=int, default=None, help="specify a checkpoint to load")
-    parser.add_argument('--seed', type=int, default=None, help="the seed used to initialize evaluation environment")
+    parser.add_argument('--dir', type=str, default="", help="The path to the experiment directory", required=True)
+    parser.add_argument('--ckpt_num', type=int, default=None, help="Specify a checkpoint to load")
+    parser.add_argument('--seed', type=int, default=None, help="The seed used to initialize evaluation environment")
     parser.add_argument('--explore', type=bool, default=False, help="True for off-policy evaluation")
     parser.add_argument('--output_dir', type=str, default=None, help="Full path of directory to write evaluation logs")
-    parser.add_argument('--num_rollouts', type=int, default=10, help="Number of randomly initialized episodes to evaluate")
+    parser.add_argument('--num_rollouts', type=int, default=10,
+                        help="Number of randomly initialized episodes to evaluate")
 
     return parser.parse_args()
 
@@ -139,7 +140,7 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
     Returns
     -------
     ckpt_num : int
-        The specified ckpt number (or the number of the latest saved checkpoint, if no ckpt_num was specifed).
+        The specified ckpt number (or the number of the latest saved checkpoint, if no ckpt_num was specified).
     ckpt_num_str : str
         The trailing numbers of the checkpoint directory corresponding to the desired checkpoint.
     """
