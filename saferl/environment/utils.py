@@ -128,8 +128,8 @@ def log_to_jsonlines(contents, output_dir, jsonline_filename):
 
 def jsonify(map):
     """
-    A function to convert non-JSON serializable objects (numpy arrays and data types) within a dictionary to JSON friendly
-    data types.
+    A function to convert non-JSON serializable objects (numpy arrays and data types) within a dictionary to JSON
+    friendly data types.
 
     Parameters
     ----------
