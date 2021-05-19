@@ -338,25 +338,3 @@ if __name__ == "__main__":
 
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
-
-"""
-BACKLOG:
-
-thread safe command line (python interpreter?)
-add min distance to lead, max rejoin.yaml time.yaml, reward (total?), etc to metadata table
-
-
-COMPLETE:
-### inconsistency found in logs -> first episode in log will have state for step zero & info will be null... ###
-### can just make a dict w/ column name -> value lists kvps... make pandas table in one step* ###
-### formatted table correctly ###
-### find root of run issue - formatted data into dict (remove df.append ops) ###
-### display metadata table for user ###
-### generate t-var plot for user ###
-### pickle serialization for debugging load time.yaml reduction ###
-### convert log reading portion of script to func, expose to notebook ###
-### Expose script functions to a Jupyter Notebook ###
-
-jupyter-lab --NotebookApp.iopub_data_rate_limit=1.0e10
-
-"""

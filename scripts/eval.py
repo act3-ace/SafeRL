@@ -154,7 +154,6 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
         else:
             raise FileNotFoundError("Checkpoint {} file not found".format(ckpt_num))
 
-
     else:
         ckpt_num = -1
         ckpt_dirs = glob(expr_dir_path + "/checkpoint_*")
@@ -164,11 +163,10 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
                 ckpt_num = int(file_num)
                 ckpt_num_str = file_num
 
-
     return ckpt_num, ckpt_num_str
 
 
-if __name__ == "__main__":
+def main():
     ## process args
     args = get_args()
 
@@ -217,3 +215,7 @@ if __name__ == "__main__":
 
     ## run inference episodes and log results
     run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts)
+
+
+if __name__ == "__main__":
+    main()
