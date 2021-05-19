@@ -1,19 +1,18 @@
 import math
 import numpy as np
 from scipy.spatial.transform import Rotation
-import copy
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
     BaseActuatorSet, BaseLinearODESolverDynamics
 
+
 class CWHSpacecraftOriented2d(BasePlatform):
 
     def __init__(self, config=None, controller=None, **kwargs):
-        self.mass = 12 # kg
-        self.moment = 0.056 # kg*m^2
-        self.react_wheel_moment = 4.1e-5 #kg*m^2
-        self.n = 0.001027 #rad/s
-
+        self.mass = 12  # kg
+        self.moment = 0.056  # kg*m^2
+        self.react_wheel_moment = 4.1e-5  # kg*m^2
+        self.n = 0.001027  # rad/s
 
         dynamics = CWHOriented2dDynamics(self)
         actuator_set = CWHOriented2dActuatorSet()
@@ -22,7 +21,7 @@ class CWHSpacecraftOriented2d(BasePlatform):
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
-    def _generate_info(self):
+    def generate_info(self):
         info = {
             'state': self.state.vector,
             'x': self.x,
@@ -56,6 +55,7 @@ class CWHSpacecraftOriented2d(BasePlatform):
     def react_wheel_ang_vel(self):
         return self.state.react_wheel_ang_vel
 
+
 class CWHOriented2dState(BasePlatformStateVectorized):
 
     def build_vector(self, x=0, y=0, theta=0, x_dot=0, y_dot=0, theta_dot=0, react_wheel_ang_vel=0, **kwargs):
@@ -88,7 +88,7 @@ class CWHOriented2dState(BasePlatformStateVectorized):
     @property
     def y_dot(self):
         return self._vector[4]
-    
+
     @property
     def theta_dot(self):
         return self._vector[5]
@@ -112,6 +112,7 @@ class CWHOriented2dState(BasePlatformStateVectorized):
         vel = np.array([self.x_dot, self.y_dot, 0], dtype=np.float64)
         return vel
 
+
 class CWHOriented2dActuatorSet(BaseActuatorSet):
 
     def __init__(self):
@@ -130,8 +131,9 @@ class CWHOriented2dActuatorSet(BaseActuatorSet):
 
         super().__init__(actuators)
 
+
 class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
-    def __init__( self, platform, integration_method='RK45'):
+    def __init__(self, platform, integration_method='RK45'):
         self.platform = platform
 
         super().__init__(integration_method=integration_method)
@@ -144,27 +146,26 @@ class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
             control[1] = min(0, control[1])
         elif state_cur.react_wheel_ang_vel <= -576:
             control[1] = max(0, control[1])
-        
-        pos_vel_state_vec = np.array( [state_cur.x, state_cur.y, state_cur.x_dot, state_cur.y_dot], dtype=np.float64 )
 
-        thrust_vector = control[0] * np.array( [ math.cos(state_cur.theta), math.sin(state_cur.theta) ] )
-        pos_vel_derivative = np.matmul( self.A, pos_vel_state_vec ) + np.matmul( self.B, thrust_vector )
+        pos_vel_state_vec = np.array([state_cur.x, state_cur.y, state_cur.x_dot, state_cur.y_dot], dtype=np.float64)
+
+        thrust_vector = control[0] * np.array([math.cos(state_cur.theta), math.sin(state_cur.theta)])
+        pos_vel_derivative = np.matmul(self.A, pos_vel_state_vec) + np.matmul(self.B, thrust_vector)
 
         react_wheel_ang_acc = control[1]
         theta_dot_dot = -1 * self.platform.react_wheel_moment * react_wheel_ang_acc / self.platform.moment
 
         state_derivative = CWHOriented2dState(
-            x = pos_vel_derivative[0],
-            y = pos_vel_derivative[1],
-            theta = state_cur.theta_dot,
-            x_dot = pos_vel_derivative[2],
-            y_dot = pos_vel_derivative[3],
-            theta_dot = theta_dot_dot,
-            react_wheel_ang_vel = react_wheel_ang_acc,
+            x=pos_vel_derivative[0],
+            y=pos_vel_derivative[1],
+            theta=state_cur.theta_dot,
+            x_dot=pos_vel_derivative[2],
+            y_dot=pos_vel_derivative[3],
+            theta_dot=theta_dot_dot,
+            react_wheel_ang_vel=react_wheel_ang_acc,
         )
 
         return state_derivative.vector
-
 
     def gen_dynamics_matrices(self):
         m = self.platform.mass

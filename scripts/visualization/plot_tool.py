@@ -1,5 +1,7 @@
 """
-This script implements the API used by the plot_notebook.ipynb Jupyter notebook in order to provide quick and powerful insight into experiment log data. In the future, running this script directly will launch a simplified plotting tool, however currently such a feature is not implemented.
+This script implements the API used by the plot_notebook.ipynb Jupyter notebook in order to provide quick and powerful
+insight into experiment log data. In the future, running this script directly will launch a simplified plotting tool,
+however currently such a feature is not implemented.
 
 Note: requires flatten_json package amd console-menu
         (pip install flatten_json
@@ -30,7 +32,9 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
         "episode_success": [],
         "episode_failure": []
     }
-    episode_dictionaries = {}                # index (row #) -> dict (flattened state dict) [step_number | episode_ID | wingman_x | ... ]
+
+    # index (row #) -> dict (flattened state dict) [step_number | episode_ID | wingman_x | ... ]
+    episode_dictionaries = {}
 
     t_start = time.time()
     # open log file
@@ -40,6 +44,7 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
             prev_ID = None
             prev_success = None
             prev_failure = None
+            prev_episode_number = None
 
             # iterate through json objects in log
             for state in log:
@@ -91,17 +96,13 @@ def process_log(path_to_file: str, blacklist: list, is_jsonlines=True):
         t_end = time.time()
         print("log read time.yaml: " + str(t_end - t_start))
     else:
-        with open(path_to_file, "rb") as file:         #this has issues with saves using "log" in beginning
+        with open(path_to_file, "rb") as file:         # this has issues with saves using "log" in beginning
             episode_dataframes = pickle.load(file)
 
         with open(path_to_file.strip("log")+"meta", "rb") as file:
             metadata_df = pickle.load(file)
 
     return metadata_df, episode_dataframes
-
-
-def display_metadata():
-    print(metadata_df)
 
 
 def display_selected_episode():
@@ -125,7 +126,7 @@ def set_selected_episode():
         print("Entered ID does not match any in current log")
 
 
-def manipulate_variables():
+def manipulate_variables(available_variables):
     print("Available Variables:\n")
     print(available_variables)
     print()
@@ -244,10 +245,6 @@ def plot_variables(plot_name: str):
 
     for x in x_vars:
         for y in y_vars:
-            # print(episode[x])
-            # print(type(episode[x]))
-            # print(episode[x].shape)
-
             x_array = episode[x].to_numpy()
             y_array = episode[y].to_numpy()
             plot(x_array, {y: y_array}, ax=main_axes)
@@ -255,7 +252,7 @@ def plot_variables(plot_name: str):
     main_axes.figure.savefig(plot_name)
 
 
-#TODO
+# TODO
 def to_numpy(data):
     """
     Helper func to convert array-like data to plottable type numpy.ndarray
@@ -268,12 +265,11 @@ def to_numpy(data):
         return data.to_numpy()
 
 
-if __name__ == "__main__":
+def main():
     from consolemenu import *
     from consolemenu.items import *
     import matplotlib
     matplotlib.use("TkAgg")
-
 
     ### Consume log file and construct pandas tables TODO: relative paths
     path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_085452/training_logs/worker_1.log"
@@ -300,9 +296,6 @@ if __name__ == "__main__":
     }
     main_figure, main_axes = pyplot.subplots()
     plot_name = "test_save.png"
-
-
-
 
     # create UI
     menu = ConsoleMenu("AFRL RTA - Log Analysis Tool", "Enter a number from the list below:")
@@ -338,3 +331,7 @@ if __name__ == "__main__":
 
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
+
+
+if __name__ == "__main__":
+    main()
