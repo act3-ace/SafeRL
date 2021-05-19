@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import argparse
 import pickle
@@ -80,7 +79,7 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
 
                 # store log contents in state
                 state = {}
-                if is_jsonable(info) == True:
+                if is_jsonable(info) is True:
                     state["info"] = info
                 else:
                     state["info"] = jsonify(info)
@@ -167,7 +166,7 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
 
 
 def main():
-    ## process args
+    # process args
     args = get_args()
 
     # assume full path passed in
@@ -197,7 +196,7 @@ def main():
     os.makedirs(eval_dir_path, exist_ok=True)
     os.makedirs(ckpt_eval_dir_path, exist_ok=True)
 
-    ## load checkpoint
+    # load checkpoint
     with open(ray_config_path, 'rb') as ray_config_f:
         ray_config = pickle.load(ray_config_f)
 
@@ -213,7 +212,7 @@ def main():
 
     agent.get_policy().config['explore'] = args.explore
 
-    ## run inference episodes and log results
+    # run inference episodes and log results
     run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts)
 
 

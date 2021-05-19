@@ -125,6 +125,7 @@ def log_to_jsonlines(contents, output_dir, jsonline_filename):
     with jsonlines.open(output_dir + jsonline_filename, mode='a') as writer:
         writer.write(contents)
 
+
 def jsonify(map):
     """
     A function to convert non-JSON serializable objects (numpy arrays and data types) within a dictionary to JSON friendly
@@ -146,7 +147,7 @@ def jsonify(map):
         suspicious_object = map[key]
         is_json_ready = is_jsonable(suspicious_object)
 
-        if is_json_ready == True:
+        if is_json_ready is True:
             # move along sir
             continue
         elif is_json_ready == TypeError:
@@ -169,6 +170,7 @@ def jsonify(map):
             raise ValueError
 
     return map
+
 
 def is_jsonable(object):
     """
