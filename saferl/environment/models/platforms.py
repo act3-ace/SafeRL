@@ -11,32 +11,32 @@ class BaseEnvObj(abc.ABC):
     @property
     @abc.abstractmethod
     def x(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def y(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def z(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def position(self):
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def orientation(self) -> scipy.spatial.transform.Rotation:
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def velocity(self):
-        ...
+        raise NotImplementedError
 
 
 class BaseActuator(abc.ABC):
@@ -44,17 +44,17 @@ class BaseActuator(abc.ABC):
     @property
     @abc.abstractmethod
     def name(self) -> str:
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def space(self) -> str:
-        ...
+        raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def default(self):
-        ...
+        raise NotImplementedError
 
 
 class ContinuousActuator(BaseActuator):
@@ -91,7 +91,7 @@ class BaseController(abc.ABC):
 
     @abc.abstractmethod
     def gen_actuation(self, state, action=None):
-        ...
+        raise NotImplementedError
 
 
 class PassThroughController(BaseController):
@@ -110,9 +110,6 @@ class AgentController(BaseController):
         self.setup_action_space()
 
     def setup_action_space(self):
-
-        actuators = self.actuator_set.actuators
-
         self.action_preprocessors = []
         action_space_tup = ()
 
@@ -127,7 +124,8 @@ class AgentController(BaseController):
                 raise ValueError("Actuator name {} not found in platform's actuator set".format(actuator_name))
 
             if actuator.space == 'continuous':
-                # determine upper and lower bounds of actuator range. Should be the intersection of the actuator object bounds and the actuator config bounds
+                # determine upper and lower bounds of actuator range.
+                # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
                     bounds_min = max(actuator.bounds[0], actuator_config['bounds'][0])
                     bounds_max = min(actuator.bounds[1], actuator_config['bounds'][1])
@@ -146,11 +144,13 @@ class AgentController(BaseController):
                     actuator_action_space = gym.spaces.Discrete(actuator_config['points'])
                 else:
                     raise ValueError(
-                        "Action Config for Actuator {} has invalid space of {}. Should be 'continuous' or 'discrete'".format(
+                        "Action Config for Actuator {} has invalid space of {}. "
+                        "Should be 'continuous' or 'discrete'".format(
                             actuator.name, actuator_config['space']))
 
             elif actuator.space == 'discrete':
-                # if the actuator is discrete, ignore actuator config. Use actuator defined points and pass through value to control
+                # if the actuator is discrete, ignore actuator config.
+                # Use actuator defined points and pass through value to control
                 raise NotImplementedError
 
             else:
@@ -186,7 +186,7 @@ class ActionPreprocessor(abc.ABC):
 
     @abc.abstractmethod
     def preprocess(self, action):
-        ...
+        raise NotImplementedError
 
     def __call__(self, action):
         return copy.deepcopy(self.name), self.preprocess(action)
@@ -331,7 +331,7 @@ class BasePlatformState(BaseEnvObj):
 
     @abc.abstractmethod
     def reset(self):
-        ...
+        raise NotImplementedError
 
 
 class BasePlatformStateVectorized(BasePlatformState):
@@ -349,7 +349,7 @@ class BasePlatformStateVectorized(BasePlatformState):
 
     @abc.abstractmethod
     def build_vector(self):
-        ...
+        raise NotImplementedError
 
     @property
     def vector_shape(self):
@@ -368,7 +368,7 @@ class BaseDynamics(abc.ABC):
 
     @abc.abstractmethod
     def step(self, step_size, state, control):
-        ...
+        raise NotImplementedError
 
 
 class BaseODESolverDynamics(BaseDynamics):
@@ -379,7 +379,7 @@ class BaseODESolverDynamics(BaseDynamics):
 
     @abc.abstractmethod
     def dx(self, t, state_vec, control):
-        ...
+        raise NotImplementedError
 
     def step(self, step_size, state, control):
 
@@ -404,7 +404,7 @@ class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
     @abc.abstractmethod
     def gen_dynamics_matrices(self):
-        ...
+        raise NotImplementedError
 
     def update_dynamics_matrices(self, state_vec):
         pass

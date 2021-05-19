@@ -1,4 +1,3 @@
-import saferl.aerospace.models
-import saferl.aerospace.tasks
+from saferl.aerospace import models, tasks
 
 lookup = {**models.lookup, **tasks.lookup}
