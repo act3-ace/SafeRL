@@ -3,12 +3,13 @@ import matplotlib.pyplot as pyplot
 import argparse
 
 """
-This script takes in the path to a rejoin task log file and a worker episode number and generates some common positional 
+This script takes in the path to a rejoin task log file and a worker episode number and generates some common positional
 plots using matplotlib.
 
 Author: John McCarroll
 5-18-2021
 """
+
 
 def get_args():
     """
@@ -22,7 +23,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--log_path', type=str, help="the path to the log file", required=True)
-    parser.add_argument('--worker_episode_number', type=int, default=0, help="the identifying number of the episode logged", required=True)
+    parser.add_argument('--episode_number', type=int, default=0, help="the identifying number of the episode logged", required=True)
     parser.add_argument('--output', type=str, default="~/", help="the directory in which to save generated plots", required=False)
 
     return parser.parse_args()
@@ -57,15 +58,20 @@ def process_log(path_to_file: str, episode_number: int):
         "rejoin_region_z": [],
     }
 
-    # open log file
     with jsonlines.open(path_to_file, 'r') as log:
-        episode_duration = 0
-        # iterate through json objects in log
+        # open log file
         for state in log:
-            # ensure correct episode
-            if state["worker_episode_number"] == episode_number:
+            # iterate through json objects in log
+            episode_key = "worker_episode_number" if "worker_episode_number" in state else None
+            episode_key = "rollout_num" if "rollout_num" in state else episode_key
+            if episode_key is None:
+                raise NotImplementedError("Could not find episode number key in logs.")
+
+            if state[episode_key] == episode_number:
+                # ensure correct episode
+
                 # add positional info of state to episode_dict
-                episode_dict["ID"] = state["episode_ID"]
+                episode_dict["ID"] = state["episode_ID"] if "episode_ID" in state else episode_number
                 episode_dict["step_number"].append(state["step_number"])
 
                 episode_dict["lead_x"].append(state["info"]["lead"]["x"])
@@ -77,8 +83,8 @@ def process_log(path_to_file: str, episode_number: int):
                 episode_dict["rejoin_region_x"].append(state["info"]["rejoin_region"]["x"])
                 episode_dict["rejoin_region_y"].append(state["info"]["rejoin_region"]["y"])
 
-                # 3d envs
                 if "z" in state["info"]["lead"]:
+                    # 3d dubins
                     episode_dict["lead_z"].append(state["info"]["lead"]["z"])
                     episode_dict["wingman_z"].append(state["info"]["wingman"]["z"])
                     episode_dict["rejoin_region_z"].append(state["info"]["rejoin_region"]["z"])
@@ -124,7 +130,7 @@ def main():
     args = get_args()
 
     # process log
-    episode_dict = process_log(args.log_path, args.worker_episode_number)
+    episode_dict = process_log(args.log_path, args.episode_number)
 
     # make plots (lead, wing, region - xyz)
     fig = plot(episode_dict["step_number"], episode_dict["lead_x"], "lead x v. step number")

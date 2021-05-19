@@ -7,11 +7,7 @@ from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.policy import Policy
 from saferl.environment.utils import jsonify, is_jsonable, log_to_jsonlines
 
-import os
 import time
-import numpy as np
-import json
-import jsonlines
 from enum import Enum
 
 
@@ -126,7 +122,6 @@ class LoggingCallback:
         worker_index = worker.worker_index
 
         # determine output location
-        output_dir = None
         if worker.policy_config["in_evaluation"]:
             output_dir = worker._original_kwargs["log_dir"] + "../evaluation_logs/"
         else:
@@ -148,7 +143,7 @@ class LoggingCallback:
                 # check if jsonable and convert if necessary
                 info = episode.last_info_for('agent0')
 
-                if is_jsonable(info) == True:
+                if is_jsonable(info) is True:
                     state["info"] = info
                 else:
                     state["info"] = jsonify(info)
