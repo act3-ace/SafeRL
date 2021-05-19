@@ -1,9 +1,4 @@
-import pandas as pd
-import numpy as np
 import jsonlines
-# from flatten_json import flatten_json
-import time
-import pickle
 import matplotlib.pyplot as pyplot
 import argparse
 
@@ -125,7 +120,7 @@ def plot(x, y, title: str):
     return fig
 
 
-if __name__ == "__main__":
+def main():
     args = get_args()
 
     # process log
@@ -160,3 +155,7 @@ if __name__ == "__main__":
 
         fig = plot(episode_dict["step_number"], episode_dict["rejoin_region_z"], "rejoin region z v. step number")
         fig.savefig(args.output + "rejoin_region_z.png")
+
+
+if __name__ == "__main__":
+    main()
