@@ -400,5 +400,6 @@ class RelativeCylinder(RelativeGeometry):
 def distance(a, b):
     return np.linalg.norm(a.position - b.position)
 
+
 def angle_wrap(angle):
-    return ( ( angle + math.pi ) % ( 2 * math.pi ) ) - math.pi
+    return ((angle + math.pi) % (2 * math.pi)) - math.pi

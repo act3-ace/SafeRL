@@ -1,5 +1,6 @@
 import abc
 
+
 class RTAModule(abc.ABC):
 
     def __init__(self):

@@ -25,7 +25,7 @@ env_config['status'][5]['config']['timeout'] = 30
 #     'v': 100,
 # }
 
-# # wingman q2 
+# # wingman q2
 # env_config['env_objs'][0]['config']['init'] = {
 #     'x':-707,
 #     'y':-707,
@@ -43,21 +43,21 @@ env_config['status'][5]['config']['timeout'] = 30
 
 # wingman q4
 env_config['env_objs'][0]['config']['init'] = {
-    'x':707,
-    'y':707,
+    'x': 707,
+    'y': 707,
     'heading': -3*math.pi/4,
     'v': 100,
 }
 
 # lead
 env_config['env_objs'][1]['config']['init'] = {
-    'x':-1000,
-    'y':0,
+    'x': -1000,
+    'y': 0,
     'heading': 0,
     'v': 100,
 }
 
-env = env_class(config = env_config)
+env = env_class(config=env_config)
 
 env.reset()
 done = False
@@ -84,19 +84,21 @@ lead_marker, = plt.plot([], [], 'bp')
 wingman_traj, = plt.plot([], [], 'g')
 lead_traj, = plt.plot([], [], 'b')
 
+
 def init():
     wingman_marker.set_data([], [],)
     lead_marker.set_data([], [],)
     wingman_traj.set_data([], [],)
     lead_traj.set_data([], [],)
 
+
 def animate(i):
     info = info_log[i]
 
     wingman_marker.set_data(info['wingman']['x'], info['wingman']['y'])
     lead_marker.set_data(info['lead']['x'], info['lead']['y'])
-    wingman_traj.set_data(info['rta']['rta_traj'][:,0], info['rta']['rta_traj'][:,1])
-    lead_traj.set_data(info['rta']['watch_traj'][:,0], info['rta']['watch_traj'][:,1])
+    wingman_traj.set_data(info['rta']['rta_traj'][:, 0], info['rta']['rta_traj'][:, 1])
+    lead_traj.set_data(info['rta']['watch_traj'][:, 0], info['rta']['watch_traj'][:, 1])
 
     if info['rta']['rta_on']:
         wingman_traj.set_color('r')
@@ -105,8 +107,7 @@ def animate(i):
 
     return wingman_marker,
 
+
 anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(info_log), interval=50)
 
 anim.save('basic_animation.mp4')
-
-1+1
