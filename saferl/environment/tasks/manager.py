@@ -4,11 +4,9 @@ import numpy as np
 
 
 class Manager(abc.ABC):
-    def __init__(self, config):
-        self.config = config
-
+    def __init__(self, *processor_configs):
         # Register and initialize processors
-        self.processors = [p_config["class"](config=p_config) for p_config in config]
+        self.processors = [p_config["class"](config=p_config["config"]) for p_config in processor_configs]
 
     def reset(self, sim_state):
         for p in self.processors:
@@ -31,8 +29,8 @@ class Manager(abc.ABC):
 
 
 class ObservationManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, *processor_configs):
+        super().__init__(processor_configs)
         self.obs = None
 
         # All processors should have same observation space
@@ -62,8 +60,8 @@ class ObservationManager(Manager):
 
 
 class StatusManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, *processor_configs):
+        super().__init__(processor_configs)
         self.status = {}
 
     def reset(self, sim_state):
@@ -101,8 +99,8 @@ class StatusManager(Manager):
 
 
 class RewardManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, *processor_configs):
+        super().__init__(processor_configs)
         self.step_value = 0
         self.total_value = 0
 
