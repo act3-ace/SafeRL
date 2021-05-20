@@ -280,7 +280,7 @@ class BasePlatform(BaseEnvObj):
             obj.reset()
 
     def pre_step(self, sim_state, action=None):
-        
+
         actuation = self.controller.gen_actuation(self.state, action)
         control = self.actuator_set.gen_control(actuation)
 

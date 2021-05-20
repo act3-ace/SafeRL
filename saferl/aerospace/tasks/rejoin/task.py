@@ -1,6 +1,7 @@
 from saferl.environment.tasks.env import BaseEnv
 from saferl.aerospace.models.dubins.rta import RTADubins2dCollision
 
+
 class DubinsRejoin(BaseEnv):
 
     def __init__(self, config):

@@ -4,11 +4,12 @@ import numpy as np
 from saferl.environment.rta.rta import RTAModule
 from saferl.environment.models.geometry import angle_wrap
 
+
 class RTADubins2dCollision(RTAModule):
 
     def __init__(self):
         super().__init__()
-        self.projection_window = 9 # seconds
+        self.projection_window = 9  # seconds
         self.projection_frequency = 10
         self.watch_list = ['lead']
         self.platform_name = 'wingman'
@@ -40,8 +41,8 @@ class RTADubins2dCollision(RTAModule):
 
             rel_heading = angle_wrap(rta_platform.heading - watch_platform.heading)
 
-            if (   ( rel_heading > 0          and rel_heading < math.pi/2)
-                or ( rel_heading < -math.pi/2 and rel_heading > -math.pi ) ):
+            if ((rel_heading > 0 and rel_heading < math.pi/2)
+                    or (rel_heading < -math.pi/2 and rel_heading > -math.pi)):
                 # turn left
                 rta_turn = -1 * self.turn_rate
             else:
@@ -51,7 +52,7 @@ class RTADubins2dCollision(RTAModule):
             if self.rta_on:
                 rta_control_proposed = self.rta_control
             else:
-                rta_control_proposed = np.array( [rta_turn, 0], dtype=np.float64 )
+                rta_control_proposed = np.array([rta_turn, 0], dtype=np.float64)
 
             rta_traj = self.dubins_projection(rta_platform, rta_control_proposed)
 
@@ -59,14 +60,13 @@ class RTADubins2dCollision(RTAModule):
             self.rta_traj = rta_traj
             self.watch_traj = watch_traj
 
-            traj_dist = np.linalg.norm( rta_traj -  watch_traj, axis=1)
+            traj_dist = np.linalg.norm(rta_traj - watch_traj, axis=1)
             if (not self.rta_on) and (np.min(traj_dist) <= self.rta_on_dist):
                 self.rta_on = True
                 self.rta_control = rta_control_proposed
             elif self.rta_on and (np.min(traj_dist) > self.rta_off_dist):
                 self.rta_on = False
                 self.rta_control = None
-
 
     def _generate_control(self, sim_state, control):
         return np.copy(self.rta_control)
@@ -79,7 +79,7 @@ class RTADubins2dCollision(RTAModule):
         traj = platform.orientation.apply(base_traj) + platform.position[None, :]
 
         return traj[:, 0:2]
-    
+
     def dubins_base_trajectory(self, v, control):
         turn_rate = control[0]
 
@@ -95,9 +95,9 @@ class RTADubins2dCollision(RTAModule):
             turn_radius = v / turn_rate
 
             traj = np.zeros((self.projection_numpoints, 3))
-            traj[:,0] = (turn_radius * np.cos(traj_theta - math.pi / 2))  
-            traj[:,1] = (turn_radius * np.sin(traj_theta - math.pi / 2)) + turn_radius
-            traj[:,2] = 0
+            traj[:, 0] = (turn_radius * np.cos(traj_theta - math.pi / 2))
+            traj[:, 1] = (turn_radius * np.sin(traj_theta - math.pi / 2)) + turn_radius
+            traj[:, 2] = 0
 
         return traj
 
