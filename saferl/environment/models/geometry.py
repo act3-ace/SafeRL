@@ -221,7 +221,7 @@ class RelativeGeometry(BaseEnvObj):
         # convert aspect angle to theta
         if aspect_angle is not None:
             aspect_angle_rad = np.deg2rad(aspect_angle)
-            theta_offset = (math.pi - aspect_angle_rad)
+            theta_offset = (math.pi + aspect_angle_rad)
 
         # convert polar to x,y offset
         if (x_offset is None) and (y_offset is None):
