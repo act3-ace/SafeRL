@@ -21,8 +21,8 @@ class BaseEnv(gym.Env):
             self.verbose = False
 
         self.observation_manager = ObservationManager(config["observation"])
-        self.reward_manager = RewardManager(config=config["reward"])
-        self.status_manager = StatusManager(config=config["status"])
+        self.reward_manager = RewardManager(config["reward"])
+        self.status_manager = StatusManager(config["status"])
 
         self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(config)
 
