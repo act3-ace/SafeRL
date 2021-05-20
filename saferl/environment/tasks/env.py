@@ -11,9 +11,8 @@ from saferl.environment.utils import setup_env_objs_from_config
 
 class BaseEnv(gym.Env):
 
-    def __init__(self, config):
+    def __init__(self, **config):
         # save config
-        self.config = config
         self.sim_state = SimulationState()
 
         if 'verbose' in config:
@@ -21,11 +20,11 @@ class BaseEnv(gym.Env):
         else:
             self.verbose = False
 
-        self.observation_manager = ObservationManager(self.config["observation"])
-        self.reward_manager = RewardManager(config=self.config["reward"])
-        self.status_manager = StatusManager(config=self.config["status"])
+        self.observation_manager = ObservationManager(config["observation"])
+        self.reward_manager = RewardManager(config=config["reward"])
+        self.status_manager = StatusManager(config=config["status"])
 
-        self.sim_state.agent, self.sim_state.env_objs = self._setup_env_objs()
+        self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(config)
 
         self._setup_action_space()
         self._setup_obs_space()
@@ -82,10 +81,6 @@ class BaseEnv(gym.Env):
             print("env reset with params {}".format(self.generate_info()))
 
         return obs
-
-    def _setup_env_objs(self):
-        agent, env_objs = setup_env_objs_from_config(self.config)
-        return agent, env_objs
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space

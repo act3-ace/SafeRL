@@ -8,13 +8,12 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
 
 class CWHSpacecraft2d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None):
         dynamics = CWH2dDynamics()
         actuator_set = CWH2dActuatorSet()
-
         state = CWH2dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, **config)
 
     def generate_info(self):
         info = {
@@ -38,13 +37,12 @@ class CWHSpacecraft2d(BasePlatform):
 
 class CWHSpacecraft3d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None):
         dynamics = CWH3dDynamics()
         actuator_set = CWH3dActuatorSet()
-
         state = CWH3dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, **config)
 
     def generate_info(self):
         info = {

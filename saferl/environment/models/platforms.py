@@ -86,9 +86,6 @@ class ContinuousActuator(BaseActuator):
 
 
 class BaseController(abc.ABC):
-    def __init__(self, config=None):
-        self.config = config
-
     @abc.abstractmethod
     def gen_actuation(self, state, action=None):
         raise NotImplementedError
@@ -103,14 +100,13 @@ class PassThroughController(BaseController):
 class AgentController(BaseController):
 
     def __init__(self, actuator_set, config):
-        self.config = config
         self.actuator_set = actuator_set
-        self.actuator_config_list = self.config['actuators']
+        self.actuator_config_list = config['actuators']
 
-        self.setup_action_space()
+        self.action_preprocessors, self.action_space = self.setup_action_space()
 
     def setup_action_space(self):
-        self.action_preprocessors = []
+        action_preprocessors = []
         action_space_tup = ()
 
         # loop over actuators in controller config and setup preprocessors
@@ -160,9 +156,11 @@ class AgentController(BaseController):
 
             # append actuator action space and preprocessor
             action_space_tup += (actuator_action_space,)
-            self.action_preprocessors.append(preprocessor)
+            action_preprocessors.append(preprocessor)
 
-        self.action_space = gym.spaces.Tuple(action_space_tup)
+        action_space = gym.spaces.Tuple(action_space_tup)
+
+        return action_preprocessors, action_space
 
     def gen_actuation(self, state, action=None):
         actuation = {}
@@ -239,17 +237,12 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, controller, state, config=None, **kwargs):
+    def __init__(self, dynamics, actuator_set, state, **config):
 
-        if config is None or 'controller' not in config:
-            controller_config = None
-        else:
-            controller_config = config['controller']
-
-        if controller_config is None:
+        if 'controller' not in config.keys():
             controller = PassThroughController()
         else:
-            controller = AgentController(actuator_set, config=controller_config)
+            controller = AgentController(actuator_set, config=config["controller"])
             self.action_space = controller.action_space
 
         self.dependent_objs = []
@@ -259,15 +252,12 @@ class BasePlatform(BaseEnvObj):
         self.controller = controller
         self.state = state
 
-        if config is None:
-            self.init_dict = None
+        if "init" in config.keys():
+            self.init_dict = config["init"]
         else:
-            if "init" in config.keys():
-                self.init_dict = config["init"]
-            else:
-                self.init_dict = {}
+            self.init_dict = {}
 
-        self.reset(**kwargs)
+        self.reset(**config)
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
@@ -330,7 +320,7 @@ class BasePlatformState(BaseEnvObj):
         self.reset(**kwargs)
 
     @abc.abstractmethod
-    def reset(self):
+    def reset(self, **kwargs):
         raise NotImplementedError
 
 
