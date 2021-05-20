@@ -3,9 +3,8 @@ import numpy as np
 
 
 class Processor(abc.ABC):
-    def __init__(self, config):
-        self.config = config["config"]
-        self.name = config["name"]
+    def __init__(self, name):
+        self.name = name
 
     @abc.abstractmethod
     def reset(self, sim_state):
@@ -61,8 +60,8 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, **config):
+        super().__init__(name=config["name"])
         self.obs = None
         self.observation_space = None
         # TODO: add normalization and clipping, pre- and post- processors
@@ -87,8 +86,8 @@ class ObservationProcessor(Processor):
 
 
 class StatusProcessor(Processor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, **config):
+        super().__init__(name=config["name"])
         self.status_value = None
 
     @abc.abstractmethod
@@ -114,11 +113,11 @@ class StatusProcessor(Processor):
 
 
 class RewardProcessor(Processor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, **config):
+        super().__init__(name=config["name"])
         self.step_value = 0
         self.total_value = 0
-        self.reward = self.config["reward"]
+        self.reward = config["reward"]
 
     def reset(self, sim_state):
         self.step_value = 0
