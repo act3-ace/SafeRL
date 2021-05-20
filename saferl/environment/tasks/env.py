@@ -1,7 +1,5 @@
 import random
 
-from copy import deepcopy
-
 import numpy as np
 
 import gym
@@ -12,7 +10,6 @@ from saferl.environment.utils import setup_env_objs_from_config
 
 
 class BaseEnv(gym.Env):
-
 
     def __init__(self, config):
         # save config
@@ -154,8 +151,8 @@ class BaseEnv(gym.Env):
     def agent(self, val):
         self.sim_state.agent = val
 
-class SimulationState:
 
+class SimulationState:
 
     def __init__(self, env_objs=None, agent=None, status=None):
         self.env_objs = env_objs

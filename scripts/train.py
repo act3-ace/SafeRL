@@ -10,8 +10,8 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
-                                        RewardComponentsCallback, LoggingCallback, LogContents
+from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
+    RewardComponentsCallback, LoggingCallback, LogContents
 
 from saferl import lookup
 

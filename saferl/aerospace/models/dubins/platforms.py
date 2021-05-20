@@ -47,7 +47,7 @@ class BaseDubinsState(BasePlatformStateVectorized):
         velocity = np.array([
             self.v * math.cos(self.heading) * math.cos(self.gamma),
             self.v * math.sin(self.heading) * math.cos(self.gamma),
-            self.v * math.sin(self.gamma),
+            -1 * self.v * math.sin(self.gamma),
         ], dtype=np.float64)
         return velocity
 
@@ -77,7 +77,7 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, config=None, controller=None,  **kwargs):
+    def __init__(self, config=None, controller=None, **kwargs):
 
         dynamics = Dubins2dDynamics()
         actuator_set = Dubins2dActuatorSet()
@@ -212,5 +212,187 @@ class Dubins2dDynamics(BaseODESolverDynamics):
         v_dot = throttle
 
         dx_vec = np.array([x_dot, y_dot, heading_dot, v_dot], dtype=np.float64)
+
+        return dx_vec
+
+
+"""
+3D Dubins Implementation
+"""
+
+
+class Dubins3dPlatform(BaseDubinsPlatform):
+
+    def __init__(self, config=None, controller=None, **kwargs):
+
+        dynamics = Dubins3dDynamics()
+        actuator_set = Dubins3dActuatorSet()
+        state = Dubins3dState()
+
+        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+
+    def generate_info(self):
+        info = {
+            'state': self.state.vector,
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'heading': self.heading,
+            'gamma': self.gamma,
+            'roll': self.roll,
+            'v': self.v,
+        }
+
+        return info
+
+
+class Dubins3dState(BaseDubinsState):
+
+    def build_vector(self, x=0, y=0, z=0, heading=0, gamma=0, roll=0, v=100, **kwargs):
+        return np.array([x, y, z, heading, gamma, roll, v], dtype=np.float64)
+
+    @property
+    def x(self):
+        return self._vector[0]
+
+    @x.setter
+    def x(self, value):
+        self._vector[0] = value
+
+    @property
+    def y(self):
+        return self._vector[1]
+
+    @y.setter
+    def y(self, value):
+        self._vector[1] = value
+
+    @property
+    def z(self):
+        return self._vector[2]
+
+    @z.setter
+    def z(self, value):
+        self._vector[2] = value
+
+    @property
+    def heading(self):
+        return self._vector[3]
+
+    @heading.setter
+    def heading(self, value):
+        self._vector[3] = value
+
+    @property
+    def gamma(self):
+        return self._vector[4]
+
+    @gamma.setter
+    def gamma(self, value):
+        self._vector[4] = value
+
+    @property
+    def roll(self):
+        return self._vector[5]
+
+    @roll.setter
+    def roll(self, value):
+        self._vector[5] = value
+
+    @property
+    def v(self):
+        return self._vector[6]
+
+    @v.setter
+    def v(self, value):
+        self._vector[6] = value
+
+    @property
+    def position(self):
+        position = np.zeros((3,))
+        position[0:3] = self._vector[0:3]
+        return position
+
+    @property
+    def orientation(self):
+        return Rotation.from_euler('ZYX', [self.yaw, self.pitch, self.roll])
+
+
+class Dubins3dActuatorSet(BaseActuatorSet):
+
+    def __init__(self):
+
+        actuators = [
+            ContinuousActuator(
+                'ailerons',
+                [np.deg2rad(-6), np.deg2rad(6)],
+                0
+            ),
+            ContinuousActuator(
+                'elevator',
+                [np.deg2rad(-6), np.deg2rad(6)],
+                0
+            ),
+            ContinuousActuator(
+                'throttle',
+                [-10, 10],
+                0
+            )
+        ]
+
+        super().__init__(actuators)
+
+
+class Dubins3dDynamics(BaseODESolverDynamics):
+
+    def __init__(self, v_min=10, v_max=100, roll_min=-math.pi/2, roll_max=math.pi/2, g=32.17, *args, **kwargs):
+        self.v_min = v_min
+        self.v_max = v_max
+        self.roll_min = roll_min
+        self.roll_max = roll_max
+        self.g = g
+
+        super().__init__(*args, **kwargs)
+
+    def step(self, step_size, state, control):
+        state = super().step(step_size, state, control)
+
+        # enforce velocity limits
+        if state.v < self.v_min or state.v > self.v_max:
+            state.v = max(min(state.v, self.v_max), self.v_min)
+
+        # enforce roll limits
+        if state.roll < self.roll_min or state.roll > self.roll_max:
+            state.roll = max(min(state.roll, self.roll_max), self.roll_min)
+
+        return state
+
+    def dx(self, t, state_vec, control):
+        x, y, z, heading, gamma, roll, v = state_vec
+
+        elevator, ailerons, throttle = control
+
+        # enforce velocity limits
+        if v <= self.v_min and throttle < 0:
+            throttle = 0
+        elif v >= self.v_max and throttle > 0:
+            throttle = 0
+
+        # enforce roll limits
+        if roll <= self.roll_min and ailerons < 0:
+            ailerons = 0
+        elif roll >= self.roll_max and ailerons > 0:
+            ailerons = 0
+
+        x_dot = v * math.cos(heading) * math.cos(gamma)
+        y_dot = v * math.sin(heading) * math.cos(gamma)
+        z_dot = -1 * v * math.sin(gamma)
+
+        gamma_dot = elevator
+        roll_dot = ailerons
+        heading_dot = (self.g / v) * math.tan(roll)                      # g = 32.17 ft/s^2
+        v_dot = throttle
+
+        dx_vec = np.array([x_dot, y_dot, z_dot, heading_dot, gamma_dot, roll_dot, v_dot], dtype=np.float64)
 
         return dx_vec

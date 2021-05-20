@@ -89,7 +89,7 @@ if __name__ == '__main__':
     os.makedirs(output_anim_single_dir, exist_ok=True)
 
     rollout_history_filepath = os.path.join(output_dir, "rollout_history.pickle")
-    pickle.dump( rollout_seq, open( rollout_history_filepath, "wb" ) )
+    pickle.dump(rollout_seq, open(rollout_history_filepath, "wb"))
 
     print('processing rollout trajectories')
     trajectory_data = process_rollout_data(rollout_seq)
@@ -105,13 +105,17 @@ if __name__ == '__main__':
             outcome_str = 'success'
             if only_failures:
                 continue
-        
-        animate_trajectories([trajectory_data[i]], os.path.join(output_anim_single_dir,'rollout_{:03d}_{}.mp4'.format(i, outcome_str)), anim_rate=1, plot_rejoin_region=True, plot_safety_region=True, sq_axis=True)
+
+        animate_trajectories([trajectory_data[i]], os.path.join(output_anim_single_dir,
+                                                                'rollout_{:03d}_{}.mp4'.format(i, outcome_str)),
+                             anim_rate=1, plot_rejoin_region=True, plot_safety_region=True, sq_axis=True)
 
     print('animating all rollouts')
 
     if not only_failures:
-        animate_trajectories(trajectory_data, os.path.join(output_anim_dir,'all_trajectories.mp4'), plot_rejoin_region=True, rejoin_color_type='match')
-    
+        animate_trajectories(trajectory_data, os.path.join(output_anim_dir,'all_trajectories.mp4'),
+                             plot_rejoin_region=True, rejoin_color_type='match')
+
     if len(failure_trajectory_data) > 0:
-        animate_trajectories(failure_trajectory_data, os.path.join(output_anim_dir,'all_failure_trajectories.mp4'), plot_rejoin_region=True, rejoin_color_type='match')
+        animate_trajectories(failure_trajectory_data, os.path.join(output_anim_dir, 'all_failure_trajectories.mp4'),
+                             plot_rejoin_region=True, rejoin_color_type='match')
