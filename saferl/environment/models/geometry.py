@@ -165,6 +165,45 @@ class RelativeGeometry(BaseEnvObj):
                  euler_decomp_axis=None,
                  init=None,
                  **kwargs):
+        """
+
+        Constructs RelativeGeometry Object
+        Must specify either a Cartesian offset or Polar offset from the ref object
+
+        Parameters
+        ----------
+        ref
+            Reference EnvObj that positions and orientations are relative to
+        shape
+            Underlying Geometry object
+        track_orientation
+            Whether rotate around its ref object as the ref's orientation rotates
+            If True, behaves as if attached to ref with a rigid rod (rotates around ref).
+            If False, behaves as if attached to ref with a gimble.
+        x_offset
+            Cartesian offset component.
+        y_offset
+            Cartesian offset component.
+        z_offset
+            Cartesian offset component. Can mix with Polar offset to add a Z offset
+        r_offset
+            Polar offset component. Distance from ref.
+        theta_offset
+            Polar offset component. Radians. Azimuth angle offset of relative vector.
+        aspect_angle
+            Polar offset component. Degrees. Can use instead of theta_offset
+        euler_decomp_axis
+            Euler decomposition of rotation tracking into a subset of the Euler angles
+            Allows tracking of planar rotations only (such as xy plane rotations only)
+            NotImplemented
+        init
+            Initialization Dictionary
+
+        Returns
+        -------
+        None
+
+        """
 
         # check that both x_offset and y_offset are used at the same time if used
         assert (x_offset is None) == (y_offset is None), \
@@ -181,7 +220,8 @@ class RelativeGeometry(BaseEnvObj):
 
         # convert aspect angle to theta
         if aspect_angle is not None:
-            theta_offset = (math.pi - aspect_angle)
+            aspect_angle_rad = np.deg2rad(aspect_angle)
+            theta_offset = (math.pi - aspect_angle_rad)
 
         # convert polar to x,y offset
         if (x_offset is None) and (y_offset is None):
