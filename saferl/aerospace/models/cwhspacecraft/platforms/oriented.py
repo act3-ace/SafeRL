@@ -88,7 +88,7 @@ class CWHOriented2dState(BasePlatformStateVectorized):
     @property
     def y_dot(self):
         return self._vector[4]
-    
+
     @property
     def theta_dot(self):
         return self._vector[5]
@@ -146,7 +146,7 @@ class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
             control[1] = min(0, control[1])
         elif state_cur.react_wheel_ang_vel <= -576:
             control[1] = max(0, control[1])
-        
+
         pos_vel_state_vec = np.array([state_cur.x, state_cur.y, state_cur.x_dot, state_cur.y_dot], dtype=np.float64)
 
         thrust_vector = control[0] * np.array([math.cos(state_cur.theta), math.sin(state_cur.theta)])
