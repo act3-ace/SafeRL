@@ -10,6 +10,18 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
 
 class BaseDubinsPlatform(BasePlatform):
 
+    def generate_info(self):
+        info = {
+            'state': self.state.vector,
+            'heading': self.heading,
+            'v': self.v,
+        }
+
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
+
     @property
     def v(self):
         return self.state.v
@@ -85,17 +97,6 @@ class Dubins2dPlatform(BaseDubinsPlatform):
         state = Dubins2dState()
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
-
-    def generate_info(self):
-        info = {
-            'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
-            'heading': self.heading,
-            'v': self.v,
-        }
-
-        return info
 
 
 class Dubins2dState(BaseDubinsState):
@@ -233,17 +234,14 @@ class Dubins3dPlatform(BaseDubinsPlatform):
 
     def generate_info(self):
         info = {
-            'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
-            'z': self.z,
-            'heading': self.heading,
             'gamma': self.gamma,
             'roll': self.roll,
-            'v': self.v,
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
 
 class Dubins3dState(BaseDubinsState):
