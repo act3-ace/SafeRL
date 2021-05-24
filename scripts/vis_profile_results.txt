@@ -1,0 +1,2 @@
+use:
+ snakeviz name_of_profile_file
