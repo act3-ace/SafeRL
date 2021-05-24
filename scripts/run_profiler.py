@@ -16,9 +16,10 @@ import pstats
 def interpret(profile_file,results_file):
     with open(results_file,'w') as stream:  
         p = pstats.Stats(profile_file,stream=stream)
-        p.sort_stats('cumulative').print_stats(20) 
+        p.print_stats()
+        #p.sort_stats('cumulative').print_stats(20) 
 
-results_file = 'docking_prof_results_cumul_time.txt'
-out_file = 'docking_multi_profile_results.txt' 
+results_file = 'env_step_profile_results'
+out_file = 'env_step_profile' 
 interpret(out_file,results_file)
 

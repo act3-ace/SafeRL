@@ -1,0 +1,175 @@
+Mon May 24 12:34:16 2021    env_step_profile.txt
+
+         1746 function calls (1710 primitive calls) in 0.003 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       11    0.000    0.000    0.001    0.000 rk.py:14(rk_step)
+    33/21    0.000    0.000    0.000    0.000 copy.py:132(deepcopy)
+       70    0.000    0.000    0.000    0.000 platforms.py:412(dx)
+       11    0.000    0.000    0.001    0.000 rk.py:111(_step_impl)
+  129/105    0.000    0.000    0.000    0.000 {built-in method numpy.core._multiarray_umath.implement_array_function}
+       20    0.000    0.000    0.000    0.000 linalg.py:2363(norm)
+      114    0.000    0.000    0.000    0.000 {built-in method numpy.array}
+       17    0.000    0.000    0.000    0.000 common.py:59(norm)
+       70    0.000    0.000    0.000    0.000 base.py:19(fun_wrapped)
+        2    0.000    0.000    0.002    0.001 ivp.py:156(solve_ivp)
+        2    0.000    0.000    0.000    0.000 common.py:64(select_initial_step)
+       70    0.000    0.000    0.000    0.000 base.py:136(fun)
+       97    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(dot)
+        1    0.000    0.000    0.003    0.003 {built-in method builtins.exec}
+        2    0.000    0.000    0.002    0.001 platforms.py:281(step)
+       70    0.000    0.000    0.000    0.000 ivp.py:514(<lambda>)
+       97    0.000    0.000    0.000    0.000 _asarray.py:14(asarray)
+       11    0.000    0.000    0.000    0.000 rk.py:105(_estimate_error)
+        1    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(einsum)
+        2    0.000    0.000    0.000    0.000 rk.py:85(__init__)
+       11    0.000    0.000    0.000    0.000 rk.py:108(_estimate_error_norm)
+       11    0.000    0.000    0.001    0.000 base.py:159(step)
+       24    0.000    0.000    0.000    0.000 copy.py:253(_keep_alive)
+        2    0.000    0.000    0.000    0.000 base.py:115(__init__)
+        2    0.000    0.000    0.002    0.001 platforms.py:384(step)
+       70    0.000    0.000    0.000    0.000 {built-in method builtins.issubclass}
+        1    0.000    0.000    0.000    0.000 {method 'apply' of 'scipy.spatial.transform.rotation.Rotation' objects}
+        2    0.000    0.000    0.000    0.000 common.py:43(validate_tol)
+        2    0.000    0.000    0.002    0.001 platforms.py:417(step)
+       20    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(norm)
+        2    0.000    0.000    0.000    0.000 shape_base.py:82(atleast_2d)
+       20    0.000    0.000    0.000    0.000 {method 'ravel' of 'numpy.ndarray' objects}
+        3    0.000    0.000    0.000    0.000 copy.py:269(_reconstruct)
+       97    0.000    0.000    0.000    0.000 multiarray.py:706(dot)
+       74    0.000    0.000    0.000    0.000 {method 'get' of 'dict' objects}
+        4    0.000    0.000    0.000    0.000 cwh.py:100(position)
+       19    0.000    0.000    0.000    0.000 {method '__deepcopy__' of 'numpy.ndarray' objects}
+        2    0.000    0.000    0.000    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+        3    0.000    0.000    0.000    0.000 copy.py:237(_deepcopy_dict)
+        2    0.000    0.000    0.000    0.000 cwh.py:19(generate_info)
+        9    0.000    0.000    0.000    0.000 processor.py:25(increment)
+        1    0.000    0.000    0.000    0.000 geometry.py:215(update)
+        1    0.000    0.000    0.000    0.000 manager.py:85(_compute_status)
+        2    0.000    0.000    0.000    0.000 base.py:4(check_arguments)
+        1    0.000    0.000    0.000    0.000 {built-in method from_quat}
+        1    0.000    0.000    0.000    0.000 platforms.py:167(gen_actuation)
+       20    0.000    0.000    0.000    0.000 linalg.py:112(isComplexType)
+        1    0.000    0.000    0.000    0.000 {built-in method numpy.core._multiarray_umath.c_einsum}
+        3    0.000    0.000    0.000    0.000 copyreg.py:87(__newobj__)
+       27    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+        4    0.000    0.000    0.000    0.000 processor.py:134(step)
+        1    0.000    0.000    0.000    0.000 geometry.py:112(contains)
+        2    0.000    0.000    0.000    0.000 geometry.py:397(distance)
+        2    0.000    0.000    0.000    0.000 platforms.py:219(gen_control)
+       70    0.000    0.000    0.000    0.000 platforms.py:409(update_dynamics_matrices)
+        5    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(concatenate)
+        3    0.000    0.000    0.000    0.000 {method '__reduce_ex__' of 'object' objects}
+       46    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 task.py:17(generate_info)
+        1    0.000    0.000    0.000    0.000 manager.py:114(generate_components)
+        1    0.000    0.000    0.000    0.000 manager.py:131(step)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:70(_wrapreduction)
+        1    0.000    0.000    0.000    0.000 copyreg.py:96(_slotnames)
+       80    0.000    0.000    0.000    0.000 {built-in method builtins.id}
+        6    0.000    0.000    0.000    0.000 {built-in method builtins.min}
+        5    0.000    0.000    0.000    0.000 processor.py:20(step)
+        1    0.000    0.000    0.000    0.000 env.py:104(_generate_reward)
+        4    0.000    0.000    0.000    0.000 copy.py:274(<genexpr>)
+        2    0.000    0.000    0.000    0.000 numerictypes.py:360(issubdtype)
+        2    0.000    0.000    0.000    0.000 shape_base.py:223(vstack)
+        1    0.000    0.000    0.000    0.000 processors.py:88(_increment)
+        9    0.000    0.000    0.000    0.000 processor.py:29(process)
+        1    0.000    0.000    0.002    0.002 env.py:45(step)
+        2    0.000    0.000    0.000    0.000 platforms.py:191(__call__)
+        4    0.000    0.000    0.000    0.000 platforms.py:314(position)
+        5    0.000    0.000    0.000    0.000 platforms.py:358(vector)
+        2    0.000    0.000    0.000    0.000 platforms.py:362(vector)
+        3    0.000    0.000    0.000    0.000 geometry.py:70(position)
+       20    0.000    0.000    0.000    0.000 linalg.py:2359(_norm_dispatcher)
+        4    0.000    0.000    0.000    0.000 {built-in method numpy.zeros}
+        2    0.000    0.000    0.000    0.000 {built-in method numpy.empty}
+        2    0.000    0.000    0.000    0.000 {method 'any' of 'numpy.generic' objects}
+        6    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.max}
+        1    0.000    0.000    0.002    0.002 task.py:13(_step_sim)
+        1    0.000    0.000    0.002    0.002 <string>:1(<module>)
+        1    0.000    0.000    0.000    0.000 geometry.py:95(generate_info)
+        1    0.000    0.000    0.000    0.000 geometry.py:117(generate_info)
+        1    0.000    0.000    0.000    0.000 geometry.py:230(step)
+        1    0.000    0.000    0.000    0.000 env.py:96(_generate_obs)
+        1    0.000    0.000    0.000    0.000 env.py:111(_generate_status)
+        5    0.000    0.000    0.000    0.000 env.py:138(status)
+        1    0.000    0.000    0.000    0.000 manager.py:49(step)
+        1    0.000    0.000    0.000    0.000 manager.py:122(generate_info)
+        2    0.000    0.000    0.000    0.000 platforms.py:302(x)
+        1    0.000    0.000    0.000    0.000 copy.py:66(copy)
+        2    0.000    0.000    0.000    0.000 optimize.py:120(__getattr__)
+        1    0.000    0.000    0.000    0.000 einsumfunc.py:997(einsum)
+       13    0.000    0.000    0.000    0.000 _asarray.py:86(asanyarray)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:71(<dictcomp>)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:2249(any)
+        2    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(any)
+        2    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(atleast_2d)
+        4    0.000    0.000    0.000    0.000 numerictypes.py:286(issubclass_)
+        2    0.000    0.000    0.000    0.000 shape_base.py:219(_vhstack_dispatcher)
+        4    0.000    0.000    0.000    0.000 platforms.py:71(name)
+        2    0.000    0.000    0.000    0.000 {method 'astype' of 'numpy.ndarray' objects}
+        5    0.000    0.000    0.000    0.000 multiarray.py:143(concatenate)
+       12    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+        5    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 processors.py:26(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:72(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:92(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:164(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:178(_increment)
+        1    0.000    0.000    0.000    0.000 processors.py:182(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:201(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:225(_process)
+        2    0.000    0.000    0.000    0.000 cwh.py:30(x_dot)
+        2    0.000    0.000    0.000    0.000 cwh.py:80(x)
+        2    0.000    0.000    0.000    0.000 cwh.py:84(y)
+        2    0.000    0.000    0.000    0.000 cwh.py:96(y_dot)
+        1    0.000    0.000    0.000    0.000 cwh.py:106(orientation)
+        4    0.000    0.000    0.000    0.000 processor.py:152(get_step_value)
+        1    0.000    0.000    0.000    0.000 geometry.py:236(generate_info)
+        2    0.000    0.000    0.000    0.000 geometry.py:255(position)
+        1    0.000    0.000    0.000    0.000 geometry.py:263(contains)
+        3    0.000    0.000    0.000    0.000 env.py:130(env_objs)
+        2    0.000    0.000    0.000    0.000 ivp.py:28(prepare_events)
+        2    0.000    0.000    0.000    0.000 common.py:19(validate_max_step)
+        2    0.000    0.000    0.000    0.000 platforms.py:83(default)
+        2    0.000    0.000    0.000    0.000 platforms.py:207(preprocess)
+        2    0.000    0.000    0.000    0.000 platforms.py:306(y)
+        1    0.000    0.000    0.000    0.000 platforms.py:318(orientation)
+        1    0.000    0.000    0.000    0.000 geometry.py:58(x)
+        1    0.000    0.000    0.000    0.000 geometry.py:66(z)
+        1    0.000    0.000    0.000    0.000 geometry.py:74(position)
+        5    0.000    0.000    0.000    0.000 einsumfunc.py:989(_einsum_dispatcher)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:2245(_any_dispatcher)
+        2    0.000    0.000    0.000    0.000 _methods.py:53(_any)
+        2    0.000    0.000    0.000    0.000 <__array_function__ internals>:2(vstack)
+        2    0.000    0.000    0.000    0.000 shape_base.py:208(_arrays_for_stack_dispatcher)
+        1    0.000    0.000    0.000    0.000 {method 'get' of 'mappingproxy' objects}
+        4    0.000    0.000    0.000    0.000 {built-in method builtins.callable}
+        3    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x561b35667240}
+        3    0.000    0.000    0.000    0.000 {method 'update' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 processors.py:68(_increment)
+        1    0.000    0.000    0.000    0.000 processors.py:124(_increment)
+        1    0.000    0.000    0.000    0.000 processors.py:128(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:140(_increment)
+        1    0.000    0.000    0.000    0.000 processors.py:144(_process)
+        1    0.000    0.000    0.000    0.000 processors.py:160(_increment)
+        1    0.000    0.000    0.000    0.000 processors.py:197(_increment)
+        1    0.000    0.000    0.000    0.000 processors.py:221(_increment)
+        2    0.000    0.000    0.000    0.000 cwh.py:34(y_dot)
+        2    0.000    0.000    0.000    0.000 cwh.py:92(x_dot)
+        1    0.000    0.000    0.000    0.000 processor.py:79(_increment)
+        4    0.000    0.000    0.000    0.000 processor.py:155(get_total_value)
+        1    0.000    0.000    0.000    0.000 manager.py:73(step)
+        2    0.000    0.000    0.000    0.000 common.py:26(warn_extraneous)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 platforms.py:99(gen_actuation)
+        1    0.000    0.000    0.000    0.000 geometry.py:62(y)
+        9    0.000    0.000    0.000    0.000 copy.py:190(_deepcopy_atomic)
+        2    0.000    0.000    0.000    0.000 shape_base.py:78(_atleast_2d_dispatcher)
+
+
