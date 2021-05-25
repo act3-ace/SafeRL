@@ -1,5 +1,6 @@
 import abc
 import copy
+import gym
 import numpy as np
 
 
@@ -35,8 +36,14 @@ class ObservationManager(Manager):
         super().__init__(config=config)
         self.obs = None
 
-        # All processors should have same observation space
-        self.observation_space = self.processors[0].observation_space
+        # combine the processor observation spaces into a single Box space
+        processor_lows = [p.observation_space.low for p in self.processors]
+        processor_highs = [p.observation_space.high for p in self.processors]
+
+        manager_low = np.concatenate(processor_lows)
+        manager_high = np.concatenate(processor_highs)
+
+        self.observation_space = gym.spaces.Box(low=manager_low, high=manager_high)
 
     def reset(self, sim_state):
         super().reset(sim_state)
