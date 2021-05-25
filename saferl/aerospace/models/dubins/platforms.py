@@ -77,14 +77,14 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None):
 
         dynamics = Dubins2dDynamics()
         actuator_set = Dubins2dActuatorSet()
 
         state = Dubins2dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, config)
 
     def generate_info(self):
         info = {

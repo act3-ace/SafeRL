@@ -8,16 +8,18 @@ from saferl.environment.tasks.processor import ObservationProcessor, RewardProce
 from saferl.environment.models.geometry import distance
 
 
+# --------------------- Observation Processors ------------------------
+
 class DubinsObservationProcessor(ObservationProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None, **kwargs):
+        super().__init__(name=name)
 
         # Initialize member variables from config
-        self.lead = self.config["lead"]
-        self.wingman = self.config["wingman"]
-        self.rejoin_region = self.config["rejoin_region"]
-        self.reference = self.config["reference"]
-        self.mode = self.config["mode"]
+        self.lead = lead
+        self.wingman = wingman
+        self.rejoin_region = rejoin_region
+        self.reference = reference
+        self.mode = mode
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
@@ -71,15 +73,15 @@ class DubinsObservationProcessor(ObservationProcessor):
 
 
 class Dubins3dObservationProcessor(ObservationProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None, **kwargs):
+        super().__init__(name=name)
 
         # Initialize member variables from config
-        self.lead = self.config["lead"]
-        self.wingman = self.config["wingman"]
-        self.rejoin_region = self.config["rejoin_region"]
-        self.reference = self.config["reference"]
-        self.mode = self.config["mode"]
+        self.lead = lead
+        self.wingman = wingman
+        self.rejoin_region = rejoin_region
+        self.reference = reference
+        self.mode = mode
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
@@ -142,13 +144,15 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         return obs
 
 
+# --------------------- Reward Processors ------------------------
+
 class RejoinRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None, **kwargs):
+        super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
-        self.rejoin_status = self.config["rejoin_status"]
-        self.rejoin_prev_status = self.config["rejoin_prev_status"]
+        self.rejoin_status = rejoin_status
+        self.rejoin_prev_status = rejoin_prev_status
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -183,11 +187,11 @@ class RejoinRewardProcessor(RewardProcessor):
 
 
 class RejoinFirstTimeRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, rejoin_status=None, reward=None, **kwargs):
+        super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
-        self.rejoin_status = self.config["rejoin_status"]
+        self.rejoin_status = rejoin_status
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -216,13 +220,13 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
 
 
 class RejoinDistanceChangeRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, rejoin_status=None, wingman=None, rejoin_region=None, reward=None, **kwargs):
+        super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
-        self.rejoin_status = self.config["rejoin_status"]
-        self.wingman = self.config["wingman"]
-        self.rejoin_region = self.config["rejoin_region"]
+        self.rejoin_status = rejoin_status
+        self.wingman = wingman
+        self.rejoin_region = rejoin_region
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -245,12 +249,16 @@ class RejoinDistanceChangeRewardProcessor(RewardProcessor):
         return step_reward
 
 
+# --------------------- Status Processors ------------------------
+
+
 class DubinsInRejoin(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, wingman=None, rejoin_region=None, **kwargs):
+        super().__init__(name=name)
+
         # Initialize member variables from config
-        self.wingman = self.config["wingman"]
-        self.rejoin_region = self.config["rejoin_region"]
+        self.wingman = wingman
+        self.rejoin_region = rejoin_region
 
     def reset(self, sim_state):
         pass
@@ -266,10 +274,10 @@ class DubinsInRejoin(StatusProcessor):
 
 
 class DubinsInRejoinPrev(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, rejoin_status=None, **kwargs):
+        super().__init__(name=name)
         # Initialize member variables from config
-        self.rejoin_status = self.config["rejoin_status"]
+        self.rejoin_status = rejoin_status
 
     def reset(self, sim_state):
         self.in_rejoin_prev = False
@@ -286,10 +294,10 @@ class DubinsInRejoinPrev(StatusProcessor):
 
 
 class DubinsRejoinTime(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, rejoin_status=None, **kwargs):
+        super().__init__(name=name)
         # Initialize member variables from config
-        self.rejoin_status = self.config["rejoin_status"]
+        self.rejoin_status = rejoin_status
 
     def reset(self, sim_state):
         self.rejoin_time = 0
@@ -309,8 +317,8 @@ class DubinsRejoinTime(StatusProcessor):
 
 
 class DubinsTimeElapsed(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, **kwargs):
+        super().__init__(name=name)
 
     def reset(self, sim_state):
         self.time_elapsed = 0
@@ -325,11 +333,11 @@ class DubinsTimeElapsed(StatusProcessor):
 
 
 class DubinsLeadDistance(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, wingman=None, lead=None, **kwargs):
+        super().__init__(name=name)
         # Initialize member variables from config
-        self.wingman = self.config["wingman"]
-        self.lead = self.config["lead"]
+        self.wingman = wingman
+        self.lead = lead
 
     def reset(self, sim_state):
         pass
@@ -345,14 +353,15 @@ class DubinsLeadDistance(StatusProcessor):
 
 
 class DubinsFailureStatus(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, lead_distance=None, time_elapsed=None, safety_margin=None,
+                 timeout=None, max_goal_distance=None, **kwargs):
+        super().__init__(name=name)
         # Initialize member variables from config
-        self.lead_distance_key = self.config["lead_distance"]
-        self.time_elapsed_key = self.config["time_elapsed"]
-        self.safety_margin = self.config['safety_margin']
-        self.timeout = self.config['timeout']
-        self.max_goal_dist = self.config['max_goal_distance']
+        self.lead_distance_key = lead_distance
+        self.time_elapsed_key = time_elapsed
+        self.safety_margin = safety_margin
+        self.timeout = timeout
+        self.max_goal_dist = max_goal_distance
 
     def reset(self, sim_state):
         # reset state
@@ -378,11 +387,11 @@ class DubinsFailureStatus(StatusProcessor):
 
 
 class DubinsSuccessStatus(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, rejoin_time=None, success_time=None, **kwargs):
+        super().__init__(name=name)
         # Initialize member variables from config
-        self.rejoin_time_key = self.config["rejoin_time"]
-        self.success_time = self.config["success_time"]
+        self.rejoin_time_key = rejoin_time
+        self.success_time = success_time
 
     def reset(self, sim_state):
         # reset state
