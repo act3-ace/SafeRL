@@ -237,12 +237,13 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, **config):
+    def __init__(self, dynamics, actuator_set, state, platform_config):
 
-        if 'controller' not in config.keys():
+        # TODO: pass controller as argument instead of config
+        if 'controller' not in platform_config.keys():
             controller = PassThroughController()
         else:
-            controller = AgentController(actuator_set, config=config["controller"])
+            controller = AgentController(actuator_set, config=platform_config["controller"])
             self.action_space = controller.action_space
 
         self.dependent_objs = []
@@ -252,12 +253,12 @@ class BasePlatform(BaseEnvObj):
         self.controller = controller
         self.state = state
 
-        if "init" in config.keys():
-            self.init_dict = config["init"]
+        if "init" in platform_config.keys():
+            self.init_dict = platform_config["init"]
         else:
             self.init_dict = {}
 
-        self.reset(**config)
+        self.reset(**platform_config)
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)

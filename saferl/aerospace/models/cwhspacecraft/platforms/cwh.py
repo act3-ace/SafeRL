@@ -9,11 +9,12 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
 class CWHSpacecraft2d(BasePlatform):
 
     def __init__(self, config=None):
+        # TODO: replace config argument with controller
         dynamics = CWH2dDynamics()
         actuator_set = CWH2dActuatorSet()
         state = CWH2dState()
 
-        super().__init__(dynamics, actuator_set, state, **config)
+        super().__init__(dynamics, actuator_set, state, config)
 
     def generate_info(self):
         info = {
