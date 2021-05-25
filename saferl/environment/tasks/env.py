@@ -16,7 +16,7 @@ class BaseEnv(gym.Env):
 
         self.sim_state = SimulationState()
 
-        if 'verbose' is not None:
+        if verbose is not None:
             self.verbose = verbose
         else:
             self.verbose = False
