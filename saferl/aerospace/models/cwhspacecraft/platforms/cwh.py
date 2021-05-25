@@ -43,7 +43,7 @@ class CWHSpacecraft3d(BasePlatform):
         actuator_set = CWH3dActuatorSet()
         state = CWH3dState()
 
-        super().__init__(dynamics, actuator_set, state, **config)
+        super().__init__(dynamics, actuator_set, state, config)
 
     def generate_info(self):
         info = {
