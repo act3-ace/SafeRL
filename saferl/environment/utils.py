@@ -5,7 +5,6 @@ import yaml
 
 import numpy as np
 
-from saferl.environment.models.platforms import BaseEnvObj
 from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
 
 
