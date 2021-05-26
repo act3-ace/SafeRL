@@ -8,6 +8,10 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
+    @abc.abstractmethod
+    def reset(self):
+        raise NotImplementedError
+
     @property
     @abc.abstractmethod
     def x(self):
@@ -103,7 +107,7 @@ class PassThroughController(BaseController):
 class AgentController(BaseController):
 
     def __init__(self, actuator_set, config):
-        self.config = config
+        super().__init__(config=config)
         self.actuator_set = actuator_set
         self.actuator_config_list = self.config['actuators']
 
@@ -267,10 +271,10 @@ class BasePlatform(BaseEnvObj):
             else:
                 self.init_dict = {}
 
-        self.reset(**kwargs)
+        self.reset()
 
-    def reset(self, **kwargs):
-        self.state.reset(**kwargs)
+    def reset(self):
+        self.state.reset()
 
         self.actuation_cur = None
         self.control_cur = None
@@ -326,8 +330,9 @@ class BasePlatform(BaseEnvObj):
 
 class BasePlatformState(BaseEnvObj):
 
-    def __init__(self, **kwargs):
-        self.reset(**kwargs)
+    def __init__(self, init_params):
+        self.init_params = init_params
+        self.reset()
 
     @abc.abstractmethod
     def reset(self):
@@ -335,25 +340,20 @@ class BasePlatformState(BaseEnvObj):
 
 
 class BasePlatformStateVectorized(BasePlatformState):
+    def __init__(self, init_params):
+        self._vector = None
+        super().__init__(init_params=init_params)
 
-    def reset(self, vector=None, vector_deep_copy=True, **kwargs):
-        if vector is None:
-            self._vector = self.build_vector(**kwargs)
-        else:
-            assert isinstance(vector, np.ndarray)
-            assert vector.shape == self.vector_shape
-            if vector_deep_copy:
-                self.vector = copy.deepcopy(vector)
-            else:
-                self._vector = vector
+    def reset(self):
+        self._vector = self.build_vector(**self.init_params)
 
     @abc.abstractmethod
-    def build_vector(self):
+    def build_vector(self, **kwargs):
         raise NotImplementedError
 
     @property
     def vector_shape(self):
-        return self.build_vector().shape
+        return self._vector.shape
 
     @property
     def vector(self):

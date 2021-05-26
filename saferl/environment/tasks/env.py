@@ -63,12 +63,8 @@ class BaseEnv(gym.Env):
         raise NotImplementedError
 
     def reset(self):
-        # apply random initialization to environment objects
-
-        for _, obj in self.sim_state.env_objs.items():
-            init_dict = obj.init_dict
-            init_dict_draw = draw_from_rand_bounds_dict(init_dict)
-            obj.reset(**init_dict_draw)
+        # Reset sim state
+        self.sim_state.reset()
 
         # reset processor objects and status
         self.sim_state.status = self.status_manager.reset(self.sim_state)
@@ -158,3 +154,7 @@ class SimulationState:
         self.env_objs = env_objs
         self.agent = agent
         self.status = status
+
+    def reset(self):
+        for name, obj in self.env_objs.items():
+            obj.reset()
