@@ -8,25 +8,26 @@ from saferl.environment.tasks.manager import RewardManager, ObservationManager, 
 from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
 
 from saferl.environment.utils import setup_env_objs_from_config
+from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, AGENT, ENV_OBJS
 
 
 class BaseEnv(gym.Env):
 
-    def __init__(self, agent=None, env_objs=None, observation=None, reward=None, status=None, verbose=None, **kwargs):
+    def __init__(self, env_config):
 
         self.sim_state = SimulationState()
 
-        if verbose is not None:
-            self.verbose = verbose
+        if VERBOSE in env_config.keys():
+            self.verbose = env_config[VERBOSE]
         else:
             self.verbose = False
 
-        self.observation_manager = ObservationManager(observation)
-        self.reward_manager = RewardManager(reward)
-        self.status_manager = StatusManager(status)
+        self.observation_manager = ObservationManager(env_config[OBSERVATION])
+        self.reward_manager = RewardManager(env_config[REWARD])
+        self.status_manager = StatusManager(env_config[STATUS])
 
         self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(
-            agent_name=agent, env_objs_config=env_objs)
+            agent_name=env_config[AGENT], env_objs_config=env_config[ENV_OBJS])
 
         self._setup_action_space()
         self._setup_obs_space()
