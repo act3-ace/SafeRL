@@ -8,7 +8,7 @@ from saferl.environment.models.geometry import distance
 # --------------------- Observation Processors ------------------------
 
 class DockingObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d', **kwargs):
+    def __init__(self, name=None, deputy=None, mode='2d'):
         super().__init__(name=name)
 
         # Initialize member variables from config
@@ -31,7 +31,7 @@ class DockingObservationProcessor(ObservationProcessor):
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d', **kwargs):
+    def __init__(self, name=None, deputy=None, mode='2d'):
         super().__init__(name=name)
 
         # Initialize member variables from config
@@ -63,7 +63,7 @@ class DockingObservationProcessorOriented(ObservationProcessor):
 
 
 class TimeRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, reward=None, **kwargs):
+    def __init__(self, name=None, reward=None):
         super().__init__(name=name, reward=reward)
 
     def reset(self, sim_state):
@@ -80,7 +80,7 @@ class TimeRewardProcessor(RewardProcessor):
 
 
 class DistanceChangeRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, deputy=None, docking_region=None, reward=None, **kwargs):
+    def __init__(self, name=None, deputy=None, docking_region=None, reward=None):
         super().__init__(name=name, reward=reward)
         self.deputy = deputy
         self.docking_region = docking_region
@@ -101,7 +101,7 @@ class DistanceChangeRewardProcessor(RewardProcessor):
 
 
 class DistanceChangeZRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, deputy=None, docking_region=None, reward=None, **kwargs):
+    def __init__(self, name=None, deputy=None, docking_region=None, reward=None):
         super().__init__(name=name, reward=reward)
         self.deputy = deputy
         self.docking_region = docking_region
@@ -122,7 +122,7 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
 
 
 class SuccessRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, success_status=None, reward=None, **kwargs):
+    def __init__(self, name=None, success_status=None, reward=None):
         super().__init__(name=name, reward=reward)
         self.success_status = success_status
 
@@ -138,7 +138,7 @@ class SuccessRewardProcessor(RewardProcessor):
 
 
 class FailureRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, failure_status=None, reward=None, **kwargs):
+    def __init__(self, name=None, failure_status=None, reward=None):
         super().__init__(name=name, reward=reward)
         self.failure_status = failure_status
 
@@ -157,7 +157,7 @@ class FailureRewardProcessor(RewardProcessor):
 
 
 class DockingStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, deputy=None, docking_region=None, **kwargs):
+    def __init__(self, name=None, deputy=None, docking_region=None):
         super().__init__(name=name)
         self.docking_region = docking_region
         self.deputy = deputy
@@ -175,7 +175,7 @@ class DockingStatusProcessor(StatusProcessor):
 
 
 class DockingDistanceStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, deputy=None, docking_region=None, **kwargs):
+    def __init__(self, name=None, deputy=None, docking_region=None):
         super().__init__(name=name)
         self.docking_region = docking_region
         self.deputy = deputy
@@ -193,7 +193,7 @@ class DockingDistanceStatusProcessor(StatusProcessor):
 
 
 class FailureStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, docking_distance=None, max_goal_distance=None, timeout=None, **kwargs):
+    def __init__(self, name=None, docking_distance=None, max_goal_distance=None, timeout=None):
         super().__init__(name=name)
         self.timeout = timeout
         self.docking_distance = docking_distance
@@ -219,7 +219,7 @@ class FailureStatusProcessor(StatusProcessor):
 
 
 class SuccessStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, docking_status=None, **kwargs):
+    def __init__(self, name=None, docking_status=None):
         super().__init__(name=name)
         self.docking_status = docking_status
 
