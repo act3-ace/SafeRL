@@ -74,6 +74,11 @@ class CWHSpacecraft3d(BasePlatform):
 
 class CWH2dState(BasePlatformStateVectorized):
 
+    def __init__(self, init_params=None):
+        if init_params is None:
+            init_params = {'x': 0, 'y': 0, 'x_dot': 0, 'y_dot': 0}
+        super().__init__(init_params=init_params)
+
     def build_vector(self, x=0, y=0, x_dot=0, y_dot=0, **kwargs):
         return np.array([x, y, x_dot, y_dot], dtype=np.float64)
 

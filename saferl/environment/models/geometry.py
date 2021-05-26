@@ -55,6 +55,9 @@ class Point(BaseGeometry):
     def __init__(self, x=0, y=0, z=0):
         self._center = np.array([x, y, z], dtype=np.float64)
 
+    def reset(self):
+        pass
+
     @property
     def x(self):
         return self._center[0]
