@@ -11,7 +11,7 @@ from saferl.environment.models.geometry import distance
 # --------------------- Observation Processors ------------------------
 
 class DubinsObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None, **kwargs):
+    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None):
         super().__init__(name=name)
 
         # Initialize member variables from config
@@ -73,7 +73,7 @@ class DubinsObservationProcessor(ObservationProcessor):
 
 
 class Dubins3dObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None, **kwargs):
+    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None):
         super().__init__(name=name)
 
         # Initialize member variables from config
@@ -147,7 +147,7 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 # --------------------- Reward Processors ------------------------
 
 class RejoinRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None, **kwargs):
+    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None):
         super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
@@ -187,7 +187,7 @@ class RejoinRewardProcessor(RewardProcessor):
 
 
 class RejoinFirstTimeRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, rejoin_status=None, reward=None, **kwargs):
+    def __init__(self, name=None, rejoin_status=None, reward=None):
         super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
@@ -220,7 +220,7 @@ class RejoinFirstTimeRewardProcessor(RewardProcessor):
 
 
 class RejoinDistanceChangeRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, rejoin_status=None, wingman=None, rejoin_region=None, reward=None, **kwargs):
+    def __init__(self, name=None, rejoin_status=None, wingman=None, rejoin_region=None, reward=None):
         super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
@@ -253,7 +253,7 @@ class RejoinDistanceChangeRewardProcessor(RewardProcessor):
 
 
 class DubinsInRejoin(StatusProcessor):
-    def __init__(self, name=None, wingman=None, rejoin_region=None, **kwargs):
+    def __init__(self, name=None, wingman=None, rejoin_region=None):
         super().__init__(name=name)
 
         # Initialize member variables from config
@@ -274,7 +274,7 @@ class DubinsInRejoin(StatusProcessor):
 
 
 class DubinsInRejoinPrev(StatusProcessor):
-    def __init__(self, name=None, rejoin_status=None, **kwargs):
+    def __init__(self, name=None, rejoin_status=None):
         super().__init__(name=name)
         # Initialize member variables from config
         self.rejoin_status = rejoin_status
@@ -294,7 +294,7 @@ class DubinsInRejoinPrev(StatusProcessor):
 
 
 class DubinsRejoinTime(StatusProcessor):
-    def __init__(self, name=None, rejoin_status=None, **kwargs):
+    def __init__(self, name=None, rejoin_status=None):
         super().__init__(name=name)
         # Initialize member variables from config
         self.rejoin_status = rejoin_status
@@ -317,7 +317,7 @@ class DubinsRejoinTime(StatusProcessor):
 
 
 class DubinsTimeElapsed(StatusProcessor):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name=None):
         super().__init__(name=name)
 
     def reset(self, sim_state):
@@ -333,7 +333,7 @@ class DubinsTimeElapsed(StatusProcessor):
 
 
 class DubinsLeadDistance(StatusProcessor):
-    def __init__(self, name=None, wingman=None, lead=None, **kwargs):
+    def __init__(self, name=None, wingman=None, lead=None):
         super().__init__(name=name)
         # Initialize member variables from config
         self.wingman = wingman
@@ -354,7 +354,7 @@ class DubinsLeadDistance(StatusProcessor):
 
 class DubinsFailureStatus(StatusProcessor):
     def __init__(self, name=None, lead_distance=None, time_elapsed=None, safety_margin=None,
-                 timeout=None, max_goal_distance=None, **kwargs):
+                 timeout=None, max_goal_distance=None):
         super().__init__(name=name)
         # Initialize member variables from config
         self.lead_distance_key = lead_distance
@@ -387,7 +387,7 @@ class DubinsFailureStatus(StatusProcessor):
 
 
 class DubinsSuccessStatus(StatusProcessor):
-    def __init__(self, name=None, rejoin_time=None, success_time=None, **kwargs):
+    def __init__(self, name=None, rejoin_time=None, success_time=None):
         super().__init__(name=name)
         # Initialize member variables from config
         self.rejoin_time_key = rejoin_time
