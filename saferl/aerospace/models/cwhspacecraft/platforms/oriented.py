@@ -24,8 +24,6 @@ class CWHSpacecraftOriented2d(BasePlatform):
     def generate_info(self):
         info = {
             'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
             'theta': self.theta,
             'x_dot': self.x_dot,
             'y_dot': self.y_dot,
@@ -33,7 +31,10 @@ class CWHSpacecraftOriented2d(BasePlatform):
             'react_wheel_ang_vel': self.react_wheel_ang_vel
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
     @property
     def theta(self):

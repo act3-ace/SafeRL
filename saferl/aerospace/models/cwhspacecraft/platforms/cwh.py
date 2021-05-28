@@ -6,26 +6,19 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
     BaseActuatorSet, BaseLinearODESolverDynamics
 
 
-class CWHSpacecraft2d(BasePlatform):
-
-    def __init__(self, config=None, controller=None, **kwargs):
-        dynamics = CWH2dDynamics()
-        actuator_set = CWH2dActuatorSet()
-
-        state = CWH2dState()
-
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+class BaseCWHSpacecraft(BasePlatform):
 
     def generate_info(self):
         info = {
             'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
             'x_dot': self.x_dot,
             'y_dot': self.y_dot,
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
     @property
     def x_dot(self):
@@ -36,7 +29,18 @@ class CWHSpacecraft2d(BasePlatform):
         return self.state.y_dot
 
 
-class CWHSpacecraft3d(BasePlatform):
+class CWHSpacecraft2d(BaseCWHSpacecraft):
+
+    def __init__(self, config=None, controller=None, **kwargs):
+        dynamics = CWH2dDynamics()
+        actuator_set = CWH2dActuatorSet()
+
+        state = CWH2dState()
+
+        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+
+
+class CWHSpacecraft3d(BaseCWHSpacecraft):
 
     def __init__(self, config=None, controller=None, **kwargs):
         dynamics = CWH3dDynamics()
@@ -48,24 +52,13 @@ class CWHSpacecraft3d(BasePlatform):
 
     def generate_info(self):
         info = {
-            'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
-            'z': self.z,
-            'x_dot': self.x_dot,
-            'y_dot': self.y_dot,
             'z_dot': self.z_dot
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
 
-    @property
-    def x_dot(self):
-        return self.state.x_dot
-
-    @property
-    def y_dot(self):
-        return self.state.y_dot
+        return info_ret
 
     @property
     def z_dot(self):

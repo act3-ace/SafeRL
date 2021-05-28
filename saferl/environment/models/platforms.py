@@ -299,6 +299,19 @@ class BasePlatform(BaseEnvObj):
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
 
+    def generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'controller': {
+                'actuation': self.actuation_cur,
+                'control': self.control_cur,
+            }
+        }
+
+        return info
+
     @property
     def x(self):
         return self.state.x
