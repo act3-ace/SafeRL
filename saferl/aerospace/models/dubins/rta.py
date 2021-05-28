@@ -9,24 +9,26 @@ class RTADubins2dCollision(RTAModule):
 
     def __init__(self):
         super().__init__()
-        self.projection_window = 9  # seconds
+        self.projection_window = 11  # seconds
         self.projection_frequency = 10
         self.watch_list = ['lead']
         self.platform_name = 'wingman'
         self.turn_rate = np.deg2rad(6)
 
         self.rta_on_dist = 200
-        self.rta_off_dist = 400
+        self.rta_off_dist = 250
 
         self.projection_numpoints = \
             self.projection_window * self.projection_frequency + 1
 
+        self.rta_on = False
         self.rta_control = None
         self.rta_traj = None
         self.watch_traj = None
 
     def reset(self):
         super().reset()
+        self.rta_on = False
         self.rta_control = None
         self.rta_traj = None
         self.watch_traj = None
@@ -39,20 +41,16 @@ class RTADubins2dCollision(RTAModule):
             watch_platform = sim_state.env_objs[watch_name]
             watch_traj = self.dubins_projection(watch_platform)
 
-            rel_heading = angle_wrap(rta_platform.heading - watch_platform.heading)
+            rel_position = watch_platform.position - rta_platform.position
+            rel_position_aligned = rta_platform.orientation.apply(rel_position, inverse=True)
+            rel_angle = angle_wrap(math.atan2(rel_position_aligned[1], rel_position_aligned[0]), mode='pi')
 
-            if ((rel_heading > 0 and rel_heading < math.pi/2)
-                    or (rel_heading < -math.pi/2 and rel_heading > -math.pi)):
-                # turn left
+            if 0 <= rel_angle <= math.pi:
                 rta_turn = -1 * self.turn_rate
             else:
-                # turn right
                 rta_turn = self.turn_rate
 
-            if self.rta_on:
-                rta_control_proposed = self.rta_control
-            else:
-                rta_control_proposed = np.array([rta_turn, 0], dtype=np.float64)
+            rta_control_proposed = np.array([rta_turn, 0], dtype=np.float64)
 
             rta_traj = self.dubins_projection(rta_platform, rta_control_proposed)
 
@@ -63,9 +61,12 @@ class RTADubins2dCollision(RTAModule):
             traj_dist = np.linalg.norm(rta_traj - watch_traj, axis=1)
             if (not self.rta_on) and (np.min(traj_dist) <= self.rta_on_dist):
                 self.rta_on = True
-                self.rta_control = rta_control_proposed
             elif self.rta_on and (np.min(traj_dist) > self.rta_off_dist):
                 self.rta_on = False
+
+            if self.rta_on:
+                self.rta_control = rta_control_proposed
+            else:
                 self.rta_control = None
 
     def _generate_control(self, sim_state, control):
