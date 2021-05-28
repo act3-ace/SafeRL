@@ -441,5 +441,12 @@ def distance(a, b):
     return np.linalg.norm(a.position - b.position)
 
 
-def angle_wrap(angle):
-    return ((angle + math.pi) % (2 * math.pi)) - math.pi
+def angle_wrap(angle, mode='pi'):
+    assert mode == 'pi' or mode == '2pi', "invalid mode, must be on of ('pi', '2pi')"
+
+    if mode == 'pi':
+        offset = math.pi
+    else:
+        offset = 0
+
+    return ((angle + offset) % (2 * math.pi)) - offset
