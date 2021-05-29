@@ -27,13 +27,11 @@ def numpy_to_matlab_txt(mat, name=None, output_stream=None):
         return output_stream
 
 
-def setup_env_objs_from_config(config):
+def setup_env_objs_from_config(agent_name, env_objs_config):
     env_objs = {}
     agent = None
 
-    agent_name = config["agent"]
-
-    for obj_config in config["env_objs"]:
+    for obj_config in env_objs_config:
         name = obj_config["name"]
         cls = obj_config["class"]
         if issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry):
@@ -42,7 +40,7 @@ def setup_env_objs_from_config(config):
                 obj_config["config"]["ref"] = env_objs[ref_name]
             obj = geo_from_config(cls, config=obj_config["config"])
         else:
-            obj = cls(config=obj_config["config"])
+            obj = cls(obj_config["config"])
         env_objs[name] = obj
         if name == agent_name:
             agent = obj
