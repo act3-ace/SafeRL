@@ -31,24 +31,23 @@ class BaseCWHSpacecraft(BasePlatform):
 
 class CWHSpacecraft2d(BaseCWHSpacecraft):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None):
+        # TODO: replace config argument with controller
         dynamics = CWH2dDynamics()
         actuator_set = CWH2dActuatorSet()
-
         state = CWH2dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, config)
 
 
 class CWHSpacecraft3d(BaseCWHSpacecraft):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None):
         dynamics = CWH3dDynamics()
         actuator_set = CWH3dActuatorSet()
-
         state = CWH3dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, config)
 
     def generate_info(self):
         info = {
