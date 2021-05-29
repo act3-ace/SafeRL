@@ -6,32 +6,34 @@ import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
 from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
+
 from saferl.environment.utils import setup_env_objs_from_config
+from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, AGENT, ENV_OBJS
 
 
 class BaseEnv(gym.Env):
 
-    def __init__(self, config):
-        # save config
-        self.config = config
+    def __init__(self, env_config):
 
-        if 'step_size' in self.config:
-            self.step_size = self.config['step_size']
+        # set time step size
+        if 'step_size' in env_config:
+            self.step_size = env_config['step_size']
         else:
             self.step_size = 1
 
         self.sim_state = SimulationState()
 
-        if 'verbose' in config:
-            self.verbose = config['verbose']
+        if VERBOSE in env_config.keys():
+            self.verbose = env_config[VERBOSE]
         else:
             self.verbose = False
 
-        self.observation_manager = ObservationManager(self.config["observation"])
-        self.reward_manager = RewardManager(config=self.config["reward"])
-        self.status_manager = StatusManager(config=self.config["status"])
+        self.observation_manager = ObservationManager(env_config[OBSERVATION])
+        self.reward_manager = RewardManager(env_config[REWARD])
+        self.status_manager = StatusManager(env_config[STATUS])
 
-        self.sim_state.agent, self.sim_state.env_objs = self._setup_env_objs()
+        self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(
+            agent_name=env_config[AGENT], env_objs_config=env_config[ENV_OBJS])
 
         self._setup_action_space()
         self._setup_obs_space()
@@ -86,10 +88,6 @@ class BaseEnv(gym.Env):
             print("env reset with params {}".format(self.generate_info()))
 
         return obs
-
-    def _setup_env_objs(self):
-        agent, env_objs = setup_env_objs_from_config(self.config)
-        return agent, env_objs
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space
