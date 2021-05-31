@@ -8,14 +8,12 @@ from glob import glob
 import ray
 import ray.rllib.agents.ppo as ppo
 
-from saferl.aerospace.tasks.rejoin.task import DubinsRejoin
-from saferl.aerospace.tasks.docking.task import DockingEnv
 from saferl.environment.utils import jsonify, is_jsonable
 
 """
-This script loads an agent's policy from a saved checkpoint in the specified experiment directory. It randomly 
-initializes the environment said policy was trained on and runs the specified number of evaluation rollouts. These 
-evaluation rollout episodes are logged to a jsonlines eval.log file (found in experiment_dir/eval/chpt_<number> by 
+This script loads an agent's policy from a saved checkpoint in the specified experiment directory. It randomly
+initializes the environment said policy was trained on and runs the specified number of evaluation rollouts. These
+evaluation rollout episodes are logged to a jsonlines eval.log file (found in experiment_dir/eval/chpt_<number> by
 default). Currently, only DubinsRejoin and DockingEnv are supported.
 
 Author: John McCarroll
