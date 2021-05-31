@@ -134,7 +134,7 @@ class CWHOriented2dActuatorSet(BaseActuatorSet):
 
 
 class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, platform, integration_method='RK45'):
+    def __init__(self, platform, integration_method='Euler'):
         self.platform = platform
 
         super().__init__(integration_method=integration_method)

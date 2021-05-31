@@ -193,7 +193,7 @@ class CWH3dActuatorSet(BaseActuatorSet):
 
 
 class CWH2dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, m=12, n=0.001027, integration_method='RK45'):
+    def __init__(self, m=12, n=0.001027, integration_method='Euler'):
         self.m = m  # kg
         self.n = n  # rads/s
 
@@ -221,7 +221,7 @@ class CWH2dDynamics(BaseLinearODESolverDynamics):
 
 
 class CWH3dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, m=12, n=0.001027, integration_method='RK45'):
+    def __init__(self, m=12, n=0.001027, integration_method='Euler'):
         self.m = m  # kg
         self.n = n  # rads/s
 
