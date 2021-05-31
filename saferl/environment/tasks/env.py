@@ -15,6 +15,12 @@ class BaseEnv(gym.Env):
 
     def __init__(self, env_config):
 
+        # set time step size
+        if 'step_size' in env_config:
+            self.step_size = env_config['step_size']
+        else:
+            self.step_size = 1
+
         self.sim_state = SimulationState()
 
         if VERBOSE in env_config.keys():
@@ -31,8 +37,6 @@ class BaseEnv(gym.Env):
 
         self._setup_action_space()
         self._setup_obs_space()
-
-        self.step_size = 1  # TODO
 
         self.reset()
 
