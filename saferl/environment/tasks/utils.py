@@ -1,4 +1,5 @@
 import numpy as np
+from saferl.environment.tasks.processor import StatusProcessor
 
 
 def draw_from_rand_bounds_dict(rand_dict):
