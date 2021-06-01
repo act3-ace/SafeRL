@@ -1,14 +1,20 @@
 import abc
 import copy
+import gym
 import numpy as np
 
 
 class Manager(abc.ABC):
-    def __init__(self, config):
-        self.config = config
-
+    def __init__(self, processors):
         # Register and initialize processors
-        self.processors = [p_config["class"](config=p_config) for p_config in config]
+        # TODO: Inititalize processors outside of manager
+        self.processors = []
+        for p in processors:  # workaround
+            name = p["name"]
+            cls = p["class"]
+            config = p["config"]
+            config["name"] = name
+            self.processors.append(cls(**config))
 
     def reset(self, sim_state):
         for p in self.processors:
@@ -31,12 +37,18 @@ class Manager(abc.ABC):
 
 
 class ObservationManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, processors):
+        super().__init__(processors=processors)
         self.obs = None
 
-        # All processors should have same observation space
-        self.observation_space = self.processors[0].observation_space
+        # combine the processor observation spaces into a single Box space
+        processor_lows = [p.observation_space.low for p in self.processors]
+        processor_highs = [p.observation_space.high for p in self.processors]
+
+        manager_low = np.concatenate(processor_lows)
+        manager_high = np.concatenate(processor_highs)
+
+        self.observation_space = gym.spaces.Box(low=manager_low, high=manager_high)
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -62,8 +74,8 @@ class ObservationManager(Manager):
 
 
 class StatusManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, processors):
+        super().__init__(processors=processors)
         self.status = {}
 
     def reset(self, sim_state):
@@ -101,8 +113,8 @@ class StatusManager(Manager):
 
 
 class RewardManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, processors):
+        super().__init__(processors=processors)
         self.step_value = 0
         self.total_value = 0
 
