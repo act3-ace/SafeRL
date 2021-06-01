@@ -1,5 +1,4 @@
 import random
-import os
 import numpy as np
 
 import gym
@@ -32,7 +31,6 @@ class BaseEnv(gym.Env):
         self.reward_manager = RewardManager(env_config[REWARD])
         self.status_manager = StatusManager(env_config[STATUS])
 
-
         has_failure_processor = False
         has_success_processor = False
 
@@ -47,16 +45,13 @@ class BaseEnv(gym.Env):
         if not has_success_processor:
             self.status_manager.processors.append(DefaultSuccessStatusProcessor())
 
-
         self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(
             agent_name=env_config[AGENT], env_objs_config=env_config[ENV_OBJS])
-
 
         self._setup_action_space()
         self._setup_obs_space()
 
         self.reset()
-
 
     def seed(self, seed=None):
         np.random.seed(seed)
