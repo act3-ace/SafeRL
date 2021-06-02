@@ -3,7 +3,7 @@ import numpy as np
 import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
-from saferl.environment.tasks.defaults import DefaultFailureStatusProcessor, DefaultSuccessStatusProcessor
+from saferl.environment.tasks.processor.basic_processors import TimeoutProcessor, NeverSuccessProcessor
 from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
 from saferl.environment.utils import setup_env_objs_from_config
 from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, AGENT, ENV_OBJS
@@ -40,9 +40,9 @@ class BaseEnv(gym.Env):
                 has_success_processor = True
 
         if not has_failure_processor:
-            self.status_manager.processors.append(DefaultFailureStatusProcessor())
+            self.status_manager.processors.append(TimeoutProcessor())
         if not has_success_processor:
-            self.status_manager.processors.append(DefaultSuccessStatusProcessor())
+            self.status_manager.processors.append(NeverSuccessProcessor())
 
         self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(
             agent_name=env_config[AGENT], env_objs_config=env_config[ENV_OBJS])
