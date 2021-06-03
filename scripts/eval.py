@@ -35,11 +35,12 @@ def get_args():
     """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dir', type=str, default="", help="The path to the experiment directory", required=True)
+    parser.add_argument('--dir', type=str, default="", help="The full path to the experiment directory", required=True)
     parser.add_argument('--ckpt_num', type=int, default=None, help="Specify a checkpoint to load")
     parser.add_argument('--seed', type=int, default=None, help="The seed used to initialize evaluation environment")
     parser.add_argument('--explore', type=bool, default=False, help="True for off-policy evaluation")
-    parser.add_argument('--output_dir', type=str, default=None, help="Full path of directory to write evaluation logs")
+    parser.add_argument('--output_dir', type=str, default=None,
+                        help="The full path to the directory to write evaluation logs in")
     parser.add_argument('--num_rollouts', type=int, default=10,
                         help="Number of randomly initialized episodes to evaluate")
 

@@ -1,6 +1,6 @@
 import argparse
 import os
-
+from distutils.util import strtobool
 import yaml
 
 from datetime import datetime
@@ -57,6 +57,8 @@ def get_args():
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
 
+    parser.add_argument('--evaluation_during_training', type=lambda x: strtobool(x), default=False,
+                        help="True if intermittent evaluation of agent policy during training desired, False if not")
     parser.add_argument('--evaluation_interval', type=int, default=EVALUATION_INTERVAL,
                         help="number of episodes to run in between policy evaluations")
     parser.add_argument('--evaluation_num_episodes', type=int, default=EVALUATION_NUM_EPISODES,
@@ -65,7 +67,7 @@ def get_args():
                         help="number of workers used to run evaluation episodes")
     parser.add_argument('--evaluation_seed', type=int, default=EVALUATION_SEED,
                         help="set random seed for evaluation episodes")
-    parser.add_argument('--evaluation_exploration', type=bool, default=False,
+    parser.add_argument('--evaluation_exploration', type=lambda x: strtobool(x), default=False,
                         help="set exploration behavior for evaluation episodes")
 
     args = parser.parse_args()
@@ -108,20 +110,21 @@ def experiment_setup(args):
     config['env'] = env
     config['env_config'] = env_config
 
-    # set evaluation parameters
-    config["evaluation_interval"] = args.evaluation_interval
-    config["evaluation_num_episodes"] = args.evaluation_num_episodes
-    config["evaluation_num_workers"] = args.evaluation_num_workers
-    config["evaluation_config"] = {
-        # override config for logging, tensorboard, etc
-        "explore": args.evaluation_exploration,
-        "seed": args.evaluation_seed,
-        "callbacks": build_callbacks_caller([EpisodeOutcomeCallback(),
-                                             FailureCodeCallback(),
-                                             RewardComponentsCallback(),
-                                             LoggingCallback(num_logging_workers=args.evaluation_num_workers,
-                                                             contents=CONTENTS)])
-    }
+    if args.evaluation_during_training:
+        # set evaluation parameters
+        config["evaluation_interval"] = args.evaluation_interval
+        config["evaluation_num_episodes"] = args.evaluation_num_episodes
+        config["evaluation_num_workers"] = args.evaluation_num_workers
+        config["evaluation_config"] = {
+            # override config for logging, tensorboard, etc
+            "explore": args.evaluation_exploration,
+            "seed": args.evaluation_seed,
+            "callbacks": build_callbacks_caller([EpisodeOutcomeCallback(),
+                                                 FailureCodeCallback(),
+                                                 RewardComponentsCallback(),
+                                                 LoggingCallback(num_logging_workers=args.evaluation_num_workers,
+                                                                 contents=CONTENTS)])
+        }
 
     # Save experiment params
     with open(args_yaml_filepath, 'w') as args_yaml_file:
