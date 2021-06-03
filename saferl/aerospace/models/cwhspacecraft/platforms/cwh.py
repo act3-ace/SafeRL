@@ -8,11 +8,11 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
 
 class CWHSpacecraft2d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None, controller=None, init_params=None, **kwargs):
         dynamics = CWH2dDynamics()
         actuator_set = CWH2dActuatorSet()
 
-        state = CWH2dState()
+        state = CWH2dState(init_params=init_params)
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
@@ -38,11 +38,11 @@ class CWHSpacecraft2d(BasePlatform):
 
 class CWHSpacecraft3d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, config=None, controller=None, init_params=None, **kwargs):
         dynamics = CWH3dDynamics()
         actuator_set = CWH3dActuatorSet()
 
-        state = CWH3dState()
+        state = CWH3dState(init_params=init_params)
 
         super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
@@ -120,6 +120,10 @@ class CWH2dState(BasePlatformStateVectorized):
 
 
 class CWH3dState(BasePlatformStateVectorized):
+    def __init__(self, init_params=None):
+        if init_params is None:
+            init_params = {'x': 0, 'y': 0, 'z': 0, 'x_dot': 0, 'y_dot': 0, 'z_dot': 0}
+        super().__init__(init_params=init_params)
 
     def build_vector(self, x=0, y=0, z=0, x_dot=0, y_dot=0, z_dot=0, **kwargs):
         return np.array([x, y, z, x_dot, y_dot, z_dot], dtype=np.float64)
