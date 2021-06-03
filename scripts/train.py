@@ -151,7 +151,7 @@ def main(args):
         # Run training in a single process for debugging
         config["num_workers"] = 0
         trainer = ppo.PPOTrainer(config=config)
-        while True:
+        for i in range(args.stop_iteration):
             print(trainer.train())
 
 
