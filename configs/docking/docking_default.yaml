@@ -1,6 +1,7 @@
 env: saferl.aerospace.tasks.docking.task.DockingEnv
 env_config:
   agent: deputy
+  step_size: 1
   env_objs:
   - name: deputy
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
