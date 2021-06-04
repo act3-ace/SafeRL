@@ -253,7 +253,7 @@ class RelativeGeometry(BaseEnvObj):
             self.init_dict = init
 
         self.ref.register_dependent_obj(self)
-        self.update()
+        # self.update()
 
     def update(self):
         ref_orientation = self.ref.orientation

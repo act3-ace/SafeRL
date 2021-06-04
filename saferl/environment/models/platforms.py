@@ -271,8 +271,6 @@ class BasePlatform(BaseEnvObj):
             else:
                 self.init_dict = {}
 
-        self.reset()
-
     def reset(self):
         self.state.reset()
 
@@ -332,7 +330,6 @@ class BasePlatformState(BaseEnvObj):
 
     def __init__(self, init_params):
         self.init_params = init_params
-        self.reset()
 
     @abc.abstractmethod
     def reset(self):
