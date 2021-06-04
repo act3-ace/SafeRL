@@ -1,8 +1,8 @@
 from saferl.environment.tasks.processor import StatusProcessor
 
 
-# Is used a default failure processor
-class TimeoutProcessor(StatusProcessor):
+# Used a default failure processor
+class TimeoutStatusProcessor(StatusProcessor):
     def __init__(self, name='failure', timeout=1000):
         super().__init__(name=name)
         self.timeout = timeout
@@ -24,8 +24,8 @@ class TimeoutProcessor(StatusProcessor):
         return failure
 
 
-# A status processor, can be used as a default success processors
-class NeverSuccessProcessor(StatusProcessor):
+# Is to be used as a default success processor
+class NeverSuccessStatusProcessor(StatusProcessor):
 
     def __init__(self, name='success'):
         super().__init__(name=name)
