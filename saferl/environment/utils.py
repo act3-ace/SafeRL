@@ -5,7 +5,7 @@ import yaml
 
 import numpy as np
 
-from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
+from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry
 
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
@@ -27,25 +27,53 @@ def numpy_to_matlab_txt(mat, name=None, output_stream=None):
         return output_stream
 
 
-def setup_env_objs_from_config(config):
+def setup_initializers_from_config(config, env_objs, default_init):
+    initializers = []
+    reg_objs = []
+    i_list = config["initializers"]
+    for i in i_list:
+        i_class = i["class"]
+        i_config = i["config"]
+        env_obj = env_objs[i_config["env_obj"]]
+        initializer = i_class(env_obj=env_obj)
+        initializers.append(initializer)
+        reg_objs.append(env_obj.name)
+
+    # Give default initializer to objs with no defined initializer
+    no_init = list(set(env_objs.keys()) - set(reg_objs))
+    for name in no_init:
+        initializers.append(default_init(env_obj=env_objs[name]))
+
+    return initializers
+
+
+def setup_env_objs_from_config(config, default_initializer):
     env_objs = {}
     agent = None
+    initializers = []
 
     agent_name = config["agent"]
 
     for obj_config in config["env_objs"]:
+        # Get config values
         name = obj_config["name"]
         cls = obj_config["class"]
+        cfg = obj_config["config"]
+
+        # Assign ref property to existing env_obj for Geometry objects
         if issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry):
             if issubclass(cls, RelativeGeometry):
-                ref_name = obj_config["config"]["ref"]
-                obj_config["config"]["ref"] = env_objs[ref_name]
-            obj = geo_from_config(cls, config=obj_config["config"])
-        else:
-            obj = cls(config=obj_config["config"])
+                ref_name = cfg["ref"]
+                cfg["ref"] = env_objs[ref_name]
+
+        # Instantiate object
+        obj = cls(**cfg)
         env_objs[name] = obj
         if name == agent_name:
             agent = obj
+
+        # Create object initializer
+        i = cfg[ini]
 
     return agent, env_objs
 

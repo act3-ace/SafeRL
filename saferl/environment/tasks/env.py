@@ -5,8 +5,8 @@ import numpy as np
 import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
-from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
-from saferl.environment.utils import setup_env_objs_from_config
+from saferl.environment.tasks.initializers import RandBoundsInitializer
+from saferl.environment.utils import setup_env_objs_from_config, setup_initializers_from_config
 
 
 class BaseEnv(gym.Env):
@@ -14,7 +14,13 @@ class BaseEnv(gym.Env):
     def __init__(self, config):
         # save config
         self.config = config
-        self.sim_state = SimulationState()
+
+        # Initialize sim_state
+        agent, env_objs = self._setup_env_objs()
+        self.sim_state = SimulationState(agent=agent, env_objs=env_objs)
+
+        # Get initializers
+        self.initializers = setup_initializers_from_config(config, env_objs, default_init=RandBoundsInitializer)
 
         if 'verbose' in config:
             self.verbose = config['verbose']
@@ -24,8 +30,6 @@ class BaseEnv(gym.Env):
         self.observation_manager = ObservationManager(self.config["observation"])
         self.reward_manager = RewardManager(config=self.config["reward"])
         self.status_manager = StatusManager(config=self.config["status"])
-
-        self.sim_state.agent, self.sim_state.env_objs = self._setup_env_objs()
 
         self._setup_action_space()
         self._setup_obs_space()
@@ -63,8 +67,8 @@ class BaseEnv(gym.Env):
         raise NotImplementedError
 
     def reset(self):
-        # Reset sim state
-        self.sim_state.reset()
+        # Reinitialize env_objs
+        self._initialize()
 
         # reset processor objects and status
         self.sim_state.status = self.status_manager.reset(self.sim_state)
@@ -78,6 +82,11 @@ class BaseEnv(gym.Env):
             print("env reset with params {}".format(self.generate_info()))
 
         return obs
+
+    def _initialize(self):
+        # Reinitialize env_objs
+        for initializer in self.initializers:
+            initializer.initialize()
 
     def _setup_env_objs(self):
         agent, env_objs = setup_env_objs_from_config(self.config)
@@ -154,7 +163,3 @@ class SimulationState:
         self.env_objs = env_objs
         self.agent = agent
         self.status = status
-
-    def reset(self):
-        for name, obj in self.env_objs.items():
-            obj.reset()
