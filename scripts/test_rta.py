@@ -9,6 +9,8 @@ from saferl.environment.utils import YAMLParser
 
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import matplotlib
+matplotlib.rc('lines', linewidth=2.0)
 
 config = '../configs/rejoin/rejoin_default.yaml'
 
@@ -43,7 +45,7 @@ def generate_lead_wingman_collision():
     return wingman_init, lead_init
 
 
-def run_collision(env_class, env_config, save_anim=False):
+def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim.mp4'):
     wingman_init, lead_init = generate_lead_wingman_collision()
     env_config['env_objs'][0]['config']['init'] = wingman_init
     env_config['env_objs'][1]['config']['init'] = lead_init
@@ -69,16 +71,22 @@ def run_collision(env_class, env_config, save_anim=False):
     ax.set_aspect('equal', adjustable='box')
     ax.set(xlim=(-2000, 2000), ylim=(-2000, 2000))
     ax.invert_yaxis()
-    wingman_marker, = plt.plot([], [], 'go')
-    lead_marker, = plt.plot([], [], 'bp')
+    
     wingman_traj, = plt.plot([], [], 'g')
     lead_traj, = plt.plot([], [], 'b')
+    wingman_forward_traj, = plt.plot([], [], 'g--')
+    wingman_safety_circle = plt.Circle((0, 0), 200, edgecolor='r', facecolor=(0,0,0,0), linewidth=2)
+    ax.add_artist(wingman_safety_circle)
+
+    wingman_marker, = plt.plot([], [], 'go', markersize=10)
+    lead_marker, = plt.plot([], [], 'bp', markersize=10)
 
     def init():
         wingman_marker.set_data([], [],)
         lead_marker.set_data([], [],)
         wingman_traj.set_data([], [],)
         lead_traj.set_data([], [],)
+        wingman_forward_traj.set_data([], [],)
 
     def animate(i):
         info = info_log[i]
@@ -88,6 +96,15 @@ def run_collision(env_class, env_config, save_anim=False):
         wingman_traj.set_data(info['rta']['rta_traj'][:, 0], info['rta']['rta_traj'][:, 1])
         lead_traj.set_data(info['rta']['watch_traj'][:, 0], info['rta']['watch_traj'][:, 1])
 
+        x = info['wingman']['x']
+        y = info['wingman']['y']
+        heading = info['wingman']['heading']
+
+        wingman_forward_traj.set_data(
+            [x, x+500*math.cos(heading)],
+            [y, y+500*math.sin(heading)])
+        wingman_safety_circle.center = x, y
+
         if info['rta']['rta_on']:
             wingman_traj.set_color('r')
         else:
@@ -96,18 +113,18 @@ def run_collision(env_class, env_config, save_anim=False):
         return wingman_marker,
 
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(info_log), interval=50)
-
-    plt.show()
+    plt.tight_layout()
+    # plt.show()
     if save_anim:
-        anim.save('basic_animation.mp4')
+        anim.save(output_name, dpi=200)
 
 
 parser = YAMLParser(yaml_file=config, lookup=lookup)
 
 np.random.seed(0)
-for i in range(10):
+for i in range(5):
     env_class, env_config = parser.parse_env()
 
     # timeout limit
     env_config['status'][5]['config']['timeout'] = 30
-    run_collision(env_class, env_config)
+    run_collision(env_class, env_config, output_name='vids/rta_{}.mp4'.format(i), save_anim=True)
