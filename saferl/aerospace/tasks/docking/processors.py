@@ -5,23 +5,25 @@ from saferl.environment.tasks.processor import ObservationProcessor, RewardProce
 from saferl.environment.models.geometry import distance
 
 
+# --------------------- Observation Processors ------------------------
+
 class DockingObservationProcessor(ObservationProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, deputy=None, mode='2d'):
+        super().__init__(name=name)
 
         # Initialize member variables from config
-        self.mode = self.config["mode"]
-        self.deputy = self.config["deputy"]
+        self.mode = mode
+        self.deputy = deputy
 
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
-        if self.config['mode'] == '2d':
+        if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
-        elif self.config['mode'] == '3d':
+        elif self.mode == '3d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.config['mode']))
+            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
@@ -29,23 +31,23 @@ class DockingObservationProcessor(ObservationProcessor):
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, deputy=None, mode='2d'):
+        super().__init__(name=name)
 
         # Initialize member variables from config
-        self.mode = self.config["mode"]
-        self.deputy = self.config["deputy"]
+        self.mode = mode
+        self.deputy = deputy
 
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
-        if self.config['mode'] == '2d':
+        if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
             self.norm_const = np.array([1000, 1000, np.pi, 100, 100, 0.4, 500])
-        elif self.config['mode'] == '3d':
+        elif self.mode == '3d':
             raise NotImplementedError
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.config['mode']))
+            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
@@ -57,9 +59,12 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         return obs
 
 
+# --------------------- Reward Processors ------------------------
+
+
 class TimeRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, name=None, reward=None):
+        super().__init__(name=name, reward=reward)
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -75,10 +80,10 @@ class TimeRewardProcessor(RewardProcessor):
 
 
 class DistanceChangeRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.deputy = self.config["deputy"]
-        self.docking_region = self.config["docking_region"]
+    def __init__(self, name=None, deputy=None, docking_region=None, reward=None):
+        super().__init__(name=name, reward=reward)
+        self.deputy = deputy
+        self.docking_region = docking_region
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -96,10 +101,10 @@ class DistanceChangeRewardProcessor(RewardProcessor):
 
 
 class DistanceChangeZRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.deputy = self.config["deputy"]
-        self.docking_region = self.config["docking_region"]
+    def __init__(self, name=None, deputy=None, docking_region=None, reward=None):
+        super().__init__(name=name, reward=reward)
+        self.deputy = deputy
+        self.docking_region = docking_region
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -117,9 +122,9 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
 
 
 class SuccessRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.success_status = self.config["success_status"]
+    def __init__(self, name=None, success_status=None, reward=None):
+        super().__init__(name=name, reward=reward)
+        self.success_status = success_status
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
@@ -133,9 +138,9 @@ class SuccessRewardProcessor(RewardProcessor):
 
 
 class FailureRewardProcessor(RewardProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.failure_status = self.config["failure_status"]
+    def __init__(self, name=None, failure_status=None, reward=None):
+        super().__init__(name=name, reward=reward)
+        self.failure_status = failure_status
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
@@ -148,11 +153,14 @@ class FailureRewardProcessor(RewardProcessor):
         return step_reward
 
 
+# --------------------- Status Processors ------------------------
+
+
 class DockingStatusProcessor(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.docking_region = self.config["docking_region"]
-        self.deputy = self.config["deputy"]
+    def __init__(self, name=None, deputy=None, docking_region=None):
+        super().__init__(name=name)
+        self.docking_region = docking_region
+        self.deputy = deputy
 
     def reset(self, sim_state):
         pass
@@ -167,10 +175,10 @@ class DockingStatusProcessor(StatusProcessor):
 
 
 class DockingDistanceStatusProcessor(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.docking_region = self.config["docking_region"]
-        self.deputy = self.config["deputy"]
+    def __init__(self, name=None, deputy=None, docking_region=None):
+        super().__init__(name=name)
+        self.docking_region = docking_region
+        self.deputy = deputy
 
     def reset(self, sim_state):
         pass
@@ -185,11 +193,11 @@ class DockingDistanceStatusProcessor(StatusProcessor):
 
 
 class FailureStatusProcessor(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.timeout = self.config["timeout"]
-        self.docking_distance = self.config["docking_distance"]
-        self.max_goal_distance = self.config["max_goal_distance"]
+    def __init__(self, name=None, docking_distance=None, max_goal_distance=None, timeout=None):
+        super().__init__(name=name)
+        self.timeout = timeout
+        self.docking_distance = docking_distance
+        self.max_goal_distance = max_goal_distance
 
     def reset(self, sim_state):
         self.time_elapsed = 0
@@ -211,9 +219,9 @@ class FailureStatusProcessor(StatusProcessor):
 
 
 class SuccessStatusProcessor(StatusProcessor):
-    def __init__(self, config):
-        super().__init__(config=config)
-        self.docking_status = self.config["docking_status"]
+    def __init__(self, name=None, docking_status=None):
+        super().__init__(name=name)
+        self.docking_status = docking_status
 
     def reset(self, sim_state):
         pass

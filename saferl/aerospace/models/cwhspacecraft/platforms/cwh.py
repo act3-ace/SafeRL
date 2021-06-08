@@ -3,34 +3,22 @@ from scipy.spatial.transform import Rotation
 import copy
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseLinearODESolverDynamics, PassThroughController, AgentController
+    BaseActuatorSet, BaseLinearODESolverDynamics
 
 
-class CWHSpacecraft2d(BasePlatform):
-
-    def __init__(self, controller=None, **kwargs):
-        dynamics = CWH2dDynamics()
-        actuator_set = CWH2dActuatorSet()
-
-        state = CWH2dState()
-
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
-
-        super().__init__(dynamics, actuator_set, state, controller, **kwargs)
+class BaseCWHSpacecraft(BasePlatform):
 
     def generate_info(self):
         info = {
             'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
             'x_dot': self.x_dot,
             'y_dot': self.y_dot,
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
     @property
     def x_dot(self):
@@ -41,41 +29,35 @@ class CWHSpacecraft2d(BasePlatform):
         return self.state.y_dot
 
 
-class CWHSpacecraft3d(BasePlatform):
+class CWHSpacecraft2d(BaseCWHSpacecraft):
 
-    def __init__(self, config=None, **kwargs):
+    def __init__(self, config=None):
+        # TODO: replace config argument with controller
+        dynamics = CWH2dDynamics()
+        actuator_set = CWH2dActuatorSet()
+        state = CWH2dState()
+
+        super().__init__(dynamics, actuator_set, state, config)
+
+
+class CWHSpacecraft3d(BaseCWHSpacecraft):
+
+    def __init__(self, config=None):
         dynamics = CWH3dDynamics()
         actuator_set = CWH3dActuatorSet()
-
         state = CWH3dState()
 
-        if config is None or 'controller' not in config.keys():
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=config["controller"])
-
-        super().__init__(dynamics, actuator_set, controller, state, **kwargs)
+        super().__init__(dynamics, actuator_set, state, config)
 
     def generate_info(self):
         info = {
-            'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
-            'z': self.z,
-            'x_dot': self.x_dot,
-            'y_dot': self.y_dot,
             'z_dot': self.z_dot
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
 
-    @property
-    def x_dot(self):
-        return self.state.x_dot
-
-    @property
-    def y_dot(self):
-        return self.state.y_dot
+        return info_ret
 
     @property
     def z_dot(self):
@@ -211,7 +193,7 @@ class CWH3dActuatorSet(BaseActuatorSet):
 
 
 class CWH2dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, m=12, n=0.001027, integration_method='RK45'):
+    def __init__(self, m=12, n=0.001027, integration_method='Euler'):
         self.m = m  # kg
         self.n = n  # rads/s
 
@@ -239,7 +221,7 @@ class CWH2dDynamics(BaseLinearODESolverDynamics):
 
 
 class CWH3dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, m=12, n=0.001027, integration_method='RK45'):
+    def __init__(self, m=12, n=0.001027, integration_method='Euler'):
         self.m = m  # kg
         self.n = n  # rads/s
 

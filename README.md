@@ -13,6 +13,8 @@ pip install -e .
 ```
 
 ## Usage
+
+### Training
 SafeRL is built around using config files to define environments. The included training script `scripts/train.py` can be used to construct an environment and train an agent directly from a yaml config file.
 
 The following commands will train an rllib agent on one of our baseline environments
@@ -25,6 +27,27 @@ python scripts/train.py --config configs/docking/docking_default.yaml
 ```
 
 See ```python scripts/train.py --help``` for more training options.
+
+### Evaluation
+There are two options for evaluating the performance of an agent's policy: during training or after training.
+To periodically evaluate policy during training, use the 'evaluation_during_training' boolean flag while running the training script:
+```shell
+python scripts/train.py --config configs/rejoin/rejoin_default.yaml --evaluation_during_training=True
+```
+For more control over evaluation rollouts during training, try setting some of the following arguments: evaluation_during_training, evaluation_interval, evaluation_num_episodes, evaluation_num_workers, evaluation_seed, and evaluation_exploration.
+
+If you would like to evaluate a policy from a training run that has already completed, use the `scripts/eval.py` script.
+Only the 'dir' flag is required, which defines the full path to where your experiment directory is located:
+```shell
+python scripts/eval.py --dir full/path/to/experiment_dir
+```
+You may wish to evaluate the policy of a specific saved checkpoint, in which case simply use the `ckpt_num` flag to pass the number of the checkpoint you wish to evaluate
+```shell
+python scripts/eval.py --dir full/path/to/experiment_dir --ckpt_num=200
+```
+
+A lot of the same options for evaluation during training are available for evaluation after training via command line arguments for `scripts/eval.py`.
+See ```python scripts/eval.py --help``` for the full list.
 
 
 ## Documentation

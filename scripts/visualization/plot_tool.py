@@ -245,10 +245,6 @@ def plot_variables(plot_name: str):
 
     for x in x_vars:
         for y in y_vars:
-            # print(episode[x])
-            # print(type(episode[x]))
-            # print(episode[x].shape)
-
             x_array = episode[x].to_numpy()
             y_array = episode[y].to_numpy()
             plot(x_array, {y: y_array}, ax=main_axes)
@@ -269,27 +265,73 @@ def to_numpy(data):
         return data.to_numpy()
 
 
+def main():
+    from consolemenu import *
+    from consolemenu.items import *
+    import matplotlib
+    matplotlib.use("TkAgg")
+
+    ### Consume log file and construct pandas tables TODO: relative paths
+    path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_085452/training_logs/worker_1.log"
+    # path_to_log = "/home/john/AFRL/Dubins/have-deepsky/rejoin.yaml/output/expr_20210308_112211/training_logs/worker_1.log"
+    path_to_save = "/media/john/HDD/Dubins_2D_preprocessed.log"
+    blacklist = ["obs", "time.yaml"]  # list of log keys to omit from pandas table
+    load = True
+
+    metadata_df, episode_dataframes = process_log(path_to_save, blacklist, is_jsonlines=False)
+    # print(metadata_df)
+
+    ### Create UI menu
+    ## define global vars and functions
+    selected_episode = next(iter(episode_dataframes.keys()))
+    available_variables = next(iter(episode_dataframes.values())).columns.values
+    x_vars = {"step_number"}
+    # y_vars = set()
+    y_vars = {"info_wingman_x"}
+    z_vars = set()
+    var_map = {
+        "x": x_vars,
+        "y": y_vars,
+        "z": z_vars
+    }
+    main_figure, main_axes = pyplot.subplots()
+    plot_name = "test_save.png"
+
+    # create UI
+    menu = ConsoleMenu("AFRL RTA - Log Analysis Tool", "Enter a number from the list below:")
+
+    # Create some items
+    """
+        + sub plots? (whats so special about sub plots / why not just make 2 plots / how to implement?)
+        + manipulate data (invoke lambda expression on plot vars for more complex analysis...)
+    """
+
+    metadata_item = FunctionItem("View Metadata Table", display_metadata)
+
+    episode_menu = FunctionItem("Select Episode", set_selected_episode)
+
+    display_variables_item = FunctionItem("Display Current Variables", display_variables)
+    clear_variables_item = FunctionItem("Clear variables", clear_variables)
+    set_variables_item = FunctionItem("Set or Remove Variables", manipulate_variables)
+    create_variables_item = FunctionItem("Create Custom Variables", create_variables)
+    plot_variables_item = FunctionItem("Plot Variables", plot_variables, [plot_name])
+    graph_menu = ConsoleMenu("Graph Maker")
+
+    graph_menu_item = SubmenuItem("Make a Graph", graph_menu, menu)
+
+    # Once we're done creating them, we just add the items to the menu
+    graph_menu.append_item(display_variables_item)
+    graph_menu.append_item(set_variables_item)
+    graph_menu.append_item(create_variables_item)
+    graph_menu.append_item(plot_variables_item)
+
+    menu.append_item(metadata_item)
+    menu.append_item(episode_menu)
+    menu.append_item(graph_menu_item)
+
+    # Finally, we call show to show the menu and allow the user to interact
+    menu.show()
+
+
 if __name__ == "__main__":
-    pass
-
-"""
-BACKLOG:
-
-thread safe command line (python interpreter?)
-add min distance to lead, max rejoin.yaml time.yaml, reward (total?), etc to metadata table
-
-
-COMPLETE:
-### inconsistency found in logs -> first episode in log will have state for step zero & info will be null... ###
-### can just make a dict w/ column name -> value lists kvps... make pandas table in one step* ###
-### formatted table correctly ###
-### find root of run issue - formatted data into dict (remove df.append ops) ###
-### display metadata table for user ###
-### generate t-var plot for user ###
-### pickle serialization for debugging load time.yaml reduction ###
-### convert log reading portion of script to func, expose to notebook ###
-### Expose script functions to a Jupyter Notebook ###
-
-jupyter-lab --NotebookApp.iopub_data_rate_limit=1.0e10
-
-"""
+    main()
