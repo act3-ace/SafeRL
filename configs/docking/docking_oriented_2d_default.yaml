@@ -14,6 +14,7 @@ env_config:
         - name: reaction_wheel
           space: discrete
           points: 11
+      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
       init:
         x: -1000
         x_dot: 0
@@ -23,6 +24,7 @@ env_config:
   - name: chief
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
+      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
       init:
         x: 0
         x_dot: 0
@@ -35,6 +37,7 @@ env_config:
       x_offset: 0
       y_offset: 0
       radius: 20
+      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
   - name: observation_processor
     class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessorOriented
