@@ -8,12 +8,6 @@ from saferl.environment.models.platforms import BaseEnvObj
 POINT_CONTAINS_DISTANCE = 1e-10
 
 
-def geo_from_config(cls, config):
-    assert issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry)
-    obj = cls(**config)
-    return obj
-
-
 class BaseGeometry(BaseEnvObj):
 
     @property
@@ -55,7 +49,7 @@ class Point(BaseGeometry):
     def __init__(self, x=0, y=0, z=0):
         self._center = np.array([x, y, z], dtype=np.float64)
 
-    def reset(self):
+    def reset(self, **kwargs):
         pass
 
     @property
@@ -273,7 +267,7 @@ class RelativeGeometry(BaseEnvObj):
     def step(self, *args, **kwargs):
         self.update()
 
-    def reset(self):
+    def reset(self, **kwargs):
         self.update()
 
     def generate_info(self):

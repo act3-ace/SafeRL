@@ -100,6 +100,10 @@ class BaseController(abc.ABC):
 
 class PassThroughController(BaseController):
 
+    def __init__(self, config=None):
+        super().__init__(config=config)
+        self.action_space = None
+
     def gen_actuation(self, state, action=None):
         return action
 
@@ -243,18 +247,9 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, controller, state, config=None, **kwargs):
+    def __init__(self, dynamics, actuator_set, state, controller, **kwargs):
 
-        if config is None or 'controller' not in config:
-            controller_config = None
-        else:
-            controller_config = config['controller']
-
-        if controller_config is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller_config)
-            self.action_space = controller.action_space
+        self.action_space = controller.action_space
 
         self.dependent_objs = []
 
@@ -263,22 +258,14 @@ class BasePlatform(BaseEnvObj):
         self.controller = controller
         self.state = state
 
-        if config is None:
-            self.init_dict = None
-        else:
-            if "init" in config.keys():
-                self.init_dict = config["init"]
-            else:
-                self.init_dict = {}
-
-    def reset(self):
-        self.state.reset()
+    def reset(self, **kwargs):
+        self.state.reset(**kwargs)
 
         self.actuation_cur = None
         self.control_cur = None
 
         for obj in self.dependent_objs:
-            obj.reset()
+            obj.reset(**kwargs)
 
     def step(self, step_size, action=None):
         actuation = self.controller.gen_actuation(self.state, action)
@@ -328,21 +315,17 @@ class BasePlatform(BaseEnvObj):
 
 class BasePlatformState(BaseEnvObj):
 
-    def __init__(self, init_params):
-        self.init_params = init_params
-
     @abc.abstractmethod
     def reset(self):
         raise NotImplementedError
 
 
 class BasePlatformStateVectorized(BasePlatformState):
-    def __init__(self, init_params):
+    def __init__(self):
         self._vector = None
-        super().__init__(init_params=init_params)
 
-    def reset(self):
-        self._vector = self.build_vector(**self.init_params)
+    def reset(self, **kwargs):
+        self._vector = self.build_vector(**kwargs)
 
     @abc.abstractmethod
     def build_vector(self, **kwargs):
