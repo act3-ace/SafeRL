@@ -6,7 +6,7 @@ import jsonlines
 import numpy as np
 import json
 
-from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
+from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry
 
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
@@ -28,25 +28,44 @@ def numpy_to_matlab_txt(mat, name=None, output_stream=None):
         return output_stream
 
 
-def setup_env_objs_from_config(agent_name, env_objs_config):
+def initializer_from_config(ref_obj, config, default_initializer):
+    init_config = config["init"] if "init" in config.keys() else None
+    initializer = config["initializer"] if "initializer" in config.keys() else default_initializer
+    return initializer(ref_obj, init_config)
+
+
+def get_ref_objs(env_objs, config):
+    if "ref" in config.keys():
+        config["ref"] = env_objs[config["ref"]]
+    return config
+
+
+def setup_env_objs_from_config(config, default_initializer):
     env_objs = {}
     agent = None
+    initializers = []
 
-    for obj_config in env_objs_config:
+    agent_name = config["agent"]
+
+    for obj_config in config["env_objs"]:
+        # Get config values
         name = obj_config["name"]
         cls = obj_config["class"]
-        if issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry):
-            if issubclass(cls, RelativeGeometry):
-                ref_name = obj_config["config"]["ref"]
-                obj_config["config"]["ref"] = env_objs[ref_name]
-            obj = geo_from_config(cls, config=obj_config["config"])
-        else:
-            obj = cls(obj_config["config"])
+        cfg = obj_config["config"]
+
+        # Populate ref obj in config if it exists
+        cfg = get_ref_objs(env_objs, cfg)
+
+        # Instantiate object
+        obj = cls(**{k: v for k, v in cfg.items() if k != "initializer" and k != "init"})
         env_objs[name] = obj
         if name == agent_name:
             agent = obj
 
-    return agent, env_objs
+        # Create object initializer
+        initializers.append(initializer_from_config(obj, cfg, default_initializer))
+
+    return agent, env_objs, initializers
 
 
 class YAMLParser:

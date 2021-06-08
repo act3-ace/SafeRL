@@ -24,7 +24,7 @@ class CWHSpacecraftOriented2d(BasePlatform):
         else:
             controller = AgentController(actuator_set, config=controller)
 
-        super().__init__(dynamics, actuator_set, state, controller, **kwargs)
+        super().__init__(dynamics, actuator_set, state, controller)
 
     def generate_info(self):
         info = {
