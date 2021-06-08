@@ -321,8 +321,8 @@ class BasePlatformState(BaseEnvObj):
 
 
 class BasePlatformStateVectorized(BasePlatformState):
-    def __init__(self):
-        self._vector = None
+    def __init__(self, vector=None):
+        self._vector = vector
 
     def reset(self, **kwargs):
         self._vector = self.build_vector(**kwargs)

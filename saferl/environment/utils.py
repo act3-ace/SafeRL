@@ -56,7 +56,7 @@ def setup_env_objs_from_config(config, default_initializer):
         cfg = get_ref_objs(env_objs, cfg)
 
         # Instantiate object
-        obj = cls(**cfg)
+        obj = cls(**{k: v for k, v in cfg.items() if k != "initializer"})
         env_objs[name] = obj
         if name == agent_name:
             agent = obj
