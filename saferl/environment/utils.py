@@ -6,8 +6,6 @@ import jsonlines
 import numpy as np
 import json
 
-from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry
-
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
     ret_str = False
