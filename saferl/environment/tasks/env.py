@@ -5,7 +5,7 @@ import gym
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
 from saferl.environment.tasks.processor.status import TimeoutStatusProcessor, NeverSuccessStatusProcessor
 from saferl.environment.utils import setup_env_objs_from_config
-from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, AGENT, ENV_OBJS
+from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE
 from saferl.environment.tasks.initializers import RandBoundsInitializer
 
 
