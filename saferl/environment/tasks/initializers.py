@@ -4,9 +4,9 @@ import numpy as np
 
 
 class Initializer(abc.ABC):
-    def __init__(self, env_obj):
-        self.env_obj = env_obj
-        self.init_configs = {name: obj.state.init_params for name, obj in env_objs.items()}
+    def __init__(self, obj, init_config):
+        self.env_obj = obj
+        self.init_config = init_config
 
     @abc.abstractmethod
     def initialize(self):
@@ -20,8 +20,8 @@ class PassThroughInitializer(Initializer):
 
 class RandBoundsInitializer(Initializer):
     def initialize(self):
-        for name, obj in self.env_objs.items():
-            cfg = self.init_configs[name]
-            assert cfg.keys() == obj.state.init_params.keys()
-            for k, v in cfg:
-                obj.state.init_params[k] = v if type(v) != list else np.random.uniform(v[0], v[1])
+        if self.init_config is not None:
+            new_params = {}
+            for k, v in self.init_config.items():
+                new_params[k] = v if type(v) != list else np.random.uniform(v[0], v[1])
+            self.env_obj.reset(**new_params)

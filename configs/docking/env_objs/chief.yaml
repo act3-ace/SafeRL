@@ -1,7 +1,7 @@
 name: chief
 class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
 config:
-  init_params:
+  init:
     x: 0
     x_dot: 0
     y: 0

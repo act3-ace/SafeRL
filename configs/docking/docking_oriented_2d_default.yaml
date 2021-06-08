@@ -14,7 +14,7 @@ env_config:
         - name: reaction_wheel
           space: discrete
           points: 11
-      init_params:
+      init:
         x: -1000
         x_dot: 0
         y: 0
@@ -23,7 +23,7 @@ env_config:
   - name: chief
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
-      init_params:
+      init:
         x: 0
         x_dot: 0
         y: 0

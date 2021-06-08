@@ -15,7 +15,7 @@ env_config:
           space: discrete
           points: 11
           bounds: [-10, 10]
-      init_params:
+      init:
         x: [-2000, 2000]
         x_dot: 0
         y: [-2000, 2000]
@@ -23,7 +23,7 @@ env_config:
   - name: chief
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
-      init_params:
+      init:
         x: 0
         x_dot: 0
         y: 0

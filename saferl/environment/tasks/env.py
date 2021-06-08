@@ -6,7 +6,7 @@ import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
 from saferl.environment.tasks.initializers import RandBoundsInitializer
-from saferl.environment.utils import setup_env_objs_from_config, setup_initializers_from_config
+from saferl.environment.utils import setup_env_objs_from_config
 
 
 class BaseEnv(gym.Env):
@@ -16,11 +16,8 @@ class BaseEnv(gym.Env):
         self.config = config
 
         # Initialize sim_state
-        agent, env_objs = self._setup_env_objs()
+        agent, env_objs, self.initializers = self._setup_env_objs(default_initializer=RandBoundsInitializer)
         self.sim_state = SimulationState(agent=agent, env_objs=env_objs)
-
-        # Get initializers
-        self.initializers = setup_initializers_from_config(config, env_objs, default_init=RandBoundsInitializer)
 
         if 'verbose' in config:
             self.verbose = config['verbose']
@@ -88,9 +85,9 @@ class BaseEnv(gym.Env):
         for initializer in self.initializers:
             initializer.initialize()
 
-    def _setup_env_objs(self):
-        agent, env_objs = setup_env_objs_from_config(self.config)
-        return agent, env_objs
+    def _setup_env_objs(self, default_initializer):
+        agent, env_objs, initializers = setup_env_objs_from_config(self.config, default_initializer=default_initializer)
+        return agent, env_objs, initializers
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space

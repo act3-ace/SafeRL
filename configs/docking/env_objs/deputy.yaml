@@ -11,7 +11,7 @@ config:
         space: discrete
         points: 11
         bounds: [-10, 10]
-  init_params:
+  init:
     x: [-2000, 2000]
     x_dot: 0
     y: [-2000, 2000]

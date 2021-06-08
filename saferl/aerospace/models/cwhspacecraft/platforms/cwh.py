@@ -3,18 +3,23 @@ from scipy.spatial.transform import Rotation
 import copy
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseLinearODESolverDynamics
+    BaseActuatorSet, BaseLinearODESolverDynamics, PassThroughController, AgentController
 
 
 class CWHSpacecraft2d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, init_params=None, **kwargs):
+    def __init__(self, controller=None, **kwargs):
         dynamics = CWH2dDynamics()
         actuator_set = CWH2dActuatorSet()
 
-        state = CWH2dState(init_params=init_params)
+        state = CWH2dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        if controller is None:
+            controller = PassThroughController()
+        else:
+            controller = AgentController(actuator_set, config=controller)
+
+        super().__init__(dynamics, actuator_set, state, controller, **kwargs)
 
     def generate_info(self):
         info = {
@@ -38,13 +43,18 @@ class CWHSpacecraft2d(BasePlatform):
 
 class CWHSpacecraft3d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, init_params=None, **kwargs):
+    def __init__(self, config=None, **kwargs):
         dynamics = CWH3dDynamics()
         actuator_set = CWH3dActuatorSet()
 
-        state = CWH3dState(init_params=init_params)
+        state = CWH3dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        if config is None or 'controller' not in config.keys():
+            controller = PassThroughController()
+        else:
+            controller = AgentController(actuator_set, config=config["controller"])
+
+        super().__init__(dynamics, actuator_set, controller, state, **kwargs)
 
     def generate_info(self):
         info = {
@@ -73,11 +83,6 @@ class CWHSpacecraft3d(BasePlatform):
 
 
 class CWH2dState(BasePlatformStateVectorized):
-
-    def __init__(self, init_params=None):
-        if init_params is None:
-            init_params = {'x': 0, 'y': 0, 'x_dot': 0, 'y_dot': 0}
-        super().__init__(init_params=init_params)
 
     def build_vector(self, x=0, y=0, x_dot=0, y_dot=0, **kwargs):
         return np.array([x, y, x_dot, y_dot], dtype=np.float64)
@@ -120,10 +125,6 @@ class CWH2dState(BasePlatformStateVectorized):
 
 
 class CWH3dState(BasePlatformStateVectorized):
-    def __init__(self, init_params=None):
-        if init_params is None:
-            init_params = {'x': 0, 'y': 0, 'z': 0, 'x_dot': 0, 'y_dot': 0, 'z_dot': 0}
-        super().__init__(init_params=init_params)
 
     def build_vector(self, x=0, y=0, z=0, x_dot=0, y_dot=0, z_dot=0, **kwargs):
         return np.array([x, y, z, x_dot, y_dot, z_dot], dtype=np.float64)
