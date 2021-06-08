@@ -5,10 +5,22 @@ import math
 from scipy.spatial.transform import Rotation
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseODESolverDynamics, PassThroughController, AgentController
+    BaseActuatorSet, BaseODESolverDynamics
 
 
 class BaseDubinsPlatform(BasePlatform):
+
+    def generate_info(self):
+        info = {
+            'state': self.state.vector,
+            'heading': self.heading,
+            'v': self.v,
+        }
+
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
     @property
     def v(self):
@@ -77,30 +89,14 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, controller=None, **kwargs):
+    def __init__(self, config=None):
 
         dynamics = Dubins2dDynamics()
         actuator_set = Dubins2dActuatorSet()
 
         state = Dubins2dState()
 
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
-
-        super().__init__(dynamics, actuator_set, state, controller, **kwargs)
-
-    def generate_info(self):
-        info = {
-            'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
-            'heading': self.heading,
-            'v': self.v,
-        }
-
-        return info
+        super().__init__(dynamics, actuator_set, state, config)
 
 
 class Dubins2dState(BaseDubinsState):
@@ -228,32 +224,24 @@ class Dubins2dDynamics(BaseODESolverDynamics):
 
 class Dubins3dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, controller=None, **kwargs):
+    def __init__(self, config=None, controller=None, **kwargs):
 
         dynamics = Dubins3dDynamics()
         actuator_set = Dubins3dActuatorSet()
         state = Dubins3dState()
 
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
-
-        super().__init__(dynamics, actuator_set, state, controller, **kwargs)
+        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
 
     def generate_info(self):
         info = {
-            'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
-            'z': self.z,
-            'heading': self.heading,
             'gamma': self.gamma,
             'roll': self.roll,
-            'v': self.v,
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
 
 class Dubins3dState(BaseDubinsState):

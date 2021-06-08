@@ -2,10 +2,11 @@ import io
 import os
 
 import yaml
-
+import jsonlines
 import numpy as np
+import json
 
-from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry
+from saferl.environment.models.geometry import BaseGeometry, RelativeGeometry, geo_from_config
 
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
@@ -27,44 +28,25 @@ def numpy_to_matlab_txt(mat, name=None, output_stream=None):
         return output_stream
 
 
-def initializer_from_config(ref_obj, config, default_initializer):
-    init_config = config["init"] if "init" in config.keys() else None
-    initializer = config["initializer"] if "initializer" in config.keys() else default_initializer
-    return initializer(ref_obj, init_config)
-
-
-def get_ref_objs(env_objs, config):
-    if "ref" in config.keys():
-        config["ref"] = env_objs[config["ref"]]
-    return config
-
-
-def setup_env_objs_from_config(config, default_initializer):
+def setup_env_objs_from_config(agent_name, env_objs_config):
     env_objs = {}
     agent = None
-    initializers = []
 
-    agent_name = config["agent"]
-
-    for obj_config in config["env_objs"]:
-        # Get config values
+    for obj_config in env_objs_config:
         name = obj_config["name"]
         cls = obj_config["class"]
-        cfg = obj_config["config"]
-
-        # Populate ref obj in config if it exists
-        cfg = get_ref_objs(env_objs, cfg)
-
-        # Instantiate object
-        obj = cls(**{k: v for k, v in cfg.items() if k != "initializer"})
+        if issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry):
+            if issubclass(cls, RelativeGeometry):
+                ref_name = obj_config["config"]["ref"]
+                obj_config["config"]["ref"] = env_objs[ref_name]
+            obj = geo_from_config(cls, config=obj_config["config"])
+        else:
+            obj = cls(obj_config["config"])
         env_objs[name] = obj
         if name == agent_name:
             agent = obj
 
-        # Create object initializer
-        initializers.append(initializer_from_config(obj, cfg, default_initializer))
-
-    return agent, env_objs, initializers
+    return agent, env_objs
 
 
 class YAMLParser:
@@ -122,3 +104,92 @@ class YAMLParser:
         target = self.process_yaml_items(contents)
         self.working_dir = old_working_dir
         return target
+
+
+def log_to_jsonlines(contents, output_dir, jsonline_filename):
+    """
+    A helper function to handle writing to a file in JSONlines format.
+
+    Parameters
+    ----------
+    contents : dict
+        The JSON-friendly contents to be appended to the file
+    output_dir : str
+        The path to the parent directory containing the JSONlines file.
+    jsonline_filename : str
+        The name of the JSONlines formatted file to append given contents to.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    with jsonlines.open(output_dir + jsonline_filename, mode='a') as writer:
+        writer.write(contents)
+
+
+def jsonify(map):
+    """
+    A function to convert non-JSON serializable objects (numpy arrays and data types) within a dictionary to JSON
+    friendly data types.
+
+    Parameters
+    ----------
+    map : dict
+        The dictionary which may or may not contain non-JSON serializable values
+
+    Returns
+    -------
+    map : dict
+        The same dictionary passed in from parameters, but with converted values
+    """
+
+    for key in map.keys():
+        # iterate through dictionary, converting objects as needed
+        suspicious_object = map[key]
+        is_json_ready = is_jsonable(suspicious_object)
+
+        if is_json_ready is True:
+            # move along sir
+            continue
+        elif is_json_ready == TypeError:
+            if type(suspicious_object) is dict:
+                # recurse if we find sub-dictionaries
+                map[key] = jsonify(suspicious_object)
+            if type(suspicious_object) is np.ndarray:
+                # handle numpy array conversion
+                map[key] = suspicious_object.tolist()
+            elif type(suspicious_object) is np.bool_:
+                # handle numpy bool conversion
+                map[key] = bool(suspicious_object)
+            elif type(suspicious_object) is np.int64:
+                # handle int64 conversion
+                map[key] = int(suspicious_object)
+
+        elif is_json_ready == OverflowError:
+            raise OverflowError
+        elif is_json_ready == ValueError:
+            raise ValueError
+
+    return map
+
+
+def is_jsonable(object):
+    """
+    A helper function to determine whether or not an object is JSON serializable.
+
+    Parameters
+    ----------
+    object
+        The object in question
+
+    Returns
+    -------
+    bool or Error
+        True if object is JSON serializable, otherwise the specific error encountered
+    """
+    try:
+        json.dumps(object)
+        return True
+    except TypeError:
+        return TypeError
+    except OverflowError:
+        return OverflowError
+    except ValueError:
+        return ValueError

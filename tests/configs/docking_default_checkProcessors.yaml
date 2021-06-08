@@ -1,7 +1,6 @@
 env: saferl.aerospace.tasks.docking.task.DockingEnv
 env_config:
   agent: deputy
-  step_size: 1
   env_objs:
   - name: deputy
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
@@ -16,7 +15,6 @@ env_config:
           space: discrete
           points: 11
           bounds: [-10, 10]
-      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
       init:
         x: [-2000, 2000]
         x_dot: 0
@@ -25,7 +23,6 @@ env_config:
   - name: chief
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
-      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
       init:
         x: 0
         x_dot: 0
@@ -38,7 +35,6 @@ env_config:
       x_offset: 0
       y_offset: 0
       radius: 20
-      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
   - name: observation_processor
     class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
@@ -80,14 +76,4 @@ env_config:
     config:
       deputy: deputy
       docking_region: docking_region
-  - name: failure
-    class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
-    config:
-      docking_distance: docking_distance
-      max_goal_distance: 40000
-      timeout: 1000
-  - name: success
-    class: saferl.aerospace.tasks.docking.processors.SuccessStatusProcessor
-    config:
-      docking_status: docking_status
   verbose: false

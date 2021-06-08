@@ -8,10 +8,6 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
-    @abc.abstractmethod
-    def reset(self):
-        raise NotImplementedError
-
     @property
     @abc.abstractmethod
     def x(self):
@@ -90,19 +86,12 @@ class ContinuousActuator(BaseActuator):
 
 
 class BaseController(abc.ABC):
-    def __init__(self, config=None):
-        self.config = config
-
     @abc.abstractmethod
     def gen_actuation(self, state, action=None):
         raise NotImplementedError
 
 
 class PassThroughController(BaseController):
-
-    def __init__(self, config=None):
-        super().__init__(config=config)
-        self.action_space = None
 
     def gen_actuation(self, state, action=None):
         return action
@@ -111,14 +100,13 @@ class PassThroughController(BaseController):
 class AgentController(BaseController):
 
     def __init__(self, actuator_set, config):
-        super().__init__(config=config)
         self.actuator_set = actuator_set
-        self.actuator_config_list = self.config['actuators']
+        self.actuator_config_list = config['actuators']
 
-        self.setup_action_space()
+        self.action_preprocessors, self.action_space = self.setup_action_space()
 
     def setup_action_space(self):
-        self.action_preprocessors = []
+        action_preprocessors = []
         action_space_tup = ()
 
         # loop over actuators in controller config and setup preprocessors
@@ -168,9 +156,11 @@ class AgentController(BaseController):
 
             # append actuator action space and preprocessor
             action_space_tup += (actuator_action_space,)
-            self.action_preprocessors.append(preprocessor)
+            action_preprocessors.append(preprocessor)
 
-        self.action_space = gym.spaces.Tuple(action_space_tup)
+        action_space = gym.spaces.Tuple(action_space_tup)
+
+        return action_preprocessors, action_space
 
     def gen_actuation(self, state, action=None):
         actuation = {}
@@ -247,9 +237,14 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, controller, **kwargs):
+    def __init__(self, dynamics, actuator_set, state, platform_config):
 
-        self.action_space = controller.action_space
+        # TODO: pass controller as argument instead of config
+        if 'controller' not in platform_config.keys():
+            controller = PassThroughController()
+        else:
+            controller = AgentController(actuator_set, config=platform_config["controller"])
+            self.action_space = controller.action_space
 
         self.dependent_objs = []
 
@@ -258,6 +253,13 @@ class BasePlatform(BaseEnvObj):
         self.controller = controller
         self.state = state
 
+        if "init" in platform_config.keys():
+            self.init_dict = platform_config["init"]
+        else:
+            self.init_dict = {}
+
+        self.reset(**platform_config)
+
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
 
@@ -265,7 +267,7 @@ class BasePlatform(BaseEnvObj):
         self.control_cur = None
 
         for obj in self.dependent_objs:
-            obj.reset(**kwargs)
+            obj.reset()
 
     def step(self, step_size, action=None):
         actuation = self.controller.gen_actuation(self.state, action)
@@ -287,6 +289,19 @@ class BasePlatform(BaseEnvObj):
 
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
+
+    def generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'controller': {
+                'actuation': self.actuation_cur,
+                'control': self.control_cur,
+            }
+        }
+
+        return info
 
     @property
     def x(self):
@@ -315,25 +330,34 @@ class BasePlatform(BaseEnvObj):
 
 class BasePlatformState(BaseEnvObj):
 
+    def __init__(self, **kwargs):
+        self.reset(**kwargs)
+
     @abc.abstractmethod
-    def reset(self):
+    def reset(self, **kwargs):
         raise NotImplementedError
 
 
 class BasePlatformStateVectorized(BasePlatformState):
-    def __init__(self, vector=None):
-        self._vector = vector
 
-    def reset(self, **kwargs):
-        self._vector = self.build_vector(**kwargs)
+    def reset(self, vector=None, vector_deep_copy=True, **kwargs):
+        if vector is None:
+            self._vector = self.build_vector(**kwargs)
+        else:
+            assert isinstance(vector, np.ndarray)
+            assert vector.shape == self.vector_shape
+            if vector_deep_copy:
+                self.vector = copy.deepcopy(vector)
+            else:
+                self._vector = vector
 
     @abc.abstractmethod
-    def build_vector(self, **kwargs):
+    def build_vector(self):
         raise NotImplementedError
 
     @property
     def vector_shape(self):
-        return self._vector.shape
+        return self.build_vector().shape
 
     @property
     def vector(self):
@@ -353,7 +377,7 @@ class BaseDynamics(abc.ABC):
 
 class BaseODESolverDynamics(BaseDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.integration_method = integration_method
         super().__init__()
 
@@ -378,7 +402,7 @@ class BaseODESolverDynamics(BaseDynamics):
 
 class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.A, self.B = self.gen_dynamics_matrices()
         super().__init__(integration_method=integration_method)
 
