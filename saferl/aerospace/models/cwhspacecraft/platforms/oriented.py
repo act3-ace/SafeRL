@@ -145,7 +145,7 @@ class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
         super().__init__(integration_method=integration_method)
 
     def dx(self, t, state_vec, control):
-        state_cur = CWHOriented2dState(vector=state_vec)
+        state_cur = CWHOriented2dState(vector=state_vec, vector_deep_copy=False)
 
         # check reaction wheel velocity limit
         if state_cur.react_wheel_ang_vel >= 576:
@@ -161,8 +161,7 @@ class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
         react_wheel_ang_acc = control[1]
         theta_dot_dot = -1 * self.platform.react_wheel_moment * react_wheel_ang_acc / self.platform.moment
 
-        state_derivative = CWHOriented2dState()
-        state_derivative.reset(
+        state_derivative = CWHOriented2dState(
             x=pos_vel_derivative[0],
             y=pos_vel_derivative[1],
             theta=state_cur.theta_dot,
