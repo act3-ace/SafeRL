@@ -1,11 +1,11 @@
 import math
 import numpy as np
 
-from saferl.environment.rta.rta import RTAModule
+from saferl.environment.rta.rta import SimplexModule
 from saferl.environment.models.geometry import angle_wrap
 
 
-class RTADubins2dCollision(RTAModule):
+class RTADubins2dCollision(SimplexModule):
 
     def __init__(self):
         super().__init__()
@@ -21,14 +21,12 @@ class RTADubins2dCollision(RTAModule):
         self.projection_numpoints = \
             self.projection_window * self.projection_frequency + 1
 
-        self.rta_on = False
         self.rta_control = None
         self.rta_traj = None
         self.watch_traj = None
 
     def reset(self):
         super().reset()
-        self.rta_on = False
         self.rta_control = None
         self.rta_traj = None
         self.watch_traj = None

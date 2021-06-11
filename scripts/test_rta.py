@@ -71,11 +71,11 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
     ax.set_aspect('equal', adjustable='box')
     ax.set(xlim=(-2000, 2000), ylim=(-2000, 2000))
     ax.invert_yaxis()
-    
+
     wingman_traj, = plt.plot([], [], 'g')
     lead_traj, = plt.plot([], [], 'b')
     wingman_forward_traj, = plt.plot([], [], 'g--')
-    wingman_safety_circle = plt.Circle((0, 0), 200, edgecolor='r', facecolor=(0,0,0,0), linewidth=2)
+    wingman_safety_circle = plt.Circle((0, 0), 200, edgecolor='r', facecolor=(0, 0, 0, 0), linewidth=2)
     ax.add_artist(wingman_safety_circle)
 
     wingman_marker, = plt.plot([], [], 'go', markersize=10)
