@@ -17,8 +17,8 @@ env_config:
         - name: throttle
           space: discrete
           points: 5
-      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
       init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [-0.785398163, 0.785398163]
         v: [10, 100]
         x: [-4000, 0]
@@ -27,8 +27,8 @@ env_config:
   - name: lead
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
-      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
       init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 0]
         v: [40, 60]
         x: [0000, 4000]
@@ -43,7 +43,8 @@ env_config:
       radius: 150
       height: 300
       track_orientation: true
-      initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
   - name: observation_processor
     class: saferl.aerospace.tasks.rejoin.processors.Dubins3dObservationProcessor

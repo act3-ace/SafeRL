@@ -10,6 +10,7 @@ config:
         space: discrete
         points: 5
   init:
+    initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
     heading: [0, 6.283185307179586]
     v: [10, 100]
     x: [-4000, 4000]
