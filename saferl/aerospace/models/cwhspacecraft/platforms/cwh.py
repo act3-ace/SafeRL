@@ -3,7 +3,7 @@ from scipy.spatial.transform import Rotation
 import copy
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseLinearODESolverDynamics, PassThroughController, AgentController
+    BaseActuatorSet, BaseLinearODESolverDynamics
 
 
 class BaseCWHSpacecraft(BasePlatform):
@@ -37,11 +37,6 @@ class CWHSpacecraft2d(BaseCWHSpacecraft):
         actuator_set = CWH2dActuatorSet()
         state = CWH2dState()
 
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
-
         super().__init__(dynamics, actuator_set, state, controller)
 
 
@@ -51,11 +46,6 @@ class CWHSpacecraft3d(BaseCWHSpacecraft):
         dynamics = CWH3dDynamics()
         actuator_set = CWH3dActuatorSet()
         state = CWH3dState()
-
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
 
         super().__init__(dynamics, actuator_set, state, controller)
 

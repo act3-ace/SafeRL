@@ -5,7 +5,7 @@ import math
 from scipy.spatial.transform import Rotation
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseODESolverDynamics, PassThroughController, AgentController
+    BaseActuatorSet, BaseODESolverDynamics
 
 
 class BaseDubinsPlatform(BasePlatform):
@@ -95,11 +95,6 @@ class Dubins2dPlatform(BaseDubinsPlatform):
         actuator_set = Dubins2dActuatorSet()
 
         state = Dubins2dState()
-
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
 
         super().__init__(dynamics, actuator_set, state, controller)
 
@@ -234,11 +229,6 @@ class Dubins3dPlatform(BaseDubinsPlatform):
         dynamics = Dubins3dDynamics()
         actuator_set = Dubins3dActuatorSet()
         state = Dubins3dState()
-
-        if controller is None:
-            controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller)
 
         super().__init__(dynamics, actuator_set, state, controller)
 
