@@ -2,6 +2,7 @@ name: deputy
 class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
 config:
   controller:
+    class: saferl.environment.models.platforms.AgentController
     actuators:
       - name: thrust_x
         space: discrete

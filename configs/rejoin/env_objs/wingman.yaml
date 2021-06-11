@@ -2,6 +2,7 @@ name: wingman
 class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
 config:
   controller:
+    class: saferl.environment.models.platforms.AgentController
     actuators:
       - name: rudder
         space: discrete
