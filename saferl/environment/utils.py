@@ -28,7 +28,10 @@ def numpy_to_matlab_txt(mat, name=None, output_stream=None):
 
 def initializer_from_config(ref_obj, config, default_initializer):
     init_config = config["init"] if "init" in config.keys() else None
-    initializer = config["initializer"] if "initializer" in config.keys() else default_initializer
+    if init_config is not None and "initializer" in init_config.keys():
+        initializer = init_config["initializer"]
+    else:
+        initializer = default_initializer
     return initializer(ref_obj, init_config)
 
 
@@ -55,7 +58,7 @@ def setup_env_objs_from_config(config, default_initializer):
         cfg = get_ref_objs(env_objs, cfg)
 
         # Instantiate object
-        obj = cls(**{k: v for k, v in cfg.items() if k != "initializer" and k != "init"})
+        obj = cls(**{k: v for k, v in cfg.items() if k != "init"})
         env_objs[name] = obj
         if name == agent_name:
             agent = obj
