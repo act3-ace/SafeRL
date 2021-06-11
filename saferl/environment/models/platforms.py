@@ -241,6 +241,11 @@ class BasePlatform(BaseEnvObj):
 
     def __init__(self, dynamics, actuator_set, state, controller):
 
+        if controller is None:
+            controller = PassThroughController()
+        elif type(controller) == dict:
+            controller = AgentController(actuator_set, config=controller)
+
         self.action_space = controller.action_space
 
         self.dependent_objs = []
