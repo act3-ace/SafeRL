@@ -244,7 +244,7 @@ class BasePlatform(BaseEnvObj):
         if controller is None:
             controller = PassThroughController()
         elif type(controller) == dict:
-            controller = AgentController(actuator_set, config=controller)
+            controller = controller["class"](actuator_set, config=controller)
 
         self.action_space = controller.action_space
 
