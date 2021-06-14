@@ -1,5 +1,6 @@
 import io
 import os
+import copy
 
 import yaml
 import jsonlines
@@ -42,13 +43,14 @@ def get_ref_objs(env_objs, config):
 
 
 def setup_env_objs_from_config(config, default_initializer):
+    safe_config = copy.deepcopy(config)
     env_objs = {}
     agent = None
     initializers = []
 
-    agent_name = config["agent"]
+    agent_name = safe_config["agent"]
 
-    for obj_config in config["env_objs"]:
+    for obj_config in safe_config["env_objs"]:
         # Get config values
         name = obj_config["name"]
         cls = obj_config["class"]
