@@ -92,6 +92,8 @@ class BaseController(abc.ABC):
 
 
 class PassThroughController(BaseController):
+    def __init__(self):
+        self.action_space = None
 
     def gen_actuation(self, state, action=None):
         return action
@@ -237,14 +239,14 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, platform_config):
+    def __init__(self, dynamics, actuator_set, state, controller):
 
-        # TODO: pass controller as argument instead of config
-        if 'controller' not in platform_config.keys():
+        if controller is None:
             controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=platform_config["controller"])
-            self.action_space = controller.action_space
+        elif type(controller) == dict:
+            controller = controller["class"](actuator_set, config=controller)
+
+        self.action_space = controller.action_space
 
         self.dependent_objs = []
 
@@ -253,12 +255,7 @@ class BasePlatform(BaseEnvObj):
         self.controller = controller
         self.state = state
 
-        if "init" in platform_config.keys():
-            self.init_dict = platform_config["init"]
-        else:
-            self.init_dict = {}
-
-        self.reset(**platform_config)
+        self.reset()
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
@@ -267,7 +264,7 @@ class BasePlatform(BaseEnvObj):
         self.control_cur = None
 
         for obj in self.dependent_objs:
-            obj.reset()
+            obj.reset(**kwargs)
 
     def step(self, step_size, action=None):
         actuation = self.controller.gen_actuation(self.state, action)

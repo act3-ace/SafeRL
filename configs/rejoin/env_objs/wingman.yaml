@@ -2,6 +2,7 @@ name: wingman
 class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
 config:
   controller:
+    class: saferl.environment.models.platforms.AgentController
     actuators:
       - name: rudder
         space: discrete
@@ -10,6 +11,7 @@ config:
         space: discrete
         points: 5
   init:
+    initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
     heading: [0, 6.283185307179586]
     v: [10, 100]
     x: [-4000, 4000]

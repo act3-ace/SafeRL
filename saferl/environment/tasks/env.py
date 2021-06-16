@@ -4,9 +4,9 @@ import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
 from saferl.environment.tasks.processor.status import TimeoutStatusProcessor, NeverSuccessStatusProcessor
-from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
 from saferl.environment.utils import setup_env_objs_from_config
-from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, AGENT, ENV_OBJS
+from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE
+from saferl.environment.tasks.initializers import RandBoundsInitializer
 
 
 class BaseEnv(gym.Env):
@@ -44,8 +44,9 @@ class BaseEnv(gym.Env):
         if not has_success_processor:
             self.status_manager.processors.append(NeverSuccessStatusProcessor())
 
-        self.sim_state.agent, self.sim_state.env_objs = setup_env_objs_from_config(
-            agent_name=env_config[AGENT], env_objs_config=env_config[ENV_OBJS])
+        self.sim_state.agent, self.sim_state.env_objs, self.initializers = setup_env_objs_from_config(
+            config=env_config,
+            default_initializer=RandBoundsInitializer)
 
         self._setup_action_space()
         self._setup_obs_space()
@@ -81,12 +82,8 @@ class BaseEnv(gym.Env):
         raise NotImplementedError
 
     def reset(self):
-        # apply random initialization to environment objects
-
-        for _, obj in self.sim_state.env_objs.items():
-            init_dict = obj.init_dict
-            init_dict_draw = draw_from_rand_bounds_dict(init_dict)
-            obj.reset(**init_dict_draw)
+        # Reinitialize env_objs
+        self._initialize()
 
         # reset processor objects and status
         self.sim_state.status = self.status_manager.reset(self.sim_state)
@@ -100,6 +97,11 @@ class BaseEnv(gym.Env):
             print("env reset with params {}".format(self.generate_info()))
 
         return obs
+
+    def _initialize(self):
+        # Reinitialize env_objs
+        for initializer in self.initializers:
+            initializer.initialize()
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space

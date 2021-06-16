@@ -2,6 +2,7 @@ name: chief
 class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
 config:
   init:
+    initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
     x: 0
     x_dot: 0
     y: 0
