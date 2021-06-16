@@ -8,7 +8,7 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
 
 class CWHSpacecraftOriented2d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, controller=None, **kwargs):
         self.mass = 12  # kg
         self.moment = 0.056  # kg*m^2
         self.react_wheel_moment = 4.1e-5  # kg*m^2
@@ -19,7 +19,7 @@ class CWHSpacecraftOriented2d(BasePlatform):
 
         state = CWHOriented2dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, controller)
 
     def generate_info(self):
         info = {
