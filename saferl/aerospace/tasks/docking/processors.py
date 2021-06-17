@@ -43,7 +43,7 @@ class DockingObservationProcessorOriented(ObservationProcessor):
 
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            self.norm_const = np.array([1000, 1000, np.pi, 100, 100, 0.4, 500])
+            self.norm_const = self._get_norm(normalization=np.array([1000, 1000, np.pi, 100, 100, 0.4, 500]))
         elif self.mode == '3d':
             raise NotImplementedError
         else:
