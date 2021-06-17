@@ -60,10 +60,11 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None):
+    def __init__(self, name=None, normalization=None):
         super().__init__(name=name)
         self.obs = None
         self.observation_space = None
+        self.normalization = normalization
         # TODO: add normalization and clipping, pre- and post- processors
 
     def reset(self, sim_state):
@@ -74,6 +75,30 @@ class ObservationProcessor(Processor):
             "observation": self.obs
         }
         return info
+
+    def _get_norm(self, observation_space=None, normalization=None):
+        # get observation space
+        if observation_space is None:
+            if self.observation_space is None:
+                raise Exception("Observation space is not defined!")
+            observation_space = self.observation_space
+
+        # get normalization vector
+        if normalization is None:
+            if self.normalization is None:
+                # no normalization specified, so return default
+                return 1
+            normalization = self.normalization
+
+        # ensure normalization vector is correct type and shape
+        if type(normalization) in [np.array, np.ndarray]:
+            if observation_space.shape == normalization.shape:
+                # normalization is compatible
+                return normalization
+            else:
+                raise Exception("The shape of the observation space and normalization vector do not match!")
+        else:
+            raise TypeError("Given normalization vector data type is incompatible")
 
     def _increment(self, sim_state, step_size):
         # observation processors will not have a state to update by default
