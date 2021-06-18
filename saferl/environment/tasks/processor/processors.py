@@ -60,7 +60,7 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=None):
+    def __init__(self, name=None, normalization=1):
         super().__init__(name=name)
         self.obs = None
         self.observation_space = None
@@ -76,29 +76,20 @@ class ObservationProcessor(Processor):
         }
         return info
 
-    def _get_norm(self, observation_space=None, normalization=None):
-        # get observation space
-        if observation_space is None:
-            if self.observation_space is None:
-                raise Exception("Observation space is not defined!")
-            observation_space = self.observation_space
+    def _normalize(self, obs):
+        # apply normalization vector to given observations
 
-        # get normalization vector
-        if normalization is None:
-            if self.normalization is None:
-                # no normalization specified, so return default
-                return 1
-            normalization = self.normalization
+        if self.normalization is 1:
+            # no normalization specified, so no change to observations
+            return obs
 
         # ensure normalization vector is correct type and shape
-        if type(normalization) in [np.array, np.ndarray]:
-            if observation_space.shape == normalization.shape:
-                # normalization is compatible
-                return normalization
-            else:
-                raise Exception("The shape of the observation space and normalization vector do not match!")
-        else:
-            raise TypeError("Given normalization vector data type is incompatible")
+        assert type(self.normalization) in [np.array, np.ndarray], \
+            "The shape of the observation space and normalization vector do not match!"
+        assert obs.shape == self.normalization.shape, "Given normalization vector data type is incompatible"
+
+        # normalization vector is compatible, so return normalized observations
+        return np.divide(obs, self.normalization)
 
     def _increment(self, sim_state, step_size):
         # observation processors will not have a state to update by default
