@@ -4,10 +4,15 @@ import abc
 class RTAModule(abc.ABC):
 
     def __init__(self):
+        self.platform = None
+
         self.enable = True
 
     def reset(self):
         self.enable = True
+
+    def setup(self, platform):
+        self.platform = platform
 
     def filter_control(self, sim_state, control):
         if self.enable:
