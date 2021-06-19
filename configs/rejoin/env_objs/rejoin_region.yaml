@@ -6,3 +6,5 @@ config:
   r_offset: 500
   radius: 150
   track_orientation: true
+  init:
+    initializer: saferl.environment.tasks.initializers.RandBoundsInitializer

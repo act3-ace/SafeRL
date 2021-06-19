@@ -86,15 +86,14 @@ class ContinuousActuator(BaseActuator):
 
 
 class BaseController(abc.ABC):
-    def __init__(self, config=None):
-        self.config = config
-
     @abc.abstractmethod
     def gen_actuation(self, state, action=None):
         raise NotImplementedError
 
 
 class PassThroughController(BaseController):
+    def __init__(self):
+        self.action_space = None
 
     def gen_actuation(self, state, action=None):
         return action
@@ -103,14 +102,13 @@ class PassThroughController(BaseController):
 class AgentController(BaseController):
 
     def __init__(self, actuator_set, config):
-        self.config = config
         self.actuator_set = actuator_set
-        self.actuator_config_list = self.config['actuators']
+        self.actuator_config_list = config['actuators']
 
-        self.setup_action_space()
+        self.action_preprocessors, self.action_space = self.setup_action_space()
 
     def setup_action_space(self):
-        self.action_preprocessors = []
+        action_preprocessors = []
         action_space_tup = ()
 
         # loop over actuators in controller config and setup preprocessors
@@ -160,9 +158,11 @@ class AgentController(BaseController):
 
             # append actuator action space and preprocessor
             action_space_tup += (actuator_action_space,)
-            self.action_preprocessors.append(preprocessor)
+            action_preprocessors.append(preprocessor)
 
-        self.action_space = gym.spaces.Tuple(action_space_tup)
+        action_space = gym.spaces.Tuple(action_space_tup)
+
+        return action_preprocessors, action_space
 
     def gen_actuation(self, state, action=None):
         actuation = {}
@@ -239,18 +239,14 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, controller, state, rta_module=None, config=None, **kwargs):
+    def __init__(self, dynamics, actuator_set, state, controller, rta_module=None):
 
-        if config is None or 'controller' not in config:
-            controller_config = None
-        else:
-            controller_config = config['controller']
-
-        if controller_config is None:
+        if controller is None:
             controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller_config)
-            self.action_space = controller.action_space
+        elif type(controller) == dict:
+            controller = controller["class"](actuator_set, config=controller)
+
+        self.action_space = controller.action_space
 
         self.dependent_objs = []
 
@@ -263,15 +259,7 @@ class BasePlatform(BaseEnvObj):
         self.rta_module = rta_module
         self.rta_module.setup(self)
 
-        if config is None:
-            self.init_dict = None
-        else:
-            if "init" in config.keys():
-                self.init_dict = config["init"]
-            else:
-                self.init_dict = {}
-
-        self.reset(**kwargs)
+        self.reset()
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
@@ -280,7 +268,7 @@ class BasePlatform(BaseEnvObj):
         self.current_control = self.actuator_set.gen_control()
 
         for obj in self.dependent_objs:
-            obj.reset()
+            obj.reset(**kwargs)
 
     def pre_step(self, sim_state, action=None):
 
@@ -313,6 +301,19 @@ class BasePlatform(BaseEnvObj):
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
 
+    def generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'controller': {
+                'actuation': self.actuation_cur,
+                'control': self.control_cur,
+            }
+        }
+
+        return info
+
     @property
     def x(self):
         return self.state.x
@@ -344,7 +345,7 @@ class BasePlatformState(BaseEnvObj):
         self.reset(**kwargs)
 
     @abc.abstractmethod
-    def reset(self):
+    def reset(self, **kwargs):
         raise NotImplementedError
 
 
@@ -387,7 +388,7 @@ class BaseDynamics(abc.ABC):
 
 class BaseODESolverDynamics(BaseDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.integration_method = integration_method
         super().__init__()
 
@@ -412,7 +413,7 @@ class BaseODESolverDynamics(BaseDynamics):
 
 class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.A, self.B = self.gen_dynamics_matrices()
         super().__init__(integration_method=integration_method)
 

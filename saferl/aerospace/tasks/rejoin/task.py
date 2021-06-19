@@ -1,13 +1,10 @@
 from saferl.environment.tasks.env import BaseEnv
-from saferl.aerospace.models.dubins.rta import RTADubins2dCollision
 
 
 class DubinsRejoin(BaseEnv):
 
-    def __init__(self, config):
-        super().__init__(config)
-        self.step_size = 0.1
-        self.sim_state.env_objs['wingman'].rta_module = RTADubins2dCollision()
+    def __init__(self, env_config):
+        super().__init__(env_config)
 
     def reset(self):
         return super().reset()

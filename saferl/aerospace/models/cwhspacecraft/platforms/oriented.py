@@ -8,7 +8,7 @@ from saferl.environment.models.platforms import BasePlatform, BasePlatformStateV
 
 class CWHSpacecraftOriented2d(BasePlatform):
 
-    def __init__(self, config=None, controller=None, **kwargs):
+    def __init__(self, controller=None, **kwargs):
         self.mass = 12  # kg
         self.moment = 0.056  # kg*m^2
         self.react_wheel_moment = 4.1e-5  # kg*m^2
@@ -19,13 +19,11 @@ class CWHSpacecraftOriented2d(BasePlatform):
 
         state = CWHOriented2dState()
 
-        super().__init__(dynamics, actuator_set, controller, state, config=config, **kwargs)
+        super().__init__(dynamics, actuator_set, state, controller)
 
     def generate_info(self):
         info = {
             'state': self.state.vector,
-            'x': self.x,
-            'y': self.y,
             'theta': self.theta,
             'x_dot': self.x_dot,
             'y_dot': self.y_dot,
@@ -33,7 +31,10 @@ class CWHSpacecraftOriented2d(BasePlatform):
             'react_wheel_ang_vel': self.react_wheel_ang_vel
         }
 
-        return info
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
 
     @property
     def theta(self):
@@ -133,7 +134,7 @@ class CWHOriented2dActuatorSet(BaseActuatorSet):
 
 
 class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, platform, integration_method='RK45'):
+    def __init__(self, platform, integration_method='Euler'):
         self.platform = platform
 
         super().__init__(integration_method=integration_method)
