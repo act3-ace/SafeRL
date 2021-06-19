@@ -258,7 +258,10 @@ class BasePlatform(BaseEnvObj):
         self.actuator_set = actuator_set
         self.controller = controller
         self.state = state
+
+        # setup rta module with reference to self
         self.rta_module = rta_module
+        self.rta_module.setup(self)
 
         if config is None:
             self.init_dict = None
