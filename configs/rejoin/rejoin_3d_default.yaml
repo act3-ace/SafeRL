@@ -1,11 +1,13 @@
 env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
 env_config:
   agent: wingman
+  step_size: 1
   env_objs:
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
       controller:
+        class: saferl.environment.models.platforms.AgentController
         actuators:
         - name: ailerons
           space: discrete
@@ -17,6 +19,7 @@ env_config:
           space: discrete
           points: 5
       init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [-0.785398163, 0.785398163]
         v: [10, 100]
         x: [-4000, 0]
@@ -26,6 +29,7 @@ env_config:
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
       init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 0]
         v: [40, 60]
         x: [0000, 4000]
@@ -40,6 +44,8 @@ env_config:
       radius: 150
       height: 300
       track_orientation: true
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
   - name: observation_processor
     class: saferl.aerospace.tasks.rejoin.processors.Dubins3dObservationProcessor

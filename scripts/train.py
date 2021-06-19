@@ -1,6 +1,6 @@
 import argparse
 import os
-
+from distutils.util import strtobool
 import yaml
 
 from datetime import datetime
@@ -10,8 +10,8 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
-    RewardComponentsCallback, LoggingCallback, LogContents
+from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
+                                        RewardComponentsCallback, LoggingCallback, LogContents
 
 from saferl import lookup
 
@@ -19,7 +19,6 @@ from saferl.environment.utils import YAMLParser
 
 
 # Training defaults
-
 CONFIG = '../configs/docking/docking_default.yaml'
 OUTPUT_DIR = './output'
 NUM_LOGGING_WORKERS = 1
@@ -32,6 +31,10 @@ FAKE_GPUS = True
 SEED = 0
 STOP_ITERATION = 200
 CHECKPOINT_FREQUENCY = 25
+EVALUATION_INTERVAL = 50
+EVALUATION_NUM_EPISODES = 10
+EVALUATION_NUM_WORKERS = 1
+EVALUATION_SEED = 1
 
 DEBUG = False
 
@@ -41,7 +44,7 @@ def get_args():
 
     # Add parser arguments
     parser.add_argument('--config', type=str, default=CONFIG, help="path to configuration file")
-    parser.add_argument('--debug', default=False, action="store_true", help="set debug state to True")
+    parser.add_argument('--debug', default=DEBUG, action="store_true", help="set debug state to True")
     parser.add_argument('--output_dir', type=str, default=OUTPUT_DIR, help="path to output directory")
     parser.add_argument('--logging_workers', type=int, default=NUM_LOGGING_WORKERS,
                         help="number of workers for logging")
@@ -53,6 +56,19 @@ def get_args():
     parser.add_argument('--fake_gpus', default=False, action="store_true", help="use simulated gpus")
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
+
+    parser.add_argument('--evaluation_during_training', type=lambda x: strtobool(x), default=False,
+                        help="True if intermittent evaluation of agent policy during training desired, False if not")
+    parser.add_argument('--evaluation_interval', type=int, default=EVALUATION_INTERVAL,
+                        help="number of episodes to run in between policy evaluations")
+    parser.add_argument('--evaluation_num_episodes', type=int, default=EVALUATION_NUM_EPISODES,
+                        help="number of evaluation episodes to run")
+    parser.add_argument('--evaluation_num_workers', type=int, default=EVALUATION_NUM_WORKERS,
+                        help="number of workers used to run evaluation episodes")
+    parser.add_argument('--evaluation_seed', type=int, default=EVALUATION_SEED,
+                        help="set random seed for evaluation episodes")
+    parser.add_argument('--evaluation_exploration', type=lambda x: strtobool(x), default=False,
+                        help="set exploration behavior for evaluation episodes")
 
     args = parser.parse_args()
 
@@ -94,6 +110,22 @@ def experiment_setup(args):
     config['env'] = env
     config['env_config'] = env_config
 
+    if args.evaluation_during_training:
+        # set evaluation parameters
+        config["evaluation_interval"] = args.evaluation_interval
+        config["evaluation_num_episodes"] = args.evaluation_num_episodes
+        config["evaluation_num_workers"] = args.evaluation_num_workers
+        config["evaluation_config"] = {
+            # override config for logging, tensorboard, etc
+            "explore": args.evaluation_exploration,
+            "seed": args.evaluation_seed,
+            "callbacks": build_callbacks_caller([EpisodeOutcomeCallback(),
+                                                 FailureCodeCallback(),
+                                                 RewardComponentsCallback(),
+                                                 LoggingCallback(num_logging_workers=args.evaluation_num_workers,
+                                                                 contents=CONTENTS)])
+        }
+
     # Save experiment params
     with open(args_yaml_filepath, 'w') as args_yaml_file:
         arg_dict = vars(args)
@@ -122,7 +154,7 @@ def main(args):
         # Run training in a single process for debugging
         config["num_workers"] = 0
         trainer = ppo.PPOTrainer(config=config)
-        while True:
+        for i in range(args.stop_iteration):
             print(trainer.train())
 
 

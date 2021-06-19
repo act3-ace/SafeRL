@@ -5,11 +5,16 @@ import numpy as np
 
 
 class Manager(abc.ABC):
-    def __init__(self, config):
-        self.config = config
-
+    def __init__(self, processors):
         # Register and initialize processors
-        self.processors = [p_config["class"](config=p_config) for p_config in config]
+        # TODO: Inititalize processors outside of manager
+        self.processors = []
+        for p in processors:  # workaround
+            name = p["name"]
+            cls = p["class"]
+            config = p["config"]
+            config["name"] = name
+            self.processors.append(cls(**config))
 
     def reset(self, sim_state):
         for p in self.processors:
@@ -32,8 +37,8 @@ class Manager(abc.ABC):
 
 
 class ObservationManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, processors):
+        super().__init__(processors=processors)
         self.obs = None
 
         # combine the processor observation spaces into a single Box space
@@ -69,8 +74,8 @@ class ObservationManager(Manager):
 
 
 class StatusManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, processors):
+        super().__init__(processors=processors)
         self.status = {}
 
     def reset(self, sim_state):
@@ -108,8 +113,8 @@ class StatusManager(Manager):
 
 
 class RewardManager(Manager):
-    def __init__(self, config):
-        super().__init__(config=config)
+    def __init__(self, processors):
+        super().__init__(processors=processors)
         self.step_value = 0
         self.total_value = 0
 
