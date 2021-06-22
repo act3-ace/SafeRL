@@ -12,7 +12,7 @@ from matplotlib import animation
 import matplotlib
 matplotlib.rc('lines', linewidth=2.0)
 
-config = '../configs/rejoin/rejoin_default.yaml'
+config = '../configs/rejoin/rejoin_rta_default.yaml'
 
 
 def compute_collision_start(heading, v, collision_time=15):
@@ -50,7 +50,7 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
     env_config['env_objs'][0]['config']['init'] = wingman_init
     env_config['env_objs'][1]['config']['init'] = lead_init
 
-    env = env_class(config=env_config)
+    env = env_class(env_config)
 
     env.reset()
     done = False
@@ -114,7 +114,7 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
 
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(info_log), interval=50)
     plt.tight_layout()
-    # plt.show()
+    plt.show()
     if save_anim:
         anim.save(output_name, dpi=200)
 
@@ -127,4 +127,5 @@ for i in range(5):
 
     # timeout limit
     env_config['status'][5]['config']['timeout'] = 30
-    run_collision(env_class, env_config, output_name='vids/rta_{}.mp4'.format(i), save_anim=True)
+    env_config['step_size'] = 0.1
+    run_collision(env_class, env_config, output_name='vids/rta_{}.mp4'.format(i), save_anim=False)
