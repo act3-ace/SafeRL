@@ -27,7 +27,7 @@ class DubinsRejoin(BaseEnv):
             'status': self.status,
             'reward': self.reward_manager.generate_info(),
             'timestep_size': self.step_size,
-            'rta': self.env_objs['wingman'].rta_module.generate_info(),
+            'rta': self.env_objs['wingman'].rta.generate_info(),
         }
 
         return info
