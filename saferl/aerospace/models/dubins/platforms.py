@@ -89,14 +89,14 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, controller=None):
+    def __init__(self, controller=None, rta=None):
 
         dynamics = Dubins2dDynamics()
         actuator_set = Dubins2dActuatorSet()
 
         state = Dubins2dState()
 
-        super().__init__(dynamics, actuator_set, state, controller)
+        super().__init__(dynamics, actuator_set, state, controller, rta=rta)
 
 
 class Dubins2dState(BaseDubinsState):

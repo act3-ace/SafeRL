@@ -239,7 +239,7 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, controller, rta_module=None):
+    def __init__(self, dynamics, actuator_set, state, controller, rta=None):
 
         if controller is None:
             controller = PassThroughController()
@@ -256,8 +256,15 @@ class BasePlatform(BaseEnvObj):
         self.state = state
 
         # setup rta module with reference to self
-        self.rta_module = rta_module
-        self.rta_module.setup(self)
+        self.rta = rta
+        if type(self.rta) == dict:
+            if 'config' in self.rta:
+                rta_kwargs = self.rta['config']
+            else:
+                rta_kwargs = {}
+            self.rta = self.rta['class'](**rta_kwargs)
+        if self.rta is not None:
+            self.rta.setup(self)
 
         self.reset()
 
@@ -275,8 +282,8 @@ class BasePlatform(BaseEnvObj):
         actuation = self.controller.gen_actuation(self.state, action)
         control = self.actuator_set.gen_control(actuation)
 
-        if self.rta_module is not None:
-            control = self.rta_module.filter_control(sim_state, control)
+        if self.rta is not None:
+            control = self.rta.filter_control(sim_state, control)
 
         # save current actuation and control
         self.current_actuation = copy.deepcopy(actuation)
@@ -307,8 +314,8 @@ class BasePlatform(BaseEnvObj):
             'y': self.y,
             'z': self.z,
             'controller': {
-                'actuation': self.actuation_cur,
-                'control': self.control_cur,
+                'actuation': self.current_actuation,
+                'control': self.current_control,
             }
         }
 
