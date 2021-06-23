@@ -91,6 +91,26 @@ class ObservationProcessor(Processor):
         # normalization vector is compatible, so return normalized observations
         return np.divide(obs, self.normalization)
 
+    def process(self, sim_state):
+        """
+        A method to expose the current normalized observation space.
+
+        Parameters
+        ----------
+        sim_state : SimulationState
+            The current state of the simulated environment.
+
+        Returns
+        -------
+        obs : numpy.array, numpy.ndarray
+            The agent's vectorized observation space.
+        """
+        # get observations from state
+        obs = self._process(sim_state)
+        # normalize observations
+        obs = self._normalize(obs)
+        return obs
+
     def _increment(self, sim_state, step_size):
         # observation processors will not have a state to update by default
         pass
