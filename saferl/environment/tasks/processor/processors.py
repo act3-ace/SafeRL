@@ -60,7 +60,7 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=1):
+    def __init__(self, name=None, normalization=None):
         super().__init__(name=name)
         self.obs = None
         self.observation_space = None
@@ -79,7 +79,7 @@ class ObservationProcessor(Processor):
     def _normalize(self, obs):
         # apply normalization vector to given observations
 
-        if self.normalization == 1:
+        if self.normalization is None:
             # no normalization specified, so no change to observations
             return obs
 
