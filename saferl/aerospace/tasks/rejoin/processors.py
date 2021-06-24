@@ -11,9 +11,8 @@ from saferl.environment.models.geometry import distance
 # --------------------- Observation Processors ------------------------
 
 class DubinsObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None):
-        super().__init__(name=name)
-
+    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None,
+                 normalization=None):
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -23,12 +22,14 @@ class DubinsObservationProcessor(ObservationProcessor):
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            self.obs_norm_const = self._get_norm(
-                normalization=np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64))
+            if normalization is None:
+                normalization = np.array([10000, 10000, 10000, 10000, 100, 100, 100, 100], dtype=np.float64)
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            self.obs_norm_const = self._get_norm(
-                normalization=np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64))
+            if normalization is None:
+                normalization = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
+
+        super().__init__(name=name, normalization=normalization)
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -66,18 +67,14 @@ class DubinsObservationProcessor(ObservationProcessor):
             lead_vel[0:3]
         ])
 
-        # normalize observation
-        obs = np.divide(obs, self.obs_norm_const)
-
-        obs = np.clip(obs, -1, 1)
+        # obs = np.clip(obs, -1, 1) #TODO: clipping after norm?
 
         return obs
 
 
 class Dubins3dObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None):
-        super().__init__(name=name)
-
+    def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None,
+                 normalization=None):
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -87,16 +84,17 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
-            self.obs_norm_const = self._get_norm(
-                normalization=np.array(
+            if normalization is None:
+                normalization = np.array(
                     [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi],
-                dtype=np.float64))
+                    dtype=np.float64)
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            self.obs_norm_const = self._get_norm(
-                normalization=np.array(
-                    [10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi],
-                dtype=np.float64))
+            if normalization is None:
+                normalization = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi],
+                                         dtype=np.float64)
+
+        super().__init__(name=name, normalization=normalization)
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -140,10 +138,7 @@ class Dubins3dObservationProcessor(ObservationProcessor):
             gamma
         ])
 
-        # normalize observation
-        obs = np.divide(obs, self.obs_norm_const)
-
-        obs = np.clip(obs, -1, 1)
+        # obs = np.clip(obs, -1, 1) #TODO: clip after norm?
 
         return obs
 
