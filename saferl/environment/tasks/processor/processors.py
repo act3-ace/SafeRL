@@ -79,7 +79,7 @@ class ObservationProcessor(Processor):
     def _normalize(self, obs):
         # apply normalization vector to given observations
 
-        if self.normalization is 1:
+        if self.normalization == 1:
             # no normalization specified, so no change to observations
             return obs
 
