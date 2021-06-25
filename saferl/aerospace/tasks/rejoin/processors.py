@@ -12,7 +12,7 @@ from saferl.environment.models.geometry import distance
 
 class DubinsObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None,
-                 normalization=None):
+                 normalization=None, clipping_bounds=None):
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -29,7 +29,10 @@ class DubinsObservationProcessor(ObservationProcessor):
             if normalization is None:
                 normalization = np.array([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1], dtype=np.float64)
 
-        super().__init__(name=name, normalization=normalization)
+        if clipping_bounds is None:
+            clipping_bounds = {"min": -1, "max": 1}
+
+        super().__init__(name=name, normalization=normalization, clipping_bounds=clipping_bounds)
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -67,14 +70,12 @@ class DubinsObservationProcessor(ObservationProcessor):
             lead_vel[0:3]
         ])
 
-        # obs = np.clip(obs, -1, 1) #TODO: clipping after norm?
-
         return obs
 
 
 class Dubins3dObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, lead=None, wingman=None, rejoin_region=None, reference=None, mode=None,
-                 normalization=None):
+                 normalization=None, clipping_bounds=None):
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -94,7 +95,10 @@ class Dubins3dObservationProcessor(ObservationProcessor):
                 normalization = np.array([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi],
                                          dtype=np.float64)
 
-        super().__init__(name=name, normalization=normalization)
+        if clipping_bounds is None:
+            clipping_bounds = {"min": -1, "max": 1}
+
+        super().__init__(name=name, normalization=normalization, clipping_bounds=clipping_bounds)
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -137,8 +141,6 @@ class Dubins3dObservationProcessor(ObservationProcessor):
             roll,
             gamma
         ])
-
-        # obs = np.clip(obs, -1, 1) #TODO: clip after norm?
 
         return obs
 
