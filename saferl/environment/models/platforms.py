@@ -254,6 +254,7 @@ class BasePlatform(BaseEnvObj):
         self.actuator_set = actuator_set
         self.controller = controller
         self.state = state
+        self.next_state = self.state
 
         # setup rta module with reference to self
         self.rta = rta
@@ -270,6 +271,7 @@ class BasePlatform(BaseEnvObj):
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
+        self.next_state = self.state
 
         self.current_actuation = {}
         self.current_control = self.actuator_set.gen_control()
@@ -277,7 +279,11 @@ class BasePlatform(BaseEnvObj):
         for obj in self.dependent_objs:
             obj.reset(**kwargs)
 
-    def pre_step(self, sim_state, action=None):
+    def step(self, sim_state, step_size, action=None):
+        self.step_compute(sim_state, step_size, action=action)
+        self.step_apply()
+
+    def step_compute(self, sim_state, step_size, action=None):
 
         actuation = self.controller.gen_actuation(self.state, action)
         control = self.actuator_set.gen_control(actuation)
@@ -289,21 +295,19 @@ class BasePlatform(BaseEnvObj):
         self.current_actuation = copy.deepcopy(actuation)
         self.current_control = copy.deepcopy(control)
 
-        for obj in self.dependent_objs:
-            obj.pre_step(sim_state, action=action)
-
-    def step(self, step_size):
-
-        control = self.current_control
-
         # compute new state if dynamics were applied
-        new_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
+        self.next_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
+
+        for obj in self.dependent_objs:
+            obj.step_compute(sim_state, action=action)
+
+    def step_apply(self):
 
         # overwrite platform state with new state from dynamics
-        self.state = new_state
+        self.state = self.next_state
 
         for obj in self.dependent_objs:
-            obj.step(step_size)
+            obj.step_apply()
 
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
