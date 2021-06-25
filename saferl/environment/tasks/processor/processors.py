@@ -60,12 +60,13 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=None):
+    def __init__(self, name=None, normalization=None, clipping_bounds=None):
         super().__init__(name=name)
         self.obs = None
-        self.observation_space = None
+        # self.observation_space = None
+
         self.normalization = normalization
-        # TODO: add normalization and clipping, pre- and post- processors
+        self.clipping_bounds = clipping_bounds
 
     def reset(self, sim_state):
         self.obs = None
@@ -83,13 +84,33 @@ class ObservationProcessor(Processor):
             # no normalization specified, so no change to observations
             return obs
 
-        # ensure normalization vector is correct type and shape
+        # ensure normalization vector is correct types
         assert type(self.normalization) in [np.array, np.ndarray], \
+            "Expected numpy.array or numpy.ndarray for variable \'normalization\', but instead got: {}".format(
+                type(self.normalization))
+        # ensure normalization vector is correct shape
+        assert obs.shape == self.normalization.shape, \
             "The shape of the observation space and normalization vector do not match!"
-        assert obs.shape == self.normalization.shape, "Given normalization vector data type is incompatible"
 
         # normalization vector is compatible, so return normalized observations
-        return np.divide(obs, self.normalization)
+        obs = np.divide(obs, self.normalization)
+        return obs
+
+    def _clip(self, obs):
+        # apply normalization vector to given observations
+
+        if self.clipping_bounds is None:
+            # no specified clipping
+            return obs
+
+        assert type(self.clipping_bounds) == dict, \
+            "Expected dict for variable \'clipping_bounds\', but instead got: {}".format(type(self.clipping_bounds))
+        assert "max" in self.clipping_bounds, "\'max\' key not defined in \'clipping_bounds\'"
+        assert "min" in self.clipping_bounds, "\'min\' key not defined in \'clipping_bounds\'"
+
+        # apply clipping in specified range
+        obs = np.clip(obs, self.clipping_bounds["min"], self.clipping_bounds["max"])
+        return obs
 
     def process(self, sim_state):
         """
@@ -109,6 +130,8 @@ class ObservationProcessor(Processor):
         obs = self._process(sim_state)
         # normalize observations
         obs = self._normalize(obs)
+        # clip
+        obs = self._clip(obs)
         return obs
 
     def _increment(self, sim_state, step_size):
