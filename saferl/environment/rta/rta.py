@@ -14,28 +14,28 @@ class RTAModule(abc.ABC):
     def setup(self, platform):
         self.platform = platform
 
-    def filter_control(self, sim_state, control):
+    def filter_control(self, sim_state, step_size, control):
         if self.enable:
-            return self._filter_control(sim_state, control)
+            return self._filter_control(sim_state, step_size, control)
         else:
             return control
 
-    def _filter_control(self, sim_state, control):
-        self.monitor(sim_state, control)
-        return self.generate_control(sim_state, control)
+    def _filter_control(self, sim_state, step_size, control):
+        self.monitor(sim_state, step_size, control)
+        return self.generate_control(sim_state, step_size, control)
 
-    def monitor(self, sim_state, control):
-        self._monitor(sim_state, control)
+    def monitor(self, sim_state, step_size, control):
+        self._monitor(sim_state, step_size, control)
 
-    def generate_control(self, sim_state, control):
-        return self._generate_control(sim_state, control)
+    def generate_control(self, sim_state, step_size, control):
+        return self._generate_control(sim_state, step_size, control)
 
     @abc.abstractmethod
-    def _monitor(self, sim_state, control):
+    def _monitor(self, sim_state, step_size, control):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _generate_control(self, sim_state, control):
+    def _generate_control(self, sim_state, step_size, control):
         raise NotImplementedError()
 
 
@@ -49,9 +49,9 @@ class SimplexModule(RTAModule):
         self.rta_on = False
         super().reset()
 
-    def _filter_control(self, sim_state, control):
-        self.monitor(sim_state, control)
+    def _filter_control(self, sim_state, step_size, control):
+        self.monitor(sim_state, step_size, control)
         if self.rta_on:
-            return self.generate_control(sim_state, control)
+            return self.generate_control(sim_state, step_size, control)
         else:
             return control

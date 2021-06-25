@@ -289,7 +289,7 @@ class BasePlatform(BaseEnvObj):
         control = self.actuator_set.gen_control(actuation)
 
         if self.rta is not None:
-            control = self.rta.filter_control(sim_state, control)
+            control = self.rta.filter_control(sim_state, step_size, control)
 
         # save current actuation and control
         self.current_actuation = copy.deepcopy(actuation)

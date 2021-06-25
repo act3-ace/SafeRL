@@ -31,7 +31,7 @@ class RTADubins2dCollision(SimplexModule):
         self.rta_traj = None
         self.watch_traj = None
 
-    def _monitor(self, sim_state, control):
+    def _monitor(self, sim_state, step_size, control):
         rta_platform = sim_state.env_objs[self.platform_name]
 
         for watch_name in self.watch_list:
@@ -67,7 +67,7 @@ class RTADubins2dCollision(SimplexModule):
             else:
                 self.rta_control = None
 
-    def _generate_control(self, sim_state, control):
+    def _generate_control(self, sim_state, step_size, control):
         return np.copy(self.rta_control)
 
     def dubins_projection(self, platform, control=None):
