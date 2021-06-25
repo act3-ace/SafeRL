@@ -264,10 +264,14 @@ class RelativeGeometry(BaseEnvObj):
         if self.track_orientation:
             self.shape.orientation = self.ref.orientation
 
-    def pre_step(self, sim_state, *args, **kwargs):
+    def step(self, *args, **kwargs):
+        self.step_compute()
+        self.step_apply()
+
+    def step_compute(self, *args, **kwargs):
         pass
 
-    def step(self, *args, **kwargs):
+    def step_apply(self, *args, **kwargs):
         self.update()
 
     def reset(self, **kwargs):
