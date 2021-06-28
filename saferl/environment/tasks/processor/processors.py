@@ -60,13 +60,13 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=None, clipping_bounds=None):
+    def __init__(self, name=None, normalization=None, clip=None):
         super().__init__(name=name)
         self.obs = None
         # self.observation_space = None
 
-        self.normalization = normalization
-        self.clipping_bounds = clipping_bounds
+        self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
+        self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
 
     def reset(self, sim_state):
         self.obs = None
@@ -97,19 +97,19 @@ class ObservationProcessor(Processor):
         return obs
 
     def _clip(self, obs):
-        # apply normalization vector to given observations
+        # apply clipping to given observation vector
 
-        if self.clipping_bounds is None:
+        if self.clip is None:
             # no specified clipping
             return obs
 
-        assert type(self.clipping_bounds) == dict, \
-            "Expected dict for variable \'clipping_bounds\', but instead got: {}".format(type(self.clipping_bounds))
-        assert "max" in self.clipping_bounds, "\'max\' key not defined in \'clipping_bounds\'"
-        assert "min" in self.clipping_bounds, "\'min\' key not defined in \'clipping_bounds\'"
+        assert type(self.clip) == list, \
+            "Expected a list for variable \'clip\', but instead got: {}".format(type(self.clip))
+        assert 2 == len(self.clip), \
+            "Expected a list of length 2 for variable \'clip\', but instead got: {}".format(len(self.clip))
 
         # apply clipping in specified range
-        obs = np.clip(obs, self.clipping_bounds["min"], self.clipping_bounds["max"])
+        obs = np.clip(obs, self.clip[0], self.clip[1])
         return obs
 
     def process(self, sim_state):
