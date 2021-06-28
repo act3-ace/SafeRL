@@ -10,6 +10,13 @@ Please refer to the official documentation for updates.
 
 ### Login
 
+#### On-Prem (preferred)
+
+Begin by logging in to the ACE Hub deployment front end found [here](https://hub.lynx.act3-ace.ai/)
+using your ACT3 afresearchlab account credentials.
+
+#### Google Cloud Platform (if needed)
+
 Begin by logging in to the afresearchlab ACE Hub deployment front end found [here](https://hub.ace.afresearchlab.com/)
 using your Google afresearchlab account credentials.
 
