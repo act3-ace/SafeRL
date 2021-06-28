@@ -38,7 +38,7 @@ class DubinsObservationProcessor(ObservationProcessor):
                 normalization = [10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1]
 
         if clip is None:
-            clip = {"min": -1, "max": 1}
+            clip = [-1, 1]
 
         super().__init__(name=name, normalization=normalization, clip=clip)
 
@@ -110,7 +110,7 @@ class Dubins3dObservationProcessor(ObservationProcessor):
                 normalization = [10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi]
 
         if clip is None:
-            clip = {"min": -1, "max": 1}
+            clip = [-1, 1]
 
         super().__init__(name=name, normalization=normalization, clip=clip)
 
