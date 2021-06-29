@@ -323,6 +323,9 @@ class BasePlatform(BaseEnvObj):
             }
         }
 
+        if self.rta is not None:
+            info['rta'] = self.rta.generate_info()
+
         return info
 
     @property
