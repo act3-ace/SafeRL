@@ -34,6 +34,8 @@ class RTADubins2dCollision(SimplexModule):
     def _monitor(self, sim_state, step_size, control):
         rta_platform = sim_state.env_objs[self.platform_name]
 
+        backup_on = self.backup_on
+
         for watch_name in self.watch_list:
 
             watch_platform = sim_state.env_objs[watch_name]
@@ -57,17 +59,19 @@ class RTADubins2dCollision(SimplexModule):
             self.watch_traj = watch_traj
 
             traj_dist = np.linalg.norm(rta_traj - watch_traj, axis=1)
-            if (not self.rta_on) and (np.min(traj_dist) <= self.rta_on_dist):
-                self.rta_on = True
-            elif self.rta_on and (np.min(traj_dist) > self.rta_off_dist):
-                self.rta_on = False
+            if (not backup_on) and (np.min(traj_dist) <= self.rta_on_dist):
+                backup_on = True
+            elif backup_on and (np.min(traj_dist) > self.rta_off_dist):
+                backup_on = False
 
-            if self.rta_on:
+            if backup_on:
                 self.rta_control = rta_control_proposed
             else:
                 self.rta_control = None
 
-    def _generate_control(self, sim_state, step_size, control):
+        return backup_on
+
+    def _backup_control(self, sim_state, step_size, control):
         return np.copy(self.rta_control)
 
     def dubins_projection(self, platform, control=None):
@@ -101,8 +105,12 @@ class RTADubins2dCollision(SimplexModule):
         return traj
 
     def generate_info(self):
-        return {
-            'rta_on': self.rta_on,
+        info = {
             'rta_traj': self.rta_traj,
             'watch_traj': self.watch_traj
         }
+
+        info_parent = super().generate_info()
+        info_ret = {**info_parent, **info}
+
+        return info_ret
