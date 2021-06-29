@@ -93,8 +93,8 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
 
         wingman_marker.set_data(info['wingman']['x'], info['wingman']['y'])
         lead_marker.set_data(info['lead']['x'], info['lead']['y'])
-        wingman_traj.set_data(info['rta']['rta_traj'][:, 0], info['rta']['rta_traj'][:, 1])
-        lead_traj.set_data(info['rta']['watch_traj'][:, 0], info['rta']['watch_traj'][:, 1])
+        wingman_traj.set_data(info['wingman']['rta']['rta_traj'][:, 0], info['wingman']['rta']['rta_traj'][:, 1])
+        lead_traj.set_data(info['wingman']['rta']['watch_traj'][:, 0], info['wingman']['rta']['watch_traj'][:, 1])
 
         x = info['wingman']['x']
         y = info['wingman']['y']
@@ -105,7 +105,7 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
             [y, y+500*math.sin(heading)])
         wingman_safety_circle.center = x, y
 
-        if info['rta']['rta_on']:
+        if info['wingman']['rta']['backup_on']:
             wingman_traj.set_color('r')
         else:
             wingman_traj.set_color('g')
