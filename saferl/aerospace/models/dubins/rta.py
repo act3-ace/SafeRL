@@ -31,10 +31,8 @@ class RTADubins2dCollision(SimplexModule):
         self.rta_traj = None
         self.watch_traj = None
 
-    def _monitor(self, sim_state, step_size, control):
+    def _monitor(self, sim_state, step_size, control, intervening):
         rta_platform = sim_state.env_objs[self.platform_name]
-
-        backup_on = self.backup_on
 
         for watch_name in self.watch_list:
 
@@ -59,17 +57,17 @@ class RTADubins2dCollision(SimplexModule):
             self.watch_traj = watch_traj
 
             traj_dist = np.linalg.norm(rta_traj - watch_traj, axis=1)
-            if (not backup_on) and (np.min(traj_dist) <= self.rta_on_dist):
-                backup_on = True
-            elif backup_on and (np.min(traj_dist) > self.rta_off_dist):
-                backup_on = False
+            if (not intervening) and (np.min(traj_dist) <= self.rta_on_dist):
+                intervening = True
+            elif intervening and (np.min(traj_dist) > self.rta_off_dist):
+                intervening = False
 
-            if backup_on:
+            if intervening:
                 self.rta_control = rta_control_proposed
             else:
                 self.rta_control = None
 
-        return backup_on
+        return intervening
 
     def _backup_control(self, sim_state, step_size, control):
         return np.copy(self.rta_control)
