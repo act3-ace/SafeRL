@@ -105,7 +105,7 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
             [y, y+500*math.sin(heading)])
         wingman_safety_circle.center = x, y
 
-        if info['wingman']['rta']['backup_on']:
+        if info['wingman']['rta']['intervening']:
             wingman_traj.set_color('r')
         else:
             wingman_traj.set_color('g')
