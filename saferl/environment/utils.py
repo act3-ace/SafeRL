@@ -78,12 +78,9 @@ def build_lookup(pkg, parent):
     modules = inspect.getmembers(pkg, inspect.ismodule)
     modules = [m for m in modules if parent in m[1].__name__]
     classes = inspect.getmembers(pkg, inspect.isclass)
-    if len(classes) > 0:
-        print()
     classes = [c for c in classes if parent in c[1].__module__]
     local_lookup = {pkg.__name__ + "." + k: v for k, v in classes}
     for m in modules:
-        print(m)
         local_lookup = {**local_lookup, **build_lookup(m[1], parent)}
     return local_lookup
 
