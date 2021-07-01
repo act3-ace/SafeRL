@@ -1,6 +1,7 @@
 import io
 import os
 import copy
+import inspect
 
 import yaml
 import jsonlines
@@ -60,6 +61,8 @@ def setup_env_objs_from_config(config, default_initializer):
         cfg = get_ref_objs(env_objs, cfg)
 
         # Instantiate object
+        if type(cls) is str:
+            print()
         obj = cls(**{k: v for k, v in cfg.items() if k != "init"})
         env_objs[name] = obj
         if name == agent_name:
@@ -69,6 +72,19 @@ def setup_env_objs_from_config(config, default_initializer):
         initializers.append(initializer_from_config(obj, cfg, default_initializer))
 
     return agent, env_objs, initializers
+
+
+def build_lookup(pkg, parent):
+    modules = inspect.getmembers(pkg, inspect.ismodule)
+    modules = [m for m in modules if parent in str(m[1])]
+    classes = inspect.getmembers(pkg, inspect.isclass)
+    if len(classes) > 0:
+        print()
+    classes = [c for c in classes if parent in str(c[1])]
+    local_lookup = {pkg.__name__ + "." + k: v for k, v in classes if "saferl" in str(v)}
+    for m in modules:
+        local_lookup = {**local_lookup, **build_lookup(m[1], parent)}
+    return local_lookup
 
 
 class YAMLParser:

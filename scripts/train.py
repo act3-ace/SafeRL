@@ -10,12 +10,10 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
+import saferl
+from saferl.environment.utils import YAMLParser, build_lookup
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
-
-from saferl import lookup
-
-from saferl.environment.utils import YAMLParser
 
 
 # Training defaults
@@ -105,7 +103,7 @@ def experiment_setup(args):
                                                                   contents=CONTENTS)])
 
     # Setup custom config
-    parser = YAMLParser(yaml_file=args.config, lookup=lookup)
+    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup(saferl, "saferl"))
     env, env_config = parser.parse_env()
     config['env'] = env
     config['env_config'] = env_config
