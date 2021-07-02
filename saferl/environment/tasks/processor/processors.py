@@ -61,6 +61,21 @@ class Processor(abc.ABC):
 
 class ObservationProcessor(Processor):
     def __init__(self, name=None, normalization=None, clip=None):
+        """
+        The class constructor handles the assignment of member variables.
+
+        Parameters
+        ----------
+        name : str
+            The name of the processor to be displayed in logging.
+        normalization : list or numpy.ndarray
+            An array of constants used to normalize the values in a generated observation arrays via element-wise
+            division.
+        clip : list
+            A two element list containing a minimum value boundary and a maximum value boundary (in that order) applied
+            to all values in generated observation arrays.
+        """
+
         super().__init__(name=name)
         self.obs = None
         # self.observation_space = None
@@ -84,9 +99,9 @@ class ObservationProcessor(Processor):
             # no normalization specified, so no change to observations
             return obs
 
-        # ensure normalization vector is correct types
-        assert type(self.normalization) in [np.array, np.ndarray], \
-            "Expected numpy.array or numpy.ndarray for variable \'normalization\', but instead got: {}".format(
+        # ensure normalization vector is correct type
+        assert type(self.normalization) == np.ndarray, \
+            "Expected numpy.ndarray for variable \'normalization\', but instead got: {}".format(
                 type(self.normalization))
         # ensure normalization vector is correct shape
         assert obs.shape == self.normalization.shape, \
