@@ -215,3 +215,33 @@ def is_jsonable(object):
         return OverflowError
     except ValueError:
         return ValueError
+
+
+class PostProcessor:
+    def __init__(self, **kwargs):
+        self.config = kwargs
+
+    def __call__(self, input):
+        """
+        Subclasses should implement this method to apply post-processing to processor's return values.
+
+        Parameters
+        ----------
+        input
+            The value passed to a given post processor for modification.
+
+        Returns
+        -------
+        input
+            The modified (processed) input value
+        """
+        raise NotImplementedError
+
+
+class Normalize(PostProcessor):
+    def __call__(self, input_array):
+        if "mu" in self.config and "sigma" in self.config and type(input_array) == np.ndarray:
+            input_array = np.subtract(input_array, self.config["mu"])
+            input_array = np.divide(input_array, self.config["sigma"])
+
+        return input_array
