@@ -1,6 +1,8 @@
 import abc
 import numpy as np
 
+from saferl.environment.utils import Normalize                      # import post-processor classes
+
 
 class Processor(abc.ABC):
     def __init__(self, name=None):
@@ -60,13 +62,16 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=None, clip=None):
+    def __init__(self, name=None, normalization=None, clip=None, post_processors=None):
         super().__init__(name=name)
         self.obs = None
         # self.observation_space = None
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
+        self.post_processors = []                   # list of PostProcessors
+        for post_processor in post_processors:
+            self.post_processors.append(post_processor["class"](**post_processor["config"]))
 
     def reset(self, sim_state):
         self.obs = None
@@ -112,6 +117,25 @@ class ObservationProcessor(Processor):
         obs = np.clip(obs, self.clip[0], self.clip[1])
         return obs
 
+    def _post_process(self, obs):
+        """
+        A method to sequentially apply post processors to obs.
+
+        Parameters
+        ----------
+        obs : numpy.array or numpy.ndarray
+            An array of values representing the observation space.
+
+        Returns
+        -------
+        obs : numpy.array or numpy.ndarray
+            An array of values representing the observation space.
+        """
+
+        for post_processor in self.post_processors:
+            obs = post_processor(obs)
+        return obs
+
     def process(self, sim_state):
         """
         A method to expose the current normalized observation space.
@@ -132,6 +156,8 @@ class ObservationProcessor(Processor):
         obs = self._normalize(obs)
         # clip
         obs = self._clip(obs)
+        # post-process
+        obs = self._post_process(obs)
         return obs
 
     def _increment(self, sim_state, step_size):
