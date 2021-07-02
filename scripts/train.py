@@ -103,7 +103,7 @@ def experiment_setup(args):
                                                                   contents=CONTENTS)])
 
     # Setup custom config
-    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup(saferl, "saferl"))
+    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup(saferl, "saferl")[0])
     env, env_config = parser.parse_env()
     config['env'] = env
     config['env_config'] = env_config

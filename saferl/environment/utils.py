@@ -74,15 +74,18 @@ def setup_env_objs_from_config(config, default_initializer):
     return agent, env_objs, initializers
 
 
-def build_lookup(pkg, parent):
+def build_lookup(pkg, parent, checked_modules=None):
+    checked_modules = set() if checked_modules is None else checked_modules
     modules = inspect.getmembers(pkg, inspect.ismodule)
-    modules = [m for m in modules if parent in str(m[1])]
+    modules = [m for m in modules if str(m[1]) not in checked_modules and parent in str(m[1])]
+    checked_modules = checked_modules.union(set([str(m[1]) for m in modules]))
     classes = inspect.getmembers(pkg, inspect.isclass)
     classes = [c for c in classes if parent in str(c[1])]
     local_lookup = {pkg.__name__ + "." + k: v for k, v in classes if "saferl" in str(v)}
     for m in modules:
-        local_lookup = {**local_lookup, **build_lookup(m[1], parent)}
-    return local_lookup
+        m_lookup, checked_modules = build_lookup(m[1], parent=parent, checked_modules=checked_modules)
+        local_lookup = {**local_lookup, **m_lookup}
+    return local_lookup, checked_modules
 
 
 class YAMLParser:
