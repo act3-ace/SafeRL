@@ -77,11 +77,12 @@ def setup_env_objs_from_config(config, default_initializer):
 def build_lookup(pkg, parent, checked_modules=None):
     checked_modules = set() if checked_modules is None else checked_modules
     modules = inspect.getmembers(pkg, inspect.ismodule)
+    modules = [m for m in modules if parent in m[1].__name__]
     modules = [m for m in modules if str(m[1]) not in checked_modules and parent in str(m[1])]
     checked_modules = checked_modules.union(set([str(m[1]) for m in modules]))
     classes = inspect.getmembers(pkg, inspect.isclass)
-    classes = [c for c in classes if parent in str(c[1])]
-    local_lookup = {pkg.__name__ + "." + k: v for k, v in classes if "saferl" in str(v)}
+    classes = [c for c in classes if parent in c[1].__module__]
+    local_lookup = {pkg.__name__ + "." + k: v for k, v in classes}
     for m in modules:
         m_lookup, checked_modules = build_lookup(m[1], parent=parent, checked_modules=checked_modules)
         local_lookup = {**local_lookup, **m_lookup}
