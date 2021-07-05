@@ -239,9 +239,41 @@ class PostProcessor:
 
 
 class Normalize(PostProcessor):
-    def __call__(self, input_array):
-        if "mu" in self.config and "sigma" in self.config and type(input_array) == np.ndarray:
-            input_array = np.subtract(input_array, self.config["mu"])
-            input_array = np.divide(input_array, self.config["sigma"])
+    def __call__(self, input_array, mu=None, sigma=None):
+        if type(input_array) == np.ndarray:
+            skip_mu = False
+            skip_sigma = False
+
+            if mu is None:
+                # mu not specified as kwarg
+                if "mu" in self.config:
+                    # assign mu from config
+                    mu = self.config["mu"]
+                else:
+                    # mu not specified at all
+                    skip_mu = True
+
+            if not skip_mu:
+                # apply mu to input
+                assert type(mu) in [float, int, list, np.ndarray], \
+                    "Expected variable \'mu\' to be type int, float, list, or numpy.ndarray, but received {}"\
+                    .format(type(mu))
+                input_array = np.subtract(input_array, mu)
+
+            if sigma is None:
+                # mu not specified as kwarg
+                if "sigma" in self.config:
+                    # assign sigma from config
+                    sigma = self.config["sigma"]
+                else:
+                    # sigma not specified at all
+                    skip_sigma = True
+
+            if not skip_sigma:
+                assert type(sigma) in [float, int, list, np.ndarray], \
+                    "Expected variable \'sigma\' to be type int, float, list, or numpy.ndarray, but received {}" \
+                    .format(type(sigma))
+
+                input_array = np.divide(input_array, sigma)
 
         return input_array
