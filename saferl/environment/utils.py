@@ -74,7 +74,11 @@ def setup_env_objs_from_config(config, default_initializer):
     return agent, env_objs, initializers
 
 
-def build_lookup(pkg, parent, checked_modules=None):
+def build_lookup(pkg):
+    return _build_lookup(pkg=pkg, parent=pkg.__name__)[0]
+
+
+def _build_lookup(pkg, parent, checked_modules=None):
     checked_modules = set() if checked_modules is None else checked_modules
     modules = inspect.getmembers(pkg, inspect.ismodule)
     modules = [m for m in modules if m[1].__name__ not in checked_modules and parent in m[1].__name__]
@@ -83,7 +87,7 @@ def build_lookup(pkg, parent, checked_modules=None):
     classes = [c for c in classes if parent in c[1].__module__]
     local_lookup = {pkg.__name__ + "." + k: v for k, v in classes}
     for m in modules:
-        m_lookup, checked_modules = build_lookup(m[1], parent=parent, checked_modules=checked_modules)
+        m_lookup, checked_modules = _build_lookup(m[1], parent=parent, checked_modules=checked_modules)
         local_lookup = {**local_lookup, **m_lookup}
     return local_lookup, checked_modules
 
