@@ -1,6 +1,7 @@
 import io
 import os
 import copy
+import inspect
 
 import yaml
 import jsonlines
@@ -60,6 +61,8 @@ def setup_env_objs_from_config(config, default_initializer):
         cfg = get_ref_objs(env_objs, cfg)
 
         # Instantiate object
+        if type(cls) is str:
+            print()
         obj = cls(**{k: v for k, v in cfg.items() if k != "init"})
         env_objs[name] = obj
         if name == agent_name:
@@ -69,6 +72,24 @@ def setup_env_objs_from_config(config, default_initializer):
         initializers.append(initializer_from_config(obj, cfg, default_initializer))
 
     return agent, env_objs, initializers
+
+
+def build_lookup(pkg):
+    return _build_lookup(pkg=pkg, parent=pkg.__name__)[0]
+
+
+def _build_lookup(pkg, parent, checked_modules=None):
+    checked_modules = set() if checked_modules is None else checked_modules
+    modules = inspect.getmembers(pkg, inspect.ismodule)
+    modules = [m for m in modules if m[1].__name__ not in checked_modules and parent in m[1].__name__]
+    checked_modules = checked_modules.union(set([m[1].__name__ for m in modules]))
+    classes = inspect.getmembers(pkg, inspect.isclass)
+    classes = [c for c in classes if parent in c[1].__module__]
+    local_lookup = {pkg.__name__ + "." + k: v for k, v in classes}
+    for m in modules:
+        m_lookup, checked_modules = _build_lookup(m[1], parent=parent, checked_modules=checked_modules)
+        local_lookup = {**local_lookup, **m_lookup}
+    return local_lookup, checked_modules
 
 
 class YAMLParser:
