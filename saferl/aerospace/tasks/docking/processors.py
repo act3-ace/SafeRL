@@ -8,8 +8,8 @@ from saferl.environment.models.geometry import distance
 # --------------------- Observation Processors ------------------------
 
 class DockingObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d'):
-        super().__init__(name=name)
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
+        super().__init__(name=name, normalization=normalization, clip=clip)
 
         # Initialize member variables from config
         self.mode = mode
@@ -31,9 +31,7 @@ class DockingObservationProcessor(ObservationProcessor):
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d'):
-        super().__init__(name=name)
-
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
         # Initialize member variables from config
         self.mode = mode
         self.deputy = deputy
@@ -43,11 +41,14 @@ class DockingObservationProcessorOriented(ObservationProcessor):
 
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            self.norm_const = np.array([1000, 1000, np.pi, 100, 100, 0.4, 500])
+            if normalization is None:
+                normalization = [1000, 1000, np.pi, 100, 100, 0.4, 500]
         elif self.mode == '3d':
             raise NotImplementedError
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+
+        super().__init__(name=name, normalization=normalization, clip=clip)
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
@@ -55,7 +56,6 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         # if self.config['mode'] == '2d':
         #     obs[2]
 
-        obs = obs / self.norm_const
         return obs
 
 
