@@ -1,11 +1,11 @@
 """
 This module implements all fixtures common to testing the training functionality of our benchmarks.
+
+Author: John McCarroll
 """
 
 import pytest
 import os
-import jsonlines
-import statistics
 import shutil
 import ray.rllib.agents.ppo as ppo
 from ray import tune
@@ -14,6 +14,7 @@ from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeC
     RewardComponentsCallback, LoggingCallback, LogContents
 from saferl import lookup
 from saferl.environment.utils import YAMLParser
+from success_criteria import SuccessCriteria
 
 
 # define defaults
@@ -23,13 +24,38 @@ default_workers = 6
 default_fake_gpus = False
 default_seed = 100
 default_output = "../../test_data/training_output"
-# TODO: use tmp_dir and tmp_file fixtures
 
 
 @pytest.fixture()
 def success_threshold():
-    default_success_threshold = 0.05
-    return default_success_threshold
+    """
+    This fixture determines the rate of successful episodes a task must reach during training in order to pass the
+    system test.
+
+    Returns
+    -------
+    success_threshold : float
+        Desired rate of successful episodes to be confident task training functions appropriately.
+    """
+
+    success_threshold = 0.9
+    return success_threshold
+
+
+@pytest.fixture()
+def max_iterations():
+    """
+    This fixture defines the maximum training iterations before termination during a test of task training
+    functionality.
+
+    Returns
+    -------
+    max_iters : int
+        Maximum training iterations allowed before training termination.
+    """
+
+    max_iterations = 1000
+    return max_iterations
 
 
 @pytest.fixture
@@ -58,10 +84,7 @@ def config(config_path):
         config['seed'] = default_seed
         config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                                       FailureCodeCallback(),
-                                                      RewardComponentsCallback(),
-                                                      LoggingCallback(num_logging_workers=default_workers,
-                                                                  episode_log_interval=1,
-                                                                  contents=default_log_contents)])
+                                                      RewardComponentsCallback()])
 
         # Setup custom config
         parser = YAMLParser(yaml_file=config_path, lookup=lookup)
@@ -93,7 +116,7 @@ def output_dir():
 
 
 @pytest.fixture
-def training_output(config, stop_dict, output_dir, expr_name):
+def training_output(config, output_dir, success_threshold, max_iterations):
     """
     This fixture runs training, populating the output_path with training logs.
 
@@ -101,33 +124,32 @@ def training_output(config, stop_dict, output_dir, expr_name):
     ----------
     config : dict
         A map of experiment config settings.
-    stop_dict : dict
-        A dict specifying stop criteria for the experiment.
     output_dir : Fixture
         The full path of the desired experiment's config file.
-    expr_name : str
-        The name of the experiment to run.
+    success_threshold : float
+        Desired rate of successful episodes to be confident task training functions appropriately.
+    max_iterations : int
+        Maximum training iterations allowed before training termination.
     """
 
-    #TODO: .run returns results* (use results var and remove logging and cleanup)
-    results = tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=output_dir,
-                checkpoint_at_end=True, name=expr_name)
+    results = tune.run(ppo.PPOTrainer,
+                       config=config,
+                       stop=SuccessCriteria(success_threshold=success_threshold, max_iterations=max_iterations),
+                       local_dir=output_dir,
+                       verbose=0)
+
     return results
 
 
 @pytest.fixture
-def success_rate(training_output, output_dir, expr_name):
+def success_rate(training_output):
     """
     This fixture parses a training log and returns the success ratio.
 
     Parameters
     ----------
-    training_output : Fixture
-        A fixture that runs the experiment in order to produce logs.
-    output_dir : str
-        The full path of the desired experiment's config file.
-    expr_name : str
-        The name of the experiment to run.
+    training_output : dict
+        A fixture that runs the experiment to completion and returns a dict of results.
 
     Returns
     -------
@@ -135,31 +157,6 @@ def success_rate(training_output, output_dir, expr_name):
         The ratio of the successes to failures.
     """
 
-    # parse log file
-    successes = list()
-    episodes = set()
-    log_file = os.path.join(output_dir, expr_name, "training_logs/worker_1.log")
-    with jsonlines.open(log_file, 'r') as log:
-        prev_ID = None
-        prev_success = None
-
-        # iterate through json objects in log
-        for state in log:
-            episode_success = state["info"]["success"]
-            episode_ID = state["episode_ID"]
-
-            if episode_ID not in episodes:
-                # start of new episode
-                episodes.add(episode_ID)
-                # store previous episode's success data (1 = success, 0 = failure)
-                if prev_ID:
-                    successes.append(int(prev_success))
-
-            prev_ID = episode_ID
-            prev_success = episode_success
-
-        # add last episode's data
-        successes.append(int(episode_success))
-        success_rate = statistics.mean(successes)
-
-        return success_rate
+    results = training_output.results[next(iter(training_output.results))]
+    success_rate = results["custom_metrics"]["outcome/success_mean"]
+    return success_rate

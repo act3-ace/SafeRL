@@ -1,5 +1,7 @@
 """
-This class holds all 2d dubins rejoin specific fixtures and tests
+This class holds all 2d Dubins rejoin specific fixtures and tests
+
+Author: John McCarroll
 """
 
 import pytest
@@ -19,34 +21,6 @@ def config_path():
     return config_path
 
 
-@pytest.fixture
-def expr_name():
-    """
-    Returns
-    -------
-    name : str
-        The name of the experiment.
-    """
-
-    name = "dubins_2d_rejoin_test"
-    return name
-
-
-@pytest.fixture
-def stop_dict():
-    """
-    Returns
-    -------
-    stop_dict : dict
-        A dict specifying stop criteria for the experiment.
-    """
-
-    stop_dict = {
-        'training_iteration': 20
-    }
-    return stop_dict
-
-
 @pytest.mark.system_test
 def test_dubins_2d_rejoin(success_rate, success_threshold):
     """
@@ -56,6 +30,8 @@ def test_dubins_2d_rejoin(success_rate, success_threshold):
     ----------
     success_rate : float
         The ratio of the successes to failures.
+    success_threshold : float
+        #TODO
     """
 
-    assert success_rate > success_threshold
+    assert success_rate >= success_threshold
