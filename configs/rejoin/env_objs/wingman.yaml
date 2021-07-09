@@ -1,6 +1,8 @@
 name: wingman
 class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
 config:
+  v_min: 10
+  v_max: 100
   controller:
     class: saferl.environment.models.platforms.AgentController
     actuators:
