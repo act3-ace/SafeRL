@@ -9,21 +9,13 @@ import os
 import shutil
 import ray.rllib.agents.ppo as ppo
 from ray import tune
+from constants import *
 
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
-    RewardComponentsCallback, LoggingCallback, LogContents
+    RewardComponentsCallback
 from saferl import lookup
 from saferl.environment.utils import YAMLParser
 from success_criteria import SuccessCriteria
-
-
-# define defaults
-default_log_contents = (LogContents.INFO,)
-default_gpus = 0
-default_workers = 6
-default_fake_gpus = False
-default_seed = 100
-default_output = "../../test_data/training_output"
 
 
 @pytest.fixture()
@@ -38,7 +30,7 @@ def success_threshold():
         Desired rate of successful episodes to be confident task training functions appropriately.
     """
 
-    success_threshold = 0.9
+    success_threshold = DEFAULT_SUCCESS_THRESHOLD
     return success_threshold
 
 
@@ -54,8 +46,50 @@ def max_iterations():
         Maximum training iterations allowed before training termination.
     """
 
-    max_iterations = 1000
+    # max_iterations = DEFAULT_MAX_ITERATIONS
+    max_iterations = 5
     return max_iterations
+
+
+test_configs = ["/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_default.yaml",
+                "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml",
+                "/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_3d_default.yaml",
+                "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_oriented_2d_default.yaml"]
+
+
+# TODO: now, how to override if --configs param given?
+# def pytest_addoption(parser):
+#     parser.addoption(
+#         "--configs", action="store", default="",
+#         help="To override default benchmark config assay, assign the full path of a test configurations file."
+#     )
+
+
+def parse_config_file(test_config_path):
+    config_paths = []
+    with open(test_config_path, 'r') as file:
+        for line in file:
+            if line:
+                # if line not empty
+                if line[0] != "#":
+                    # if line not comment
+                    # add config path to test list
+                    config_paths.append(line)
+
+    return config_paths
+
+
+@pytest.fixture()
+def config_path(request):
+    # retrieve path of test_config_file from command line
+    test_config_file = request.config.getoption("--configs")
+    if test_config_file and os.path.isfile(test_config_file):
+        configs = parse_config_file(test_config_file)
+        if configs:
+            return configs
+
+    # if no test_config_file given or if test_config_file empty, run default test assay
+    return request.param
 
 
 @pytest.fixture
@@ -78,10 +112,10 @@ def config(config_path):
     if os.path.exists(config_path):
         # Setup default PPO config
         config = ppo.DEFAULT_CONFIG.copy()
-        config["num_gpus"] = default_gpus
-        config["num_workers"] = default_workers
-        config['_fake_gpus'] = default_fake_gpus
-        config['seed'] = default_seed
+        config["num_gpus"] = DEFAULT_GPUS
+        config["num_workers"] = DEFAULT_WORKERS
+        config['_fake_gpus'] = DEFAULT_FAKE_GPUS
+        config['seed'] = DEFAULT_SEED
         config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                                       FailureCodeCallback(),
                                                       RewardComponentsCallback()])
@@ -109,7 +143,7 @@ def output_dir():
         The full path of the desired experiment's config file.
     """
 
-    output_path = os.path.join(os.getcwd(), default_output)
+    output_path = os.path.join(os.getcwd(), DEFAULT_OUTPUT)
     os.makedirs(output_path, exist_ok=True)
     yield output_path
     shutil.rmtree(output_path)
@@ -148,7 +182,7 @@ def success_rate(training_output):
 
     Parameters
     ----------
-    training_output : dict
+    training_output : ExperimentAnalysis TODO: correct?
         A fixture that runs the experiment to completion and returns a dict of results.
 
     Returns
@@ -158,5 +192,23 @@ def success_rate(training_output):
     """
 
     results = training_output.results[next(iter(training_output.results))]
-    success_rate = results["custom_metrics"]["outcome/success_mean"]
+    success_rate = results[CUSTOM_METRICS][SUCCESS_MEAN]
     return success_rate
+
+
+@pytest.mark.system_test
+@pytest.mark.parametrize("config_path", test_configs, indirect=True)
+def test_training(success_rate, success_threshold):                 # add config_path to enable params?
+    """
+    This test ensures that an agent is still able to train on specified benchmarks. All benchmarks are tested by
+    default.
+
+    Parameters
+    ----------
+    success_rate : float
+        The ratio of the successes to failures.
+    success_threshold : float
+        #TODO
+    """
+
+    assert success_rate >= success_threshold

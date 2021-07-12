@@ -6,6 +6,7 @@ Author: John McCarroll
 """
 
 from ray.tune.stopper import Stopper
+from constants import CUSTOM_METRICS, SUCCESS_MEAN, TRAINING_ITERATIONS
 
 
 class SuccessCriteria(Stopper):
@@ -15,11 +16,23 @@ class SuccessCriteria(Stopper):
         self.max_iterations = max_iterations
 
     def __call__(self, trial_id, results):
-        if results["custom_metrics"]["outcome/success_mean"] >= self.success_threshold \
-                or results["training_iteration"] >= self.max_iterations:
-            return True
-        else:
-            return False
+        """
+        This function checks if training episode success rate is above the acceptable threshold
+        or if training has progressed longer than the maximum allowed iterations.
+        It returns True, terminating the test if either condition is met.
+        """
+
+        terminate = False
+        custom_metrics = results[CUSTOM_METRICS]
+
+        if SUCCESS_MEAN in custom_metrics:
+            if custom_metrics[SUCCESS_MEAN] >= self.success_threshold:
+                terminate = True
+
+        if results[TRAINING_ITERATIONS] > self.max_iterations:
+            terminate = True
+
+        return terminate
 
     def stop_all(self):
         pass
