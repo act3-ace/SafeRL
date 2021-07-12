@@ -10,7 +10,6 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
-import saferl
 from saferl.environment.utils import YAMLParser, build_lookup
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
@@ -123,7 +122,7 @@ def experiment_setup(args):
         config['rollout_fragment_length'] = args.rollout_fragment_length
 
     # Setup custom config
-    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup(saferl))
+    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup())
     env, env_config = parser.parse_env()
     config['env'] = env
     config['env_config'] = env_config

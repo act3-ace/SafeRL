@@ -8,6 +8,8 @@ import jsonlines
 import numpy as np
 import json
 
+import saferl
+
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
     ret_str = False
@@ -74,7 +76,7 @@ def setup_env_objs_from_config(config, default_initializer):
     return agent, env_objs, initializers
 
 
-def build_lookup(pkg):
+def build_lookup(pkg=saferl):
     return _build_lookup(pkg=pkg, parent=pkg.__name__)[0]
 
 
