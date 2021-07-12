@@ -47,48 +47,12 @@ def max_iterations():
     """
 
     # max_iterations = DEFAULT_MAX_ITERATIONS
-    max_iterations = 5
+    max_iterations = 1
     return max_iterations
-
-
-test_configs = ["/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_default.yaml",
-                "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml",
-                "/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_3d_default.yaml",
-                "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_oriented_2d_default.yaml"]
-
-
-# TODO: now, how to override if --configs param given?
-# def pytest_addoption(parser):
-#     parser.addoption(
-#         "--configs", action="store", default="",
-#         help="To override default benchmark config assay, assign the full path of a test configurations file."
-#     )
-
-
-def parse_config_file(test_config_path):
-    config_paths = []
-    with open(test_config_path, 'r') as file:
-        for line in file:
-            if line:
-                # if line not empty
-                if line[0] != "#":
-                    # if line not comment
-                    # add config path to test list
-                    config_paths.append(line)
-
-    return config_paths
 
 
 @pytest.fixture()
 def config_path(request):
-    # retrieve path of test_config_file from command line
-    test_config_file = request.config.getoption("--configs")
-    if test_config_file and os.path.isfile(test_config_file):
-        configs = parse_config_file(test_config_file)
-        if configs:
-            return configs
-
-    # if no test_config_file given or if test_config_file empty, run default test assay
     return request.param
 
 
@@ -194,21 +158,3 @@ def success_rate(training_output):
     results = training_output.results[next(iter(training_output.results))]
     success_rate = results[CUSTOM_METRICS][SUCCESS_MEAN]
     return success_rate
-
-
-@pytest.mark.system_test
-@pytest.mark.parametrize("config_path", test_configs, indirect=True)
-def test_training(success_rate, success_threshold):                 # add config_path to enable params?
-    """
-    This test ensures that an agent is still able to train on specified benchmarks. All benchmarks are tested by
-    default.
-
-    Parameters
-    ----------
-    success_rate : float
-        The ratio of the successes to failures.
-    success_threshold : float
-        #TODO
-    """
-
-    assert success_rate >= success_threshold

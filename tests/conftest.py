@@ -24,3 +24,14 @@ def pytest_addoption(parser):
         "--configs", action="store", default="",
         help="To override default benchmark config assay, assign the full path of a test configurations file."
     )
+
+
+# def pytest_generate_tests(metafunc):
+#     if 'player' in metafunc.fixturenames:
+#         team_name = metafunc.config.getoption('team')
+#
+#         # you can move this part out to module scope if you want
+#         with open('./teams.yml') as f:
+#             teams = yaml.load(f)
+#
+#         metafunc.parametrize("player", teams.get(team_name, []))
