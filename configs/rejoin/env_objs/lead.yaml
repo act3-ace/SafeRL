@@ -1,6 +1,8 @@
 name: lead
 class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
 config:
+  v_min: 10
+  v_max: 100
   init:
     initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
     heading: [0, 6.283185307179586]
