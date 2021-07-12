@@ -1,0 +1,11 @@
+# An example file defining a configuration of training tests
+
+# run these tests using the following syntax on the command line:
+# pytest <-m system_tests?> --configs=/full/path/to/this/file.txt
+
+# comment lines begin with the pound symbol and empty lines are ignored
+
+# Below are the full paths to configs we wish to test:
+/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_3d_default.yaml
+/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml
+/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_CRAZY_CUSTOM_CONFIG.yaml

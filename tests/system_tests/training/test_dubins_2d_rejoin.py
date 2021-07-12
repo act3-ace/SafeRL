@@ -1,5 +1,5 @@
 """
-This class holds all 2d Dubins rejoin specific fixtures and tests
+This class holds all 2d Dubins rejoin specific fixtures and tests.
 
 Author: John McCarroll
 """
@@ -17,6 +17,7 @@ def config_path():
     """
 
     config_path = "../../../configs/rejoin/rejoin_default.yaml"
+    # config_path = "../configs/rejoin/rejoin_default.yaml"
     # TODO: remove brittle hardcoding (this requires pytest to be run from tests/ dir)
     return config_path
 
