@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 
 
 class RTAModule(abc.ABC):
@@ -8,19 +9,29 @@ class RTAModule(abc.ABC):
 
         self.enable = True
         self.intervening = False
+        self.control_desired = None
+        self.control_actual = None
+
+        self.reset()
 
     def reset(self):
         self.enable = True
         self.intervening = False
+        self.control_desired = None
+        self.control_actual = None
 
     def setup(self, platform):
         self.platform = platform
 
     def filter_control(self, sim_state, step_size, control):
+        self.control_desired = np.copy(control)
+
         if self.enable:
-            return self._filter_control(sim_state, step_size, control)
+            self.control_actual = np.copy(self._filter_control(sim_state, step_size, control))
         else:
-            return control
+            self.control_actual = np.copy(control)
+
+        return np.copy(self.control_actual)
 
     @abc.abstractmethod
     def _filter_control(self, sim_state, step_size, control):
@@ -30,6 +41,8 @@ class RTAModule(abc.ABC):
         info = {
             'enable': self.enable,
             'intervening': self.intervening,
+            'control_desired': self.control_desired,
+            'control_actual': self.control_actual,
         }
 
         return info
