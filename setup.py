@@ -21,7 +21,8 @@ setuptools.setup(
     python_requires='>=3.6',
     install_requires=[
         "tensorflow",
-        "ray[rllib]",
+        "torch",
+        "ray[rllib]==1.2",
         "tqdm",
         "jsonlines",
         "matplotlib"

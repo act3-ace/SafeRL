@@ -1,11 +1,14 @@
 import io
 import os
 import copy
+import inspect
 
 import yaml
 import jsonlines
 import numpy as np
 import json
+
+import saferl
 
 
 def numpy_to_matlab_txt(mat, name=None, output_stream=None):
@@ -60,6 +63,8 @@ def setup_env_objs_from_config(config, default_initializer):
         cfg = get_ref_objs(env_objs, cfg)
 
         # Instantiate object
+        if type(cls) is str:
+            print()
         obj = cls(**{k: v for k, v in cfg.items() if k != "init"})
         env_objs[name] = obj
         if name == agent_name:
@@ -69,6 +74,44 @@ def setup_env_objs_from_config(config, default_initializer):
         initializers.append(initializer_from_config(obj, cfg, default_initializer))
 
     return agent, env_objs, initializers
+
+
+def build_lookup(pkg=saferl):
+    return _build_lookup(pkg=pkg, parent=pkg.__name__)[0]
+
+
+def _build_lookup(pkg, parent, checked_modules=None):
+    checked_modules = set() if checked_modules is None else checked_modules
+    modules = inspect.getmembers(pkg, inspect.ismodule)
+    modules = [m for m in modules if m[1].__name__ not in checked_modules and parent in m[1].__name__]
+    checked_modules = checked_modules.union(set([m[1].__name__ for m in modules]))
+    classes = inspect.getmembers(pkg, inspect.isclass)
+    classes = [c for c in classes if parent in c[1].__module__]
+    local_lookup = {pkg.__name__ + "." + k: v for k, v in classes}
+    for m in modules:
+        m_lookup, checked_modules = _build_lookup(m[1], parent=parent, checked_modules=checked_modules)
+        local_lookup = {**local_lookup, **m_lookup}
+    return local_lookup, checked_modules
+
+
+def dict_merge(dict_a, dict_b, recursive=True):
+    '''
+    Merges dictionaries dict_a, dict_b
+    key collisions take value from dict_b
+    recursive flag allows dict values to be merged recursively
+    '''
+    dict_merged = copy.deepcopy(dict_a)
+
+    for k, v_b in dict_b.items():
+        if recursive and k in dict_a:
+            v_a = dict_a[k]
+            if isinstance(v_a, dict) and isinstance(v_b, dict):
+                dict_merged[k] = dict_merge(v_a, v_b, recursive=recursive)
+            else:
+                dict_merged[k] = copy.deepcopy(v_b)
+        else:
+            dict_merged[k] = copy.deepcopy(v_b)
+    return dict_merged
 
 
 class YAMLParser:
@@ -88,11 +131,9 @@ class YAMLParser:
             config = yaml.load(f)
         assert "env" in config.keys(), "environment config missing required field: env"
         assert "env_config" in config.keys(), "environment config missing required field: env_config"
-        env_str = config["env"]
-        env_config = config["env_config"]
-        env = self.lookup[env_str]
-        env_config = self.process_yaml_items(env_config)
-        return env, env_config
+        config["env"] = self.lookup[config["env"]]
+        config["env_config"] = self.process_yaml_items(config["env_config"])
+        return config
 
     def process_yaml_items(self, target):
         if isinstance(target, dict):
@@ -221,18 +262,18 @@ class PostProcessor:
     def __init__(self, **kwargs):
         self.config = kwargs
 
-    def __call__(self, input):
+    def __call__(self, input_array):
         """
         Subclasses should implement this method to apply post-processing to processor's return values.
 
         Parameters
         ----------
-        input
+        input_array : numpy.ndarray
             The value passed to a given post processor for modification.
 
         Returns
         -------
-        input
+        input_array
             The modified (processed) input value
         """
         raise NotImplementedError
