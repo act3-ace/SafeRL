@@ -93,3 +93,12 @@ env_config:
     config:
       docking_status: docking_status
   verbose: false
+
+model:
+    fcnet_hiddens:
+    - 512
+    - 512
+    fcnet_activation: tanh
+    
+lr: 0.0003
+    
