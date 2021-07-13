@@ -8,8 +8,8 @@ from saferl.environment.models.geometry import distance
 # --------------------- Observation Processors ------------------------
 
 class DockingObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
-        super().__init__(name=name, normalization=normalization, clip=clip)
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
 
         # Initialize member variables from config
         self.mode = mode
@@ -31,7 +31,7 @@ class DockingObservationProcessor(ObservationProcessor):
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
         # Initialize member variables from config
         self.mode = mode
         self.deputy = deputy
@@ -48,7 +48,7 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
-        super().__init__(name=name, normalization=normalization, clip=clip)
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
