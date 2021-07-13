@@ -2,7 +2,7 @@ import abc
 import numpy as np
 from collections.abc import Iterable
 
-from saferl.environment.utils import *
+from saferl.environment.utils import Normalize
 
 
 class Processor(abc.ABC):

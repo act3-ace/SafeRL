@@ -91,7 +91,8 @@ class Dubins3dObservationProcessor(ObservationProcessor):
                  reference=None,
                  mode=None,
                  normalization=None,
-                 clip=None):
+                 clip=None,
+                 post_processors=None):
 
         # Initialize member variables from config
         self.lead = lead
@@ -113,7 +114,7 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         if clip is None:
             clip = [-1, 1]
 
-        super().__init__(name=name, normalization=normalization, clip=clip)
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
