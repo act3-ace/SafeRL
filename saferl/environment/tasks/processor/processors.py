@@ -1,7 +1,8 @@
 import abc
 import numpy as np
+from collections.abc import Iterable
 
-from saferl.environment.utils import Normalize                      # import post-processor classes
+from saferl.environment.utils import *
 
 
 class Processor(abc.ABC):
@@ -63,6 +64,23 @@ class Processor(abc.ABC):
 
 class ObservationProcessor(Processor):
     def __init__(self, name=None, normalization=None, clip=None, post_processors=None):
+        """
+        The class constructor handles the assignment of member variables.
+
+        Parameters
+        ----------
+        name : str
+            The name of the processor to be displayed in logging.
+        normalization : list or numpy.ndarray
+            An array of constants used to normalize the values in a generated observation arrays via element-wise
+            division.
+        clip : list
+            A two element list containing a minimum value boundary and a maximum value boundary (in that order) applied
+            to all values in generated observation arrays.
+        post_processors : list
+            A list of dicts, each with PostProcessor class and a config dict KVPs.
+        """
+
         super().__init__(name=name)
         self.obs = None
         # self.observation_space = None
@@ -70,8 +88,14 @@ class ObservationProcessor(Processor):
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
         self.post_processors = []                   # list of PostProcessors
-        for post_processor in post_processors:
-            self.post_processors.append(post_processor["class"](**post_processor["config"]))
+
+        if isinstance(post_processors, Iterable):
+            for post_processor in post_processors:
+                assert "class" in post_processor, \
+                    "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
+                assert "config" in post_processor, \
+                    "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
+                self.post_processors.append(post_processor["class"](**post_processor["config"]))
 
     def reset(self, sim_state):
         self.obs = None
@@ -89,9 +113,9 @@ class ObservationProcessor(Processor):
             # no normalization specified, so no change to observations
             return obs
 
-        # ensure normalization vector is correct types
-        assert type(self.normalization) in [np.array, np.ndarray], \
-            "Expected numpy.array or numpy.ndarray for variable \'normalization\', but instead got: {}".format(
+        # ensure normalization vector is correct type
+        assert type(self.normalization) == np.ndarray, \
+            "Expected numpy.ndarray for variable \'normalization\', but instead got: {}".format(
                 type(self.normalization))
         # ensure normalization vector is correct shape
         assert obs.shape == self.normalization.shape, \

@@ -10,12 +10,9 @@ from ray import tune
 
 import ray.rllib.agents.ppo as ppo
 
+from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents
-
-from saferl import lookup
-
-from saferl.environment.utils import YAMLParser
 
 
 # Training defaults
@@ -27,6 +24,7 @@ CONTENTS = (LogContents.VERBOSE,)
 CUDA_VISIBLE_DEVICES = "-1"
 NUM_GPUS = 0
 NUM_WORKERS = 6
+NUM_ENVS_PER_WORKER = 1
 FAKE_GPUS = True
 SEED = 0
 STOP_ITERATION = 200
@@ -35,7 +33,6 @@ EVALUATION_INTERVAL = 50
 EVALUATION_NUM_EPISODES = 10
 EVALUATION_NUM_WORKERS = 1
 EVALUATION_SEED = 1
-
 DEBUG = False
 
 
@@ -53,6 +50,12 @@ def get_args():
     parser.add_argument('--cuda_visible', type=str, default=CUDA_VISIBLE_DEVICES, help="list of cuda visible devices")
     parser.add_argument('--gpus', type=int, default=NUM_GPUS, help="number of gpus used for training")
     parser.add_argument('--workers', type=int, default=NUM_WORKERS, help="number of cpu workers used for training")
+    parser.add_argument(
+        '--envs_per_worker',
+        type=int,
+        default=NUM_ENVS_PER_WORKER,
+        help="number of environments per cpu worker used for training"
+    )
     parser.add_argument('--fake_gpus', default=False, action="store_true", help="use simulated gpus")
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
@@ -97,6 +100,8 @@ def experiment_setup(args):
     config["num_workers"] = args.workers
     config['_fake_gpus'] = args.fake_gpus
     config['seed'] = args.seed
+    if args.envs_per_worker > 1:
+        config["num_envs_per_worker"] = args.envs_per_worker
     config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                                   FailureCodeCallback(),
                                                   RewardComponentsCallback(),
@@ -105,10 +110,8 @@ def experiment_setup(args):
                                                                   contents=CONTENTS)])
 
     # Setup custom config
-    parser = YAMLParser(yaml_file=args.config, lookup=lookup)
-    env, env_config = parser.parse_env()
-    config['env'] = env
-    config['env_config'] = env_config
+    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup())
+    custom_config = parser.parse_env()
 
     if args.evaluation_during_training:
         # set evaluation parameters
@@ -125,6 +128,9 @@ def experiment_setup(args):
                                                  LoggingCallback(num_logging_workers=args.evaluation_num_workers,
                                                                  contents=CONTENTS)])
         }
+
+    # Merge custom and default configs
+    config = dict_merge(config, custom_config, recursive=True)
 
     # Save experiment params
     with open(args_yaml_filepath, 'w') as args_yaml_file:
