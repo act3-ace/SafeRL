@@ -6,7 +6,6 @@ Author: John McCarroll
 """
 
 from ray.tune.stopper import Stopper
-# from tests.system_tests.training.constants import CUSTOM_METRICS, SUCCESS_MEAN, TRAINING_ITERATIONS
 from constants import *
 
 
@@ -21,6 +20,18 @@ class SuccessCriteria(Stopper):
         This function checks if training episode success rate is above the acceptable threshold
         or if training has progressed longer than the maximum allowed iterations.
         It returns True, terminating the test if either condition is met.
+
+        Parameters
+        ----------
+        trial_id : str
+            The unique ID for the current trial.
+        results : dict
+            A collection of current training progress metrics.
+
+        Returns
+        -------
+        terminate : bool
+            True if training should be stopped, False otherwise.
         """
 
         terminate = False
