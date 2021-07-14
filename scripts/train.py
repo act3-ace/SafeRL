@@ -62,7 +62,7 @@ def get_args():
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
 
-    parser.add_argument('--complete_episodes', type=lambda x: strtobool(x), default=COMPLETE,
+    parser.add_argument('--complete_episodes', action="store_true",
                         help="True if using complete episodes during training desired, "
                              "False if using truncated episodes")
     parser.add_argument('--rollout_fragment_length', type=int, default=ROLLOUT_FRAGMENT_LENGTH,
