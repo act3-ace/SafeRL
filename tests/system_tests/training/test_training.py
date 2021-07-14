@@ -31,8 +31,6 @@ test_configs = [(REJOIN_DEFAULT_PATH, DEFAULT_SUCCESS_THRESHOLD, 200, DEFAULT_SE
                 (REJOIN_3D_PATH,  DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, DEFAULT_SEED),
                 (DOCKING_ORIENTED_2D_PATH,  DEFAULT_SUCCESS_THRESHOLD, 500, DEFAULT_SEED)]
 
-# test_configs = [(DOCKING_ORIENTED_2D_PATH,  0.8, 400, DEFAULT_SEED)]
-
 
 @pytest.mark.system_test
 @pytest.mark.parametrize("config_path,success_threshold,max_iterations,seed", test_configs, indirect=True)
