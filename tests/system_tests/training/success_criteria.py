@@ -6,11 +6,12 @@ Author: John McCarroll
 """
 
 from ray.tune.stopper import Stopper
-from constants import CUSTOM_METRICS, SUCCESS_MEAN, TRAINING_ITERATIONS
+# from tests.system_tests.training.constants import CUSTOM_METRICS, SUCCESS_MEAN, TRAINING_ITERATIONS
+from constants import *
 
 
 class SuccessCriteria(Stopper):
-    def __init__(self, success_threshold=0.9, max_iterations=1000):
+    def __init__(self, success_threshold=DEFAULT_SUCCESS_THRESHOLD, max_iterations=DEFAULT_MAX_ITERATIONS):
         super().__init__()
         self.success_threshold = success_threshold
         self.max_iterations = max_iterations

@@ -14,15 +14,18 @@ from constants import *
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
     RewardComponentsCallback
 from saferl import lookup
+
+from tests.system_tests.training.success_criteria import SuccessCriteria
 from saferl.environment.utils import YAMLParser
 from success_criteria import SuccessCriteria
 
 
 @pytest.fixture()
-def success_threshold():
+def success_threshold(request):
     """
     This fixture determines the rate of successful episodes a task must reach during training in order to pass the
-    system test.
+    system test. The returned success_threshold float is parameterized to return value(s) defined in test_configs variable in
+    the test_training.py module.
 
     Returns
     -------
@@ -30,34 +33,57 @@ def success_threshold():
         Desired rate of successful episodes to be confident task training functions appropriately.
     """
 
-    success_threshold = DEFAULT_SUCCESS_THRESHOLD
-    return success_threshold
+    return request.param
 
 
 @pytest.fixture()
-def max_iterations():
+def max_iterations(request):
     """
     This fixture defines the maximum training iterations before termination during a test of task training
-    functionality.
+    functionality. The returned max_iterations int is parameterized to return value(s) defined in test_configs variable in
+    the test_training.py module.
 
     Returns
     -------
-    max_iters : int
+    max_iterations : int
         Maximum training iterations allowed before training termination.
     """
 
-    # max_iterations = DEFAULT_MAX_ITERATIONS
-    max_iterations = 1
-    return max_iterations
+    return request.param
 
 
 @pytest.fixture()
 def config_path(request):
+    """
+    This fixture defines the relative path to the YAML config file which defines the training under test. The returned
+    config_path string is parameterized to return value(s) defined in test_configs variable in the test_training.py
+    module.
+
+    Returns
+    -------
+    config_path : str
+        Relative path to the training config file.
+    """
+    return request.param
+
+
+@pytest.fixture()
+def seed(request):
+    """
+    TODO: write
+    Parameters
+    ----------
+    request
+
+    Returns
+    -------
+
+    """
     return request.param
 
 
 @pytest.fixture
-def config(config_path):
+def config(config_path, seed):
     """
     This fixture parses the yaml file found at the specified config_path and returns the resulting config dict.
     If the file does not exist, a FileNotFound error is raised.
@@ -79,7 +105,7 @@ def config(config_path):
         config["num_gpus"] = DEFAULT_GPUS
         config["num_workers"] = DEFAULT_WORKERS
         config['_fake_gpus'] = DEFAULT_FAKE_GPUS
-        config['seed'] = DEFAULT_SEED
+        config['seed'] = seed
         config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                                       FailureCodeCallback(),
                                                       RewardComponentsCallback()])

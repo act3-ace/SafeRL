@@ -6,41 +6,36 @@ Author: John McCarroll
 
 import pytest
 import os
+from constants import *
 
 
-def parse_config_file(test_config_path):
-    config_paths = []
-    with open(test_config_path, 'r') as file:
-        for line in file:
-            if line[0] != "#" and line[0] != '\n':
-                # if line not comment or empty, add config path to test list
-                config_paths.append(line.strip())
+"""
+test_configs
 
-    return config_paths
+Declare this variable as a list of tuples. Each tuple is a configuration for a training system test, containing three 
+elements, in order: config_path, success_threshold, and max_iterations. 
 
+config_path is the relative path to the config file for the training run under test. 
+success_threshold is the decimal rate of successful episodes required to determine if training still functions.
+max_iterations is the maximum allowed training iterations before test termination.
+"""
 
-# @pytest.fixture()
-# def test_assay(request):
-#     # retrieve path of test_config_file from command line
-#     test_config_file = request.config.getoption("--configs")
-#
-#     if test_config_file and os.path.isfile(test_config_file):
-#         configs = parse_config_file(test_config_file)
-#         if configs:
-#             return configs
-#
-#     # if no test_config_file given or if test_config_file empty, run default test assay
-#     return default_test_configs
+# Define relative paths from the tests dir, where pytest should be run, to desired config files for trainings under test
+REJOIN_DEFAULT_PATH = "../configs/rejoin/rejoin_default.yaml"
+DOCKING_DEFAULT_PATH = "../configs/docking/docking_default.yaml"
+REJOIN_3D_PATH = "../configs/rejoin/rejoin_3d_default.yaml"
+DOCKING_ORIENTED_2D_PATH = "../configs/docking/docking_oriented_2d_default.yaml"
 
+test_configs = [(REJOIN_DEFAULT_PATH, DEFAULT_SUCCESS_THRESHOLD, 200, DEFAULT_SEED),
+                (DOCKING_DEFAULT_PATH,  DEFAULT_SUCCESS_THRESHOLD, 200, DEFAULT_SEED),
+                (REJOIN_3D_PATH,  DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, DEFAULT_SEED),
+                (DOCKING_ORIENTED_2D_PATH,  DEFAULT_SUCCESS_THRESHOLD, 500, DEFAULT_SEED)]
 
-default_test_configs = ["/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_default.yaml",
-                        "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml",
-                        "/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_3d_default.yaml",
-                        "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_oriented_2d_default.yaml"]
+# test_configs = [(DOCKING_ORIENTED_2D_PATH,  0.8, 400, DEFAULT_SEED)]
 
 
 @pytest.mark.system_test
-@pytest.mark.parametrize("config_path", default_test_configs, indirect=True)
+@pytest.mark.parametrize("config_path,success_threshold,max_iterations,seed", test_configs, indirect=True)
 def test_training(success_rate, success_threshold):
     """
     This test ensures that an agent is still able to train on specified benchmarks. All benchmarks are tested by
@@ -51,7 +46,7 @@ def test_training(success_rate, success_threshold):
     success_rate : float
         The ratio of the successes to failures.
     success_threshold : float
-        #TODO
+        Desired rate of successful episodes to be confident task training functions appropriately.
     """
 
     assert success_rate >= success_threshold
