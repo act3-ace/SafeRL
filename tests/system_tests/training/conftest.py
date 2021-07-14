@@ -15,7 +15,6 @@ from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeC
     RewardComponentsCallback
 from saferl import lookup
 
-from tests.system_tests.training.success_criteria import SuccessCriteria
 from saferl.environment.utils import YAMLParser
 from success_criteria import SuccessCriteria
 
@@ -26,6 +25,11 @@ def success_threshold(request):
     This fixture determines the rate of successful episodes a task must reach during training in order to pass the
     system test. The returned success_threshold float is parameterized to return value(s) defined in test_configs variable in
     the test_training.py module.
+
+    Parameters
+    ----------
+    request : Fixture
+        A built-in pytest Fixture used to provide info on the executing test function.
 
     Returns
     -------
@@ -43,6 +47,11 @@ def max_iterations(request):
     functionality. The returned max_iterations int is parameterized to return value(s) defined in test_configs variable in
     the test_training.py module.
 
+    Parameters
+    ----------
+    request : Fixture
+        A built-in pytest Fixture used to provide info on the executing test function.
+
     Returns
     -------
     max_iterations : int
@@ -59,6 +68,11 @@ def config_path(request):
     config_path string is parameterized to return value(s) defined in test_configs variable in the test_training.py
     module.
 
+    Parameters
+    ----------
+    request : Fixture
+        A built-in pytest Fixture used to provide info on the executing test function.
+
     Returns
     -------
     config_path : str
@@ -70,14 +84,19 @@ def config_path(request):
 @pytest.fixture()
 def seed(request):
     """
-    TODO: write
+    This fixture defines the relative path to the YAML config file which defines the training under test. The returned
+    config_path string is parameterized to return value(s) defined in test_configs variable in the test_training.py
+    module.
+
     Parameters
     ----------
-    request
+    request : Fixture
+        A built-in pytest Fixture used to provide info on the executing test function.
 
     Returns
     -------
-
+    seed : int
+        The seed passed to the environment to randomize training initialization.
     """
     return request.param
 
@@ -92,6 +111,8 @@ def config(config_path, seed):
     ----------
     config_path : str
         The full path of the desired experiment's config file.
+    seed : int
+        The seed passed to the environment to randomize training initialization.
 
     Returns
     -------
@@ -172,8 +193,8 @@ def success_rate(training_output):
 
     Parameters
     ----------
-    training_output : ExperimentAnalysis TODO: correct?
-        A fixture that runs the experiment to completion and returns a dict of results.
+    training_output : ray.tune.analysis.experiment_analysis.ExperimentAnalysis
+        A fixture that runs the experiment to completion and returns the results.
 
     Returns
     -------

@@ -5,12 +5,11 @@ Author: John McCarroll
 """
 
 import pytest
-import os
 from constants import *
 
 
 """
-test_configs
+test_configs : Construct your Training Test Assay
 
 Declare this variable as a list of tuples. Each tuple is a configuration for a training system test, containing three 
 elements, in order: config_path, success_threshold, and max_iterations. 
@@ -20,7 +19,8 @@ success_threshold is the decimal rate of successful episodes required to determi
 max_iterations is the maximum allowed training iterations before test termination.
 """
 
-# Define relative paths from the tests dir, where pytest should be run, to desired config files for trainings under test
+# Define relative paths from the tests dir, where pytest should be run, to desired config files for trainings under
+# test. Absolute paths will also run, for convenience.
 REJOIN_DEFAULT_PATH = "../configs/rejoin/rejoin_default.yaml"
 DOCKING_DEFAULT_PATH = "../configs/docking/docking_default.yaml"
 REJOIN_3D_PATH = "../configs/rejoin/rejoin_3d_default.yaml"
