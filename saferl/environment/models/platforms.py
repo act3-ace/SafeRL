@@ -372,7 +372,7 @@ class BasePlatformStateVectorized(BasePlatformState):
             assert isinstance(vector, np.ndarray)
             assert vector.shape == self.vector_shape
             if vector_deep_copy:
-                self.vector = copy.deepcopy(vector)
+                self._vector = copy.deepcopy(vector)
             else:
                 self._vector = vector
 

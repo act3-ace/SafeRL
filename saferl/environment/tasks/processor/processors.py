@@ -60,11 +60,28 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None):
+    def __init__(self, name=None, normalization=None, clip=None):
+        """
+        The class constructor handles the assignment of member variables.
+
+        Parameters
+        ----------
+        name : str
+            The name of the processor to be displayed in logging.
+        normalization : list or numpy.ndarray
+            An array of constants used to normalize the values in a generated observation arrays via element-wise
+            division.
+        clip : list
+            A two element list containing a minimum value boundary and a maximum value boundary (in that order) applied
+            to all values in generated observation arrays.
+        """
+
         super().__init__(name=name)
         self.obs = None
-        self.observation_space = None
-        # TODO: add normalization and clipping, pre- and post- processors
+        # self.observation_space = None
+
+        self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
+        self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
 
     def reset(self, sim_state):
         self.obs = None
@@ -74,6 +91,63 @@ class ObservationProcessor(Processor):
             "observation": self.obs
         }
         return info
+
+    def _normalize(self, obs):
+        # apply normalization vector to given observations
+
+        if self.normalization is None:
+            # no normalization specified, so no change to observations
+            return obs
+
+        # ensure normalization vector is correct type
+        assert type(self.normalization) == np.ndarray, \
+            "Expected numpy.ndarray for variable \'normalization\', but instead got: {}".format(
+                type(self.normalization))
+        # ensure normalization vector is correct shape
+        assert obs.shape == self.normalization.shape, \
+            "The shape of the observation space and normalization vector do not match!"
+
+        # normalization vector is compatible, so return normalized observations
+        obs = np.divide(obs, self.normalization)
+        return obs
+
+    def _clip(self, obs):
+        # apply clipping to given observation vector
+
+        if self.clip is None:
+            # no specified clipping
+            return obs
+
+        assert type(self.clip) == list, \
+            "Expected a list for variable \'clip\', but instead got: {}".format(type(self.clip))
+        assert 2 == len(self.clip), \
+            "Expected a list of length 2 for variable \'clip\', but instead got: {}".format(len(self.clip))
+
+        # apply clipping in specified range
+        obs = np.clip(obs, self.clip[0], self.clip[1])
+        return obs
+
+    def process(self, sim_state):
+        """
+        A method to expose the current normalized observation space.
+
+        Parameters
+        ----------
+        sim_state : SimulationState
+            The current state of the simulated environment.
+
+        Returns
+        -------
+        obs : numpy.array, numpy.ndarray
+            The agent's vectorized observation space.
+        """
+        # get observations from state
+        obs = self._process(sim_state)
+        # normalize observations
+        obs = self._normalize(obs)
+        # clip
+        obs = self._clip(obs)
+        return obs
 
     def _increment(self, sim_state, step_size):
         # observation processors will not have a state to update by default
