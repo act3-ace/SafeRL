@@ -13,9 +13,8 @@ from constants import *
 
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
     RewardComponentsCallback
-from saferl import lookup
 
-from saferl.environment.utils import YAMLParser
+from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from success_criteria import SuccessCriteria
 
 
@@ -132,10 +131,9 @@ def config(config_path, seed):
                                                       RewardComponentsCallback()])
 
         # Setup custom config
-        parser = YAMLParser(yaml_file=config_path, lookup=lookup)
-        env, env_config = parser.parse_env()
-        config['env'] = env
-        config['env_config'] = env_config
+        parser = YAMLParser(yaml_file=config_path, lookup=build_lookup())
+        custom_config = parser.parse_env()
+        config = dict_merge(config, custom_config, recursive=True)
 
         return config
     else:
