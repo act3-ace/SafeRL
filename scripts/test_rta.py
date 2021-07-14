@@ -1,8 +1,7 @@
 import math
 import numpy as np
 
-from saferl import lookup
-from saferl.environment.utils import YAMLParser
+from saferl.environment.utils import YAMLParser, build_lookup
 
 # import matplotlib
 # matplotlib.use('TkAgg')
@@ -12,7 +11,7 @@ from matplotlib import animation
 import matplotlib
 matplotlib.rc('lines', linewidth=2.0)
 
-config = '../configs/rejoin/rejoin_rta_default.yaml'
+config_file = '../configs/rejoin/rejoin_rta_default.yaml'
 
 
 def compute_collision_start(heading, v, collision_time=15):
@@ -119,11 +118,14 @@ def run_collision(env_class, env_config, save_anim=False, output_name='vids/anim
         anim.save(output_name, dpi=200)
 
 
-parser = YAMLParser(yaml_file=config, lookup=lookup)
+parser = YAMLParser(yaml_file=config_file, lookup=build_lookup())
 
 np.random.seed(0)
 for i in range(5):
-    env_class, env_config = parser.parse_env()
+    config = parser.parse_env()
+
+    env_class = config['env']
+    env_config = config['env_config']
 
     # timeout limit
     env_config['status'][5]['config']['timeout'] = 30
