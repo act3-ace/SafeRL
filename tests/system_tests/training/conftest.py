@@ -146,6 +146,9 @@ def output_dir():
     This fixture creates, returns, and tears down the output directory for test training logs, based on the
     default_output.
 
+    *Note: Due to the teardown of the entire output dir after each test, do NOT run multiple instances of pytest
+    concurrently on the same machine! This will cause errors where test outputs are deleted midway through a test.
+
     Returns
     ----------
     output_path : str
