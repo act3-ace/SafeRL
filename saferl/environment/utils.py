@@ -94,6 +94,26 @@ def _build_lookup(pkg, parent, checked_modules=None):
     return local_lookup, checked_modules
 
 
+def dict_merge(dict_a, dict_b, recursive=True):
+    '''
+    Merges dictionaries dict_a, dict_b
+    key collisions take value from dict_b
+    recursive flag allows dict values to be merged recursively
+    '''
+    dict_merged = copy.deepcopy(dict_a)
+
+    for k, v_b in dict_b.items():
+        if recursive and k in dict_a:
+            v_a = dict_a[k]
+            if isinstance(v_a, dict) and isinstance(v_b, dict):
+                dict_merged[k] = dict_merge(v_a, v_b, recursive=recursive)
+            else:
+                dict_merged[k] = copy.deepcopy(v_b)
+        else:
+            dict_merged[k] = copy.deepcopy(v_b)
+    return dict_merged
+
+
 class YAMLParser:
 
     COMMAND_CHAR = '!'
@@ -111,11 +131,9 @@ class YAMLParser:
             config = yaml.load(f)
         assert "env" in config.keys(), "environment config missing required field: env"
         assert "env_config" in config.keys(), "environment config missing required field: env_config"
-        env_str = config["env"]
-        env_config = config["env_config"]
-        env = self.lookup[env_str]
-        env_config = self.process_yaml_items(env_config)
-        return env, env_config
+        config["env"] = self.lookup[config["env"]]
+        config["env_config"] = self.process_yaml_items(config["env_config"])
+        return config
 
     def process_yaml_items(self, target):
         if isinstance(target, dict):
