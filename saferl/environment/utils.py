@@ -94,6 +94,26 @@ def _build_lookup(pkg, parent, checked_modules=None):
     return local_lookup, checked_modules
 
 
+def dict_merge(dict_a, dict_b, recursive=True):
+    '''
+    Merges dictionaries dict_a, dict_b
+    key collisions take value from dict_b
+    recursive flag allows dict values to be merged recursively
+    '''
+    dict_merged = copy.deepcopy(dict_a)
+
+    for k, v_b in dict_b.items():
+        if recursive and k in dict_a:
+            v_a = dict_a[k]
+            if isinstance(v_a, dict) and isinstance(v_b, dict):
+                dict_merged[k] = dict_merge(v_a, v_b, recursive=recursive)
+            else:
+                dict_merged[k] = copy.deepcopy(v_b)
+        else:
+            dict_merged[k] = copy.deepcopy(v_b)
+    return dict_merged
+
+
 class YAMLParser:
 
     COMMAND_CHAR = '!'
