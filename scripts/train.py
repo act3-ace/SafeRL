@@ -34,6 +34,8 @@ EVALUATION_NUM_EPISODES = 10
 EVALUATION_NUM_WORKERS = 1
 EVALUATION_SEED = 1
 DEBUG = False
+COMPLETE = False
+ROLLOUT_FRAGMENT_LENGTH = None
 
 
 def get_args():
@@ -59,6 +61,12 @@ def get_args():
     parser.add_argument('--fake_gpus', action="store_true", help="use simulated gpus")
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
+
+    parser.add_argument('--complete_episodes', action="store_true",
+                        help="True if using complete episodes during training desired, "
+                             "False if using truncated episodes")
+    parser.add_argument('--rollout_fragment_length', type=int, default=ROLLOUT_FRAGMENT_LENGTH,
+                        help="size of batches collected by each worker if truncated episodes")
 
     parser.add_argument('--evaluation_during_training', action="store_true",
                         help="True if intermittent evaluation of agent policy during training desired, False if not")
@@ -108,6 +116,10 @@ def experiment_setup(args):
                                                   LoggingCallback(num_logging_workers=args.logging_workers,
                                                                   episode_log_interval=args.log_interval,
                                                                   contents=CONTENTS)])
+
+    config['batch_mode'] = "complete_episodes" if args.complete_episodes else "truncate_episodes"
+    if args.rollout_fragment_length is not None:
+        config['rollout_fragment_length'] = args.rollout_fragment_length
 
     # Setup custom config
     parser = YAMLParser(yaml_file=args.config, lookup=build_lookup())
