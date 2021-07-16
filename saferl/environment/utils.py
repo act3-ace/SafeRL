@@ -318,3 +318,9 @@ class Normalize(PostProcessor):
                 input_array = np.divide(input_array, sigma)
 
         return input_array
+
+class Rotate(PostProcessor):
+    # impl rotation wrt a reference obj
+    # imple magnorm
+    # impl modify_obs_space method in parent
+    pass
