@@ -56,11 +56,11 @@ def get_args():
         default=NUM_ENVS_PER_WORKER,
         help="number of environments per cpu worker used for training"
     )
-    parser.add_argument('--fake_gpus', default=False, action="store_true", help="use simulated gpus")
+    parser.add_argument('--fake_gpus', action="store_true", help="use simulated gpus")
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
 
-    parser.add_argument('--evaluation_during_training', type=lambda x: strtobool(x), default=False,
+    parser.add_argument('--evaluation_during_training', action="store_true",
                         help="True if intermittent evaluation of agent policy during training desired, False if not")
     parser.add_argument('--evaluation_interval', type=int, default=EVALUATION_INTERVAL,
                         help="number of episodes to run in between policy evaluations")
@@ -70,7 +70,7 @@ def get_args():
                         help="number of workers used to run evaluation episodes")
     parser.add_argument('--evaluation_seed', type=int, default=EVALUATION_SEED,
                         help="set random seed for evaluation episodes")
-    parser.add_argument('--evaluation_exploration', type=lambda x: strtobool(x), default=False,
+    parser.add_argument('--evaluation_exploration', action="store_true",
                         help="set exploration behavior for evaluation episodes")
 
     args = parser.parse_args()
