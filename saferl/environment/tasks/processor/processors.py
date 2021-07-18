@@ -2,7 +2,7 @@ import abc
 import numpy as np
 from collections.abc import Iterable
 
-from saferl.environment.utils import Normalize
+from saferl.environment.utils import Normalize, Clip
 
 
 class Processor(abc.ABC):
@@ -89,6 +89,7 @@ class ObservationProcessor(Processor):
         self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
         self.post_processors = []                   # list of PostProcessors
 
+        # create and store post processors
         if isinstance(post_processors, Iterable):
             for post_processor in post_processors:
                 assert "class" in post_processor, \
@@ -96,6 +97,12 @@ class ObservationProcessor(Processor):
                 assert "config" in post_processor, \
                     "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
                 self.post_processors.append(post_processor["class"](**post_processor["config"]))
+
+        # add norm + clipping postprocessors
+        if self.normalization is not None:
+            self._add_normalization(self.normalization)
+        if self.clip is not None:
+            self._add_clipping(self.clip)
 
     def reset(self, sim_state):
         self.obs = None
@@ -106,40 +113,22 @@ class ObservationProcessor(Processor):
         }
         return info
 
-    def _normalize(self, obs):
-        # apply normalization vector to given observations
+    def _add_normalization(self, normalization_vector):
+        # create normalization PostProcessor and add it to list
+        # TODO: directly support setting mu
+        normalization_post_proc = Normalize(sigma=normalization_vector)
+        self.post_processors.append(normalization_post_proc)
 
-        if self.normalization is None:
-            # no normalization specified, so no change to observations
-            return obs
+    def _add_clipping(self, clip_bounds):
+        # ensure clip_bounds format
+        assert type(clip_bounds) == list, \
+            "Expected a list for variable \'clip\', but instead got: {}".format(type(clip_bounds))
+        assert 2 == len(clip_bounds), \
+            "Expected a list of length 2 for variable \'clip\', but instead got: {}".format(len(clip_bounds))
 
-        # ensure normalization vector is correct type
-        assert type(self.normalization) == np.ndarray, \
-            "Expected numpy.ndarray for variable \'normalization\', but instead got: {}".format(
-                type(self.normalization))
-        # ensure normalization vector is correct shape
-        assert obs.shape == self.normalization.shape, \
-            "The shape of the observation space and normalization vector do not match!"
-
-        # normalization vector is compatible, so return normalized observations
-        obs = np.divide(obs, self.normalization)
-        return obs
-
-    def _clip(self, obs):
-        # apply clipping to given observation vector
-
-        if self.clip is None:
-            # no specified clipping
-            return obs
-
-        assert type(self.clip) == list, \
-            "Expected a list for variable \'clip\', but instead got: {}".format(type(self.clip))
-        assert 2 == len(self.clip), \
-            "Expected a list of length 2 for variable \'clip\', but instead got: {}".format(len(self.clip))
-
-        # apply clipping in specified range
-        obs = np.clip(obs, self.clip[0], self.clip[1])
-        return obs
+        # create clipping PostProcessor and add it to list
+        clipping_post_proc = Clip(high=clip_bounds[0], low=clip_bounds[1])
+        self.post_processors.append(clipping_post_proc)
 
     def _post_process(self, obs):
         """
@@ -176,11 +165,7 @@ class ObservationProcessor(Processor):
         """
         # get observations from state
         obs = self._process(sim_state)
-        # normalize observations
-        obs = self._normalize(obs)
-        # clip
-        obs = self._clip(obs)
-        # post-process
+        # post-process observations
         obs = self._post_process(obs)
         return obs
 
