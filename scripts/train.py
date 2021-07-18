@@ -156,6 +156,7 @@ def main(args):
     if not args.debug:
         tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                  checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name)
+
     else:
         # Run training in a single process for debugging
         config["num_workers"] = 0
