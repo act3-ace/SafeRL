@@ -1,8 +1,10 @@
+import abc
 import io
 import os
 import copy
 import inspect
 
+import gym
 import yaml
 import jsonlines
 import numpy as np
@@ -259,9 +261,7 @@ def is_jsonable(object):
 
 
 class PostProcessor:
-    def __init__(self, **kwargs):
-        self.config = kwargs
-
+    @abc.abstractmethod
     def __call__(self, input_array):
         """
         Subclasses should implement this method to apply post-processing to processor's return values.
@@ -280,41 +280,66 @@ class PostProcessor:
 
 
 class Normalize(PostProcessor):
-    def __call__(self, input_array, mu=None, sigma=None):
-        if type(input_array) == np.ndarray:
-            skip_mu = False
-            skip_sigma = False
+    def __init__(self, mu=0, sigma=1):
+        # ensure mu and sigma compatible types
+        acceptable_types = [float, int, list, np.ndarray]
+        assert type(mu) in acceptable_types, \
+            "Expected kwarg \'mu\' to be type int, float, list, or numpy.ndarray, but received {}" \
+            .format(type(mu))
+        assert type(sigma) in acceptable_types, \
+            "Expected kwarg \'sigma\' to be type int, float, list, or numpy.ndarray, but received {}" \
+            .format(type(sigma))
 
-            if mu is None:
-                # mu not specified as kwarg
-                if "mu" in self.config:
-                    # assign mu from config
-                    mu = self.config["mu"]
-                else:
-                    # mu not specified at all
-                    skip_mu = True
+        # convert lists to numpy arrays
+        if type(mu) == list:
+            mu = np.array(mu)
+        if type(sigma) == list:
+            sigma = np.array(sigma)
 
-            if not skip_mu:
-                # apply mu to input
-                assert type(mu) in [float, int, list, np.ndarray], \
-                    "Expected variable \'mu\' to be type int, float, list, or numpy.ndarray, but received {}"\
-                    .format(type(mu))
-                input_array = np.subtract(input_array, mu)
+        # store values
+        self.mu = mu
+        self.sigma = sigma
 
-            if sigma is None:
-                # mu not specified as kwarg
-                if "sigma" in self.config:
-                    # assign sigma from config
-                    sigma = self.config["sigma"]
-                else:
-                    # sigma not specified at all
-                    skip_sigma = True
+    def __call__(self, input_array):
+        # ensure input_array is numpy array
+        assert type(input_array) == np.ndarray, \
+            "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
 
-            if not skip_sigma:
-                assert type(sigma) in [float, int, list, np.ndarray], \
-                    "Expected variable \'sigma\' to be type int, float, list, or numpy.ndarray, but received {}" \
-                    .format(type(sigma))
+        # check that dims line up for mu and sigma (or that they're scalars)
+        if type(self.mu) == np.ndarray:
+            assert input_array.shape == self.mu.shape, \
+                "Incompatible shapes for \'input_array\' and \'mu\': {} vs {}".format(input_array, self.mu)
+        if type(self.sigma) == np.ndarray:
+            assert input_array.shape == self.sigma.shape, \
+                "Incompatible shapes for \'input_array\' and \'sigma\': {} vs {}".format(input_array, self.sigma)
 
-                input_array = np.divide(input_array, sigma)
+        # apply normalization
+        input_array = np.subtract(input_array, self.mu)
+        input_array = np.divide(input_array, self.sigma)
+
+        return input_array
+
+
+class Clip(PostProcessor):
+    def __init__(self, low=-1, high=1):
+        # ensure bounds correct types
+        assert type(low) in [int, float], \
+            "Expected kwarg \'low\' to be type int or float, but instead received {}".format(type(low))
+        assert type(high) in [int, float], \
+            "Expected kwarg \'high\' to be type int or float, but instead received {}".format(type(high))
+        # ensure correct relation
+        assert low < high, "Expected value of variable \'low\' to be less than variable \'high\'"
+
+        # store values
+        self.low = low
+        self.high = high
+
+    def __call__(self, input_array):
+        # ensure input_array is numpy array
+        assert type(input_array) == np.ndarray, \
+            "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
+
+        # apply clipping in specified range
+        input_array = np.clip(input_array, self.high, self.low)
 
         return input_array
