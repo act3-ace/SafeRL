@@ -41,13 +41,18 @@ class RelativePositionObservationProcessor(ObservationProcessor):
         assert "position" in target.__dict__, "The provided target object, {}, has no 'position' attribute!"
 
         absolute_position = target.position - reference.position
-        # TODO: was rotation meant to be a post processor?
-        relative_rotation = reference.orientation.inv()
-        relative_position = relative_rotation.apply(absolute_position)
 
-        relative_position = np.array(relative_position)
 
-        return relative_position
+        # # encapsulate rotation as a post processor
+        # relative_rotation = reference.orientation.inv()
+        # relative_position = relative_rotation.apply(absolute_position)
+
+        # relative_position = np.array(relative_position)
+
+        # return relative_position
+
+
+        return absolute_position
 
 
 class EnvironmentObjectAttributeObservationProcessor(ObservationProcessor):
@@ -84,12 +89,3 @@ class EnvironmentObjectAttributeObservationProcessor(ObservationProcessor):
         value = np.array([value])
 
         return value
-
-
-"""
-NOTES:
-
-- postprocessor parent and child classes should be moved to postprocess.py module in processor package?
-- want to separate Rotation into its own postprocessor
-- unsure if ObjectAttribute Processor is useful...
-"""

@@ -262,7 +262,7 @@ def is_jsonable(object):
 
 class PostProcessor:
     @abc.abstractmethod
-    def __call__(self, input_array):
+    def __call__(self, input_array, sim_state):
         """
         Subclasses should implement this method to apply post-processing to processor's return values.
 
@@ -275,6 +275,24 @@ class PostProcessor:
         -------
         input_array
             The modified (processed) input value
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+        """
+        Subclasses shall implement this method to adjust the dimensions of the provided observation space as needed for
+        their respective post processing operation.
+
+        Parameters
+        ----------
+        obs_space : gym.spaces.Box
+            The Box representing the observation space available to the RL agent.
+
+        Returns
+        -------
+        obs_space : gym.spaces.Box
+            The modified Box representing the observation space available to the RL agent.
         """
         raise NotImplementedError
 
@@ -300,7 +318,7 @@ class Normalize(PostProcessor):
         self.mu = mu
         self.sigma = sigma
 
-    def __call__(self, input_array):
+    def __call__(self, input_array, sim_state):
         # ensure input_array is numpy array
         assert type(input_array) == np.ndarray, \
             "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
@@ -319,6 +337,11 @@ class Normalize(PostProcessor):
 
         return input_array
 
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+        # obs_space dimensions not altered by normalization
+        # TODO: alter high and low to (-1, 1) b/c normalized?
+        return obs_space
+
 
 class Clip(PostProcessor):
     def __init__(self, low=-1, high=1):
@@ -334,7 +357,7 @@ class Clip(PostProcessor):
         self.low = low
         self.high = high
 
-    def __call__(self, input_array):
+    def __call__(self, input_array, sim_state):
         # ensure input_array is numpy array
         assert type(input_array) == np.ndarray, \
             "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
@@ -344,13 +367,63 @@ class Clip(PostProcessor):
 
         return input_array
 
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+        # adjust bounds of obs_space values
+        size = obs_space.shape[0]          # assumes 1d obs space
+        low_array = [self.low] * size
+        obs_space.low = np.array(low_array)
+
+        size = obs_space.shape[0]          # assumes 1d obs space
+        high_array = [self.high] * size
+        obs_space.low = np.array(high_array)
+
+        return obs_space
+
 
 class Rotate(PostProcessor):
-    # impl rotation wrt a reference obj
-    # imple magnorm
-    # impl modify_obs_space method in parent
-    def __init__(self, ):
-        pass
+    def __init__(self, reference=None):
+        self.reference = reference
 
-    def __call__(self):
-        pass
+    def __call__(self, input_array, sim_state):
+        # assumes the entire input_array is positional info*
+
+        # ensure reference and target both in environment
+        assert self.reference in sim_state.env_objs, \
+            "The provided reference object, {}, is not found within the state's environment objects"\
+            .format(self.reference)
+
+        # apply rotation
+        reference = sim_state.env_objs[self.reference]
+        relative_rotation = reference.orientation.inv()
+        input_array = relative_rotation.apply(input_array)
+
+        return input_array
+
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+        # obs_space dimensions not altered by rotation
+        # TODO: ensure no values exceed Box bounds?
+        return obs_space
+
+
+class MagNorm(PostProcessor):
+    def __call__(self, input_array, sim_state):
+        # assumes entire input_array is the standard repr (aka "rect")
+
+        norm = np.linalg.norm(input_array)
+        mag_norm_array = np.concatenate(([norm], input_array / norm))
+
+        return mag_norm_array
+
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+        # find bounds of magnorm of obs space
+        min_magnorm = 0
+        max_magnorm = np.linalg(obs_space.high)
+
+        # set obs space
+        size = obs_space.shape[0]           # assumes 1d obs space
+        low = [-1] * size
+        high = [1] * size
+        obs_space.low = np.concatenate([min_magnorm, low])
+        obs_space.high = np.concatenate([max_magnorm, high])
+
+        return obs_space

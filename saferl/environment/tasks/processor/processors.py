@@ -130,7 +130,7 @@ class ObservationProcessor(Processor):
         clipping_post_proc = Clip(high=clip_bounds[0], low=clip_bounds[1])
         self.post_processors.append(clipping_post_proc)
 
-    def _post_process(self, obs):
+    def _post_process(self, obs, sim_state):
         """
         A method to sequentially apply post processors to obs.
 
@@ -146,7 +146,7 @@ class ObservationProcessor(Processor):
         """
 
         for post_processor in self.post_processors:
-            obs = post_processor(obs)
+            obs = post_processor(obs, sim_state)
         return obs
 
     def process(self, sim_state):
@@ -166,7 +166,7 @@ class ObservationProcessor(Processor):
         # get observations from state
         obs = self._process(sim_state)
         # post-process observations
-        obs = self._post_process(obs)
+        obs = self._post_process(obs, sim_state)
         return obs
 
     def _increment(self, sim_state, step_size):
