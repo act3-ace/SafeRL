@@ -319,8 +319,13 @@ class Normalize(PostProcessor):
 
         return input_array
 
+
 class Rotate(PostProcessor):
     # impl rotation wrt a reference obj
     # imple magnorm
     # impl modify_obs_space method in parent
-    pass
+    def __init__(self, ):
+        pass
+
+    def __call__(self):
+        pass
