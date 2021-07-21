@@ -132,9 +132,12 @@ class AgentController(BaseController):
                     bounds_max = actuator.bounds[1]
 
                 if ('space' not in actuator_config) or (actuator_config['space'] == 'continuous'):
-                    # if both actuator and config are continuous, simply pass through value to control
-                    preprocessor = ActionPreprocessorPassThrough(actuator_name)
-                    actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
+                    if ('rescale' not in actuator_config) or (actuator_config['rescale']):
+                        preprocessor = ActionPreprocessorContinuousRescale(actuator_name, [bounds_min, bounds_max])
+                        actuator_action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
+                    else:
+                        preprocessor = ActionPreprocessorPassThrough(actuator_name)
+                        actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
                 elif actuator_config['space'] == 'discrete':
                     # if actuator in continuous but config is discrete, discretize actuator bounds
                     vals = np.linspace(bounds_min, bounds_max, actuator_config['points'])
@@ -196,6 +199,20 @@ class ActionPreprocessorPassThrough(ActionPreprocessor):
 
     def preprocess(self, action):
         return action
+
+
+class ActionPreprocessorContinuousRescale(ActionPreprocessor):
+    def __init__(self, name, bounds):
+        self.bounds = bounds
+        super().__init__(name)
+
+    def preprocess(self, action):
+        low = self.bounds[0]
+        high = self.bounds[1]
+
+        scaled_action = low + (action + 1.0) * (high - low) / 2.0
+
+        return scaled_action
 
 
 class ActionPreprocessorDiscreteMap(ActionPreprocessor):
