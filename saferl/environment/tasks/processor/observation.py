@@ -5,13 +5,50 @@ observation space.
 Author: John McCarroll
 """
 
+import abc
+
 import numpy as np
 import gym
 import math
 from saferl.environment.tasks.processor import ObservationProcessor
 
 
-class RelativePositionObservationProcessor(ObservationProcessor):
+class SpatialObservationProcessor(ObservationProcessor):
+    """
+    Class to handle observations in 3D and 2D space.
+    """
+    def __init__(self, name=None,
+                 normalization=None,
+                 clip=None,
+                 post_processors=None,
+                 is_2d=False):
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+        assert type(is_2d) == bool, "Expected bool for 'is_2d' parameter, but found {}".format(type(is_2d))
+        self.is_2d = is_2d
+
+    def define_observation_space(self) -> gym.spaces.Box:
+        """
+        Spatial observation spaces will be 3D by default. An 'is_2d' flag enables the return of a 2D positional
+        observation space. Observation space bounds are left as negative to positive infinity to allow users maximum
+        flexibility.
+
+        Returns
+        -------
+        observation_space : gym.spaces.Box
+            The two to three element vector corresponding to the relative position between two specified environment
+            objects.
+        """
+
+        shape = (2,) if self.is_2d else (3,)
+        observation_space = gym.spaces.Box(shape=shape, low=-math.inf, high=math.inf)
+        return observation_space
+
+    @abc.abstractmethod
+    def _process(self, sim_state) -> np.ndarray:
+        raise NotImplementedError
+
+
+class RelativePositionObservationProcessor(SpatialObservationProcessor):
     """
     Compute and represent the positional difference between two objects.
     """
@@ -54,25 +91,8 @@ class RelativePositionObservationProcessor(ObservationProcessor):
 
         return positional_diff
 
-    def define_observation_space(self) -> gym.spaces.Box:
-        """
-        Positional observation spaces will be 3D by default. An 'is_2d' flag enables the return of a 2D positional
-        observation space. Observation space bounds are left as negative to positive infinity to allow users maximum
-        flexibility.
 
-        Returns
-        -------
-        observation_space : gym.spaces.Box
-            The two to three element vector corresponding to the relative position between two specified environment
-            objects.
-        """
-
-        shape = (2,) if self.is_2d else (3,)
-        observation_space = gym.spaces.Box(shape=shape, low=-math.inf, high=math.inf)
-        return observation_space
-
-
-class VelocityObservationProcessor(ObservationProcessor):
+class VelocityObservationProcessor(SpatialObservationProcessor):
     """
     Retrieve and represent the 'velocity' attribute of an environment object
     """
@@ -110,17 +130,3 @@ class VelocityObservationProcessor(ObservationProcessor):
         value = np.array([value])
 
         return value
-
-    def define_observation_space(self) -> gym.spaces.Box:
-        """
-        TODO
-
-        Returns
-        -------
-        observation_space : gym.spaces.Box
-            The two to three element vector corresponding to the velocity of the specified environment object.
-        """
-
-        shape = (2,) if self.is_2d else (3,)
-        observation_space = gym.spaces.Box(shape=shape, low=-math.inf, high=math.inf)
-        return observation_space

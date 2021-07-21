@@ -88,7 +88,7 @@ class ObservationProcessor(Processor):
         self.obs = None
 
         # define Box observation space
-        if not observation_space_shape:
+        if observation_space_shape:
             # observation space defined in config
             assert type(observation_space_shape) in [int, float]
             self.observation_space = gym.spaces.Box(shape=(observation_space_shape,), low=-math.inf, high=math.inf)
