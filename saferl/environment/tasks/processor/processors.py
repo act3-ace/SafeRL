@@ -5,7 +5,7 @@ import numpy as np
 import math
 from collections.abc import Iterable
 
-from saferl.environment.utils import Normalize, Clip
+from post_processors import *
 
 
 class Processor(abc.ABC):
@@ -93,10 +93,8 @@ class ObservationProcessor(Processor):
             assert type(observation_space_shape) in [int, float]
             self.observation_space = gym.spaces.Box(shape=(observation_space_shape,), low=-math.inf, high=math.inf)
         else:
+            # observation space NOT defined in config: delegate to subclass method
             self.observation_space = self.define_observation_space()
-        # apply postprocessors to Box observation space definition
-        for post_processor in post_processors:
-            self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
@@ -110,6 +108,10 @@ class ObservationProcessor(Processor):
                 assert "config" in post_processor, \
                     "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
                 self.post_processors.append(post_processor["class"](**post_processor["config"]))
+
+        # apply postprocessors to Box observation space definition
+        for post_processor in post_processors:
+            self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
         # add norm + clipping postprocessors
         if self.normalization is not None:

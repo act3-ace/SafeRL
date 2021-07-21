@@ -89,7 +89,7 @@ class Normalize(PostProcessor):
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
         # obs_space dimensions not altered by normalization
-        # TODO: alter high and low to (-1, 1) b/c normalized?
+        # TODO: alter high and low to (-1:1) b/c normalized?
         return obs_space
 
 
@@ -118,14 +118,14 @@ class Clip(PostProcessor):
         return input_array
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
-        # adjust bounds of obs_space values
-        size = obs_space.shape[0]          # assumes 1d obs space
-        low_array = [self.low] * size
-        obs_space.low = np.array(low_array)
-
-        size = obs_space.shape[0]          # assumes 1d obs space
-        high_array = [self.high] * size
-        obs_space.low = np.array(high_array)
+        # # adjust bounds of obs_space values
+        # size = obs_space.shape[0]          # assumes 1d obs space
+        # low_array = [self.low] * size
+        # obs_space.low = np.array(low_array)
+        #
+        # size = obs_space.shape[0]          # assumes 1d obs space
+        # high_array = [self.high] * size
+        # obs_space.low = np.array(high_array)
 
         return obs_space
 
@@ -151,7 +151,6 @@ class Rotate(PostProcessor):
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
         # obs_space dimensions not altered by rotation
-        # TODO: ensure no values exceed Box bounds?
         return obs_space
 
 
@@ -203,7 +202,7 @@ class DefineBounds(PostProcessor):
         self.low_is_scalar = True if type(self.low) in [int, float] else False
 
     def __call__(self, input_array, sim_state):
-        pass
+        return input_array
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
         # applies given bounds to received observation space

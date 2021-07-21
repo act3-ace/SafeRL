@@ -46,7 +46,7 @@ class RelativePositionObservationProcessor(ObservationProcessor):
 
         positional_diff = target.position - reference.position
 
-        # # encapsulate rotation as a post processor
+        # # apply rotation
         # relative_rotation = reference.orientation.inv()
         # relative_position = relative_rotation.apply(absolute_position)
         # relative_position = np.array(relative_position)
