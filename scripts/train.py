@@ -1,6 +1,5 @@
 import argparse
 import os
-from distutils.util import strtobool
 import yaml
 
 from datetime import datetime
