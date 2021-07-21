@@ -1,5 +1,8 @@
 import abc
+
+import gym.spaces
 import numpy as np
+import math
 from collections.abc import Iterable
 
 from saferl.environment.utils import Normalize, Clip
@@ -63,7 +66,7 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=None, clip=None, post_processors=None):
+    def __init__(self, name=None, normalization=None, clip=None, post_processors=None, observation_space_shape=None):
         """
         The class constructor handles the assignment of member variables.
 
@@ -83,7 +86,17 @@ class ObservationProcessor(Processor):
 
         super().__init__(name=name)
         self.obs = None
-        # self.observation_space = None
+
+        # define Box observation space
+        if not observation_space_shape:
+            # observation space defined in config
+            assert type(observation_space_shape) in [int, float]
+            self.observation_space = gym.spaces.Box(shape=(observation_space_shape,), low=-math.inf, high=math.inf)
+        else:
+            self.observation_space = self.define_observation_space()
+        # apply postprocessors to Box observation space definition
+        for post_processor in post_processors:
+            self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
@@ -103,6 +116,18 @@ class ObservationProcessor(Processor):
             self._add_normalization(self.normalization)
         if self.clip is not None:
             self._add_clipping(self.clip)
+
+    @abc.abstractmethod
+    def define_observation_space(self) -> gym.spaces.Box:
+        """
+        This method shall be used to define the bounds and shape of a 1D observation space to be used by RL agents.
+
+        Returns
+        -------
+        observation_space : gym.spaces.Box
+            This Box sets the shape and upper and lower bounds of each element within a 1D observation space vector.
+        """
+        raise NotImplementedError
 
     def reset(self, sim_state):
         self.obs = None
