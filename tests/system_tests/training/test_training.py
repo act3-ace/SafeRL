@@ -19,8 +19,8 @@ success_threshold is the decimal rate of successful episodes required to determi
 max_iterations is the maximum allowed training iterations before test termination.
 """
 
-# Define relative paths from the tests dir, where pytest should be run, to desired config files for trainings under
-# test. Absolute paths will also run, for convenience.
+# Define relative or absolute paths from the tests dir, where pytest should be run, to desired config files for
+# trainings under test.
 REJOIN_DEFAULT_PATH = "../configs/rejoin/rejoin_default.yaml"
 DOCKING_DEFAULT_PATH = "../configs/docking/docking_default.yaml"
 REJOIN_3D_PATH = "../configs/rejoin/rejoin_3d_default.yaml"
