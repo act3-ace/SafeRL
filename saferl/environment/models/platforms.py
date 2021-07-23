@@ -256,13 +256,13 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, controller):
+    def __init__(self, name, dynamics, actuator_set, state, controller):
 
         if controller is None:
             controller = PassThroughController()
         elif type(controller) == dict:
             controller = controller["class"](actuator_set, config=controller)
-
+        self.name = name
         self.action_space = controller.action_space
 
         self.dependent_objs = []
