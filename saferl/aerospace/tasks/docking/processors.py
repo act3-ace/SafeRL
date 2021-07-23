@@ -3,6 +3,7 @@ import numpy as np
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
+from saferl.environment.utils import Normalize
 
 
 # --------------------- Observation Processors ------------------------
@@ -39,9 +40,19 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
+        # vet post_processors for custom normalization
+        has_custom_normalization = False
+        if post_processors:
+            for post_processor in post_processors:
+                assert "class" in post_processor, \
+                    "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
+                if post_processor["class"] is Normalize:
+                    has_custom_normalization = True
+
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            if normalization is None:
+            if normalization is None and not has_custom_normalization:
+                # if no custom normalization defined
                 normalization = [1000, 1000, np.pi, 100, 100, 0.4, 500]
         elif self.mode == '3d':
             raise NotImplementedError

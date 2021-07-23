@@ -340,6 +340,6 @@ class Clip(PostProcessor):
             "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
 
         # apply clipping in specified range
-        input_array = np.clip(input_array, self.high, self.low)
+        input_array = np.clip(input_array, self.low, self.high)
 
         return input_array
