@@ -18,14 +18,13 @@ setuptools.setup(
         # "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.6, <3.9',
     install_requires=[
-        "tensorflow",
-        "torch",
+        "tensorflow==2.4",
         "ray[rllib]==1.2",
-        "tqdm",
-        "jsonlines",
-        "matplotlib",
-        "pytest"
+        "tqdm==4.59.0",
+        "jsonlines==2.0.0",
+        "matplotlib==3.3.4",
+        "pytest==6.2.4"
     ]
 )
