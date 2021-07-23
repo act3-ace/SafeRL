@@ -25,6 +25,7 @@ setuptools.setup(
         "ray[rllib]==1.2",
         "tqdm",
         "jsonlines",
-        "matplotlib"
+        "matplotlib",
+        "pytest"
     ]
 )
