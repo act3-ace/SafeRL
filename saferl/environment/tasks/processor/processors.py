@@ -86,7 +86,7 @@ class ObservationProcessor(Processor):
         # self.observation_space = None
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
-        self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
+        self.clip = clip                            # clip[0] == min clip bound, clip[1] == max clip bound
         self.post_processors = []                   # list of PostProcessors
 
         # create and store post processors
@@ -127,7 +127,7 @@ class ObservationProcessor(Processor):
             "Expected a list of length 2 for variable \'clip\', but instead got: {}".format(len(clip_bounds))
 
         # create clipping PostProcessor and add it to list
-        clipping_post_proc = Clip(high=clip_bounds[0], low=clip_bounds[1])
+        clipping_post_proc = Clip(high=clip_bounds[1], low=clip_bounds[0])
         self.post_processors.append(clipping_post_proc)
 
     def _post_process(self, obs):

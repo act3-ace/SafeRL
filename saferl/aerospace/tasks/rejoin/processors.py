@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
+from saferl.environment.utils import Normalize, Clip
 
 
 # --------------------- Observation Processors ------------------------
@@ -29,16 +30,31 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
+        # vet post_processors for custom normalization or clipping
+        has_custom_normalization = False
+        has_custom_clipping = False
+        if post_processors:
+            for post_processor in post_processors:
+                assert "class" in post_processor, \
+                    "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
+                if post_processor["class"] is Normalize:
+                    has_custom_normalization = True
+                if post_processor["class"] is Clip:
+                    has_custom_clipping = True
+
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            if normalization is None:
+            if normalization is None and not has_custom_normalization:
+                # if no custom normalization defined
                 normalization = [10000, 10000, 10000, 10000, 100, 100, 100, 100]
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            if normalization is None:
+            if normalization is None and not has_custom_normalization:
+                # if no custom normalization defined
                 normalization = [10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1]
 
-        if clip is None:
+        if clip is None and not has_custom_clipping:
+            # if no custom clipping defined
             clip = [-1, 1]
 
         super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
@@ -101,17 +117,32 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
+        # vet post_processors for custom normalization or clipping
+        has_custom_normalization = False
+        has_custom_clipping = False
+        if post_processors:
+            for post_processor in post_processors:
+                assert "class" in post_processor, \
+                    "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
+                if post_processor["class"] is Normalize:
+                    has_custom_normalization = True
+                if post_processor["class"] is Clip:
+                    has_custom_clipping = True
+
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
-            if normalization is None:
+            if normalization is None and not has_custom_normalization:
+                # if no custom normalization defined
                 normalization = [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100,
                                  math.pi, math.pi],
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            if normalization is None:
+            if normalization is None and not has_custom_normalization:
+                # if no custom normalization defined
                 normalization = [10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi]
 
-        if clip is None:
+        if clip is None and not has_custom_clipping:
+            # if no custom clipping defined
             clip = [-1, 1]
 
         super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
