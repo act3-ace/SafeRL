@@ -27,6 +27,7 @@ env_config:
   - name: chief
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
+      name : chief
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         x: 0
