@@ -3,6 +3,15 @@ env_config:
   agent: deputy
   step_size: 1
   env_objs:
+  - name: chief
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
+    config:
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        x: 0
+        x_dot: 0
+        y: 0
+        y_dot: 0
   - name: deputy
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
@@ -18,19 +27,11 @@ env_config:
           points: 11
           bounds: [-10, 10]
       init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: [-2000, 2000]
+        initializer: saferl.aerospace.tasks.docking.initializers.DeputyPolarInitializer
+        ref: chief
+        radius: 1000
+        angle: [0, 6.283185307179586]
         x_dot: 0
-        y: [-2000, 2000]
-        y_dot: 0
-  - name: chief
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
-    config:
-      init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: 0
-        x_dot: 0
-        y: 0
         y_dot: 0
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
