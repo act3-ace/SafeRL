@@ -129,7 +129,7 @@ class AgentController(BaseController):
                 # determine upper and lower bounds of actuator range.
                 # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
-                    actuator.bounds = actuator_config['bounds'].copy()
+                    actuator.bounds = actuator_config['bounds']
                 
                 bounds_min = actuator.bounds[0]
                 bounds_max = actuator.bounds[1]
