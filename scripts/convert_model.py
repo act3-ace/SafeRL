@@ -36,8 +36,6 @@ with open(ray_config_path, 'rb') as ray_config_f:
 
 ray.init()
 
-ray_config['normalize_actions'] = True
-
 env_config = ray_config['env_config']
 ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
 
@@ -47,8 +45,6 @@ agent.restore(ckpt_path)
 policy = agent.get_policy()
 model = policy.model.base_model
 weights = policy.get_weights()
-
-obs = np.linspace(-.9, .9, 12)
 
 sess = policy.get_session()
 tf.compat.v1.keras.backend.set_session(sess)
