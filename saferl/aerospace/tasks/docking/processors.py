@@ -156,24 +156,6 @@ class FailureRewardProcessor(RewardProcessor):
 # --------------------- Status Processors ------------------------
 
 
-class DockingStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, deputy=None, docking_region=None):
-        super().__init__(name=name)
-        self.docking_region = docking_region
-        self.deputy = deputy
-
-    def reset(self, sim_state):
-        pass
-
-    def _increment(self, sim_state, step_size):
-        # status derived directly from simulation state. No state machine necessary
-        pass
-
-    def _process(self, sim_state):
-        in_docking = sim_state.env_objs[self.docking_region].contains(sim_state.env_objs[self.deputy])
-        return in_docking
-
-
 class DockingDistanceStatusProcessor(StatusProcessor):
     def __init__(self, name=None, deputy=None, docking_region=None):
         super().__init__(name=name)
@@ -192,12 +174,113 @@ class DockingDistanceStatusProcessor(StatusProcessor):
         return docking_distance
 
 
+class InDockingStatusProcessor(StatusProcessor):
+    def __init__(self, name=None, deputy=None, docking_region=None):
+        super().__init__(name=name)
+        self.docking_region = docking_region
+        self.deputy = deputy
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        # status derived directly from simulation state. No state machine necessary
+        pass
+
+    def _process(self, sim_state):
+        in_docking = sim_state.env_objs[self.docking_region].contains(sim_state.env_objs[self.deputy])
+        return in_docking
+
+
+class DockingVelocityLimit(StatusProcessor):
+    def __init__(self, name, target, dist_status, vel_threshold, threshold_dist, slope=2):
+        self.target = target
+        self.dist_status = dist_status
+        self.vel_threshold = vel_threshold
+        self.threshold_dist = threshold_dist
+        self.slope = slope
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        pass
+
+    def _process(self, sim_state):
+        target_obj = sim_state.env_objs[self.target]
+        dist = sim_state.status[self.dist_status]
+
+        target_mean_motion = target_obj.dynamics.n
+
+        vel_limit = self.vel_threshold
+
+        if dist > self.threshold_dist:
+            vel_limit += self.slope * target_mean_motion * (dist - self.threshold_dist)
+
+        return vel_limit
+
+
+class RelativeVelocityConstraint(StatusProcessor):
+    def __init__(self, name, target, ref, vel_limit_status, lower_bound=False):
+        self.target = target
+        self.ref = ref
+        self.lower_bound = lower_bound
+        self.vel_limit_status = vel_limit_status
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        pass
+
+    def _process(self, sim_state):
+        target_obj = sim_state.env_objs[self.target]
+        ref_obj = sim_state.env_objs[self.ref]
+
+        vel_limit = sim_state.status[self.vel_limit_status]
+
+        rel_vel = target_obj.velocity - ref_obj.velocity
+        rel_vel_mag = np.linalg.norm(rel_vel)
+
+        if self.lower_bound:
+            return rel_vel_mag >= vel_limit
+        else:
+            return rel_vel_mag <= vel_limit
+
+
+class SafetyConstraintsProcessor(StatusProcessor):
+    def __init__(self, name, safety_constraint_statuses):
+        self.safety_constraint_statuses = safety_constraint_statuses
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        # status derived directly from simulation state. No state machine necessary
+        pass
+
+    def _process(self, sim_state):
+        in_docking = sim_state.env_objs[self.docking_region].contains(sim_state.env_objs[self.deputy])
+        return in_docking
+
+
 class FailureStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, docking_distance=None, max_goal_distance=None, timeout=None):
+    def __init__(self,
+                 name,
+                 docking_distance,
+                 max_goal_distance,
+                 in_docking_status,
+                 max_vel_constraint_status,
+                 timeout):
         super().__init__(name=name)
         self.timeout = timeout
         self.docking_distance = docking_distance
         self.max_goal_distance = max_goal_distance
+        self.in_docking_status = in_docking_status
+        self.max_vel_constraint_status = max_vel_constraint_status
 
     def reset(self, sim_state):
         self.time_elapsed = 0
@@ -212,16 +295,18 @@ class FailureStatusProcessor(StatusProcessor):
             failure = 'timeout'
         elif sim_state.status[self.docking_distance] >= self.max_goal_distance:
             failure = 'distance'
+        elif sim_state.status[self.in_docking_status] and (not sim_state.status[self.max_vel_constraint_status]):
+            failure = 'crash'
         else:
             failure = False
-
         return failure
 
 
 class SuccessStatusProcessor(StatusProcessor):
-    def __init__(self, name=None, docking_status=None):
+    def __init__(self, name, in_docking_status, max_vel_constraint_status):
         super().__init__(name=name)
-        self.docking_status = docking_status
+        self.in_docking_status = in_docking_status
+        self.max_vel_constraint_status = max_vel_constraint_status
 
     def reset(self, sim_state):
         pass
@@ -232,5 +317,5 @@ class SuccessStatusProcessor(StatusProcessor):
 
     def _process(self, sim_state):
         # process stare and return status
-        success = sim_state.status[self.docking_status]
+        success = sim_state.status[self.in_docking_status] and sim_state.status[self.max_vel_constraint_status]
         return success
