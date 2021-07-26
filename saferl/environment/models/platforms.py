@@ -8,6 +8,10 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
+    @abc.abstractmethod
+    def __init__(self,name):
+        self.name = name
+
     @property
     @abc.abstractmethod
     def x(self):
@@ -262,7 +266,8 @@ class BasePlatform(BaseEnvObj):
             controller = PassThroughController()
         elif type(controller) == dict:
             controller = controller["class"](actuator_set, config=controller)
-        self.name = name
+
+        super().__init__(name)
         self.action_space = controller.action_space
 
         self.dependent_objs = []
