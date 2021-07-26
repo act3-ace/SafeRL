@@ -18,14 +18,13 @@ from saferl.environment.utils import numpy_to_matlab_txt
 from contextlib import redirect_stdout
 from collections import OrderedDict
 
-
 tf.compat.v1.disable_eager_execution()
 
 # expr_dir = 'output/expr_20210210_152136/PPO_DubinsRejoin_b926e_00000_0_2021-02-10_15-21-37'
 # ckpt_num = 400
 
-expr_dir = 'output/expr_20210210_164346/PPO_DubinsRejoin_3487a_00000_0_2021-02-10_16-43-49'
-ckpt_num = 1000
+expr_dir = 'output/expr_20210331_102408/PPO_DubinsRejoin_e7a28_00000_0_2021-03-31_10-24-10'
+ckpt_num = 1325  # 875
 
 ray_config_path = os.path.join(expr_dir, 'params.pkl')
 ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
@@ -36,6 +35,8 @@ with open(ray_config_path, 'rb') as ray_config_f:
     ray_config = pickle.load(ray_config_f)
 
 ray.init()
+
+ray_config['normalize_actions'] = True
 
 env_config = ray_config['env_config']
 ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
@@ -48,7 +49,6 @@ model = policy.model.base_model
 weights = policy.get_weights()
 
 obs = np.linspace(-.9, .9, 12)
-
 
 sess = policy.get_session()
 tf.compat.v1.keras.backend.set_session(sess)
@@ -89,47 +89,84 @@ with open(mat_code_save_path, 'w') as mat_code_f:
 mat_save_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}.mat'.format(ckpt_num))
 savemat(mat_save_path, weights_formatted)
 
-
 # run model through an environment episode and save observations/model output
 model_rollout = tf.keras.models.load_model(keras_save_path)
 
 env = DubinsRejoin(config=env_config)
 env.seed(ray_config['seed'])
 
-episode_obs = []
-episode_logits = []
-episode_actions = []
-episode_value = []
-
 # turn off explore
 agent.get_policy().config['explore'] = False
 
-obs = env.reset()
-done = False
-i = 0
-while not done:
-    print(i)
-    i += 1
-    logits, value = model_rollout.predict(obs[None, :])
-    action = agent.compute_action(obs)
+trials = []
+for trial_idx in range(100):
+    episode_data = {
+        'obs': [],
+        'info': [],
+        'policy': [],
+        'value': [],
+        'action': [],
+        'control': [],
+    }
+    obs = env.reset()
 
-    episode_obs.append(obs)
-    episode_logits.append(logits)
-    episode_value.append(value)
-    episode_actions.append(action)
+    info = {
+        'wingman': env.env_objs['wingman']._generate_info(),
+        'lead': env.env_objs['lead']._generate_info(),
+        'rejoin_region': env.env_objs['rejoin_region']._generate_info(),
+    }
 
-    obs, reward, done, info = env.step(action)
+    episode_data['obs'].append(obs)
+    episode_data['info'].append(info)
+    episode_data['policy'].append([])
+    episode_data['value'].append([])
+    episode_data['action'].append([])
+    episode_data['control'].append([])
 
-logits_mat = np.array(episode_logits)[:, 0, :]
-values_mat = np.array(episode_value)[:, 0, :]
-obs_mat = np.array(episode_obs)
+    done = False
+
+    i = 0
+    while not done:
+        # print(i)
+        i += 1
+        policy, value = model_rollout.predict(obs[None, :])
+        action = agent.compute_action(obs)
+
+        # action_output = np.clip(policy, -1, 1)
+        # action = (action_output[0, 0], action_output[0,2])
+
+        obs, reward, done, info = env.step(action)
+
+        control = np.copy(env.env_objs['wingman'].control_cur)
+
+        episode_data['obs'].append(obs)
+        episode_data['info'].append(info)
+        episode_data['policy'].append(policy)
+        episode_data['value'].append(value)
+        episode_data['action'].append(action)
+        episode_data['control'].append(control)
+
+    episode_data['policy_mat'] = np.array(episode_data['policy'][1:])[:, 0, :]
+    episode_data['values_mat'] = np.array(episode_data['value'][1:])[:, 0, :]
+    episode_data['obs_mat'] = np.array(episode_data['obs'][:-1])
+
+    if episode_data['info'][-1]['success']:
+        outcome = 'success'
+    else:
+        outcome = 'failure: ' + episode_data['info'][-1]['failure']
+
+    episode_data['outcome'] = outcome
+
+    trials.append(episode_data)
+
+    print(i, info['success'], info['failure'])
 
 # save network inputs and outputs to npz file at mat file
 model_test_io_npz_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.npz'.format(ckpt_num))
+model_test_io_pkl_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.pickle'.format(ckpt_num))
 model_test_io_mat_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.mat'.format(ckpt_num))
 
-np.savez(model_test_io_npz_path, logits=logits_mat, values=values_mat, obs=obs_mat)
-savemat(model_test_io_mat_path, {'logits': logits_mat, 'values': values_mat, 'obs': obs_mat})
-
-
-1 + 1
+# np.savez(model_test_io_npz_path, trials=trials)
+savemat(model_test_io_mat_path, {'trials': trials})
+with open(model_test_io_pkl_path, 'wb') as f:
+    pickle.dump({'trials': trials}, f)
