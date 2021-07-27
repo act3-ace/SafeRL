@@ -27,7 +27,7 @@ env_config:
           points: 11
           bounds: [-10, 10]
       init:
-        initializer: saferl.aerospace.tasks.docking.initializers.DeputyPolarInitializer
+        initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         ref: chief
         radius: 1000
         angle: [0, 6.283185307179586]
