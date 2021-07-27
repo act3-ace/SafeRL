@@ -12,11 +12,11 @@ env_config:
         - name: thrust_x
           space: discrete
           points: 11
-          bounds: [-10, 10]
+          bounds: [-1, 1]
         - name: thrust_y
           space: discrete
           points: 11
-          bounds: [-10, 10]
+          bounds: [-1, 1]
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         x: [-2000, 2000]
