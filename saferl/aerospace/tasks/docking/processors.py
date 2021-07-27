@@ -121,6 +121,60 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
         return step_reward
 
 
+class ConditionalRewardProcessor(RewardProcessor):
+    def __init__(self, name, reward, cond_status):
+        self.cond_status = cond_status
+        self.last_step_size = 0
+        super().__init__(name, reward)
+
+    def reset(self, sim_state):
+        self.last_step_size = 0
+
+    def _increment(self, sim_state, step_size):
+        self.last_step_size = step_size
+
+    def _process(self, sim_state):
+        cond = sim_state.status[self.cond_status]
+
+        if cond:
+            return self.reward
+        else:
+            return 0
+
+
+class ProportionalRewardProcessor(RewardProcessor):
+    def __init__(self, name, scale, bias, proportion_status, cond_status=None, cond_status_invert=False):
+        self.scale = scale
+        self.bias = bias
+        self.proportion_status = proportion_status
+        self.cond_status = cond_status
+        self.cond_status_invert = cond_status_invert
+        self.last_step_size = 0
+        super().__init__(name, reward=0)
+
+    def reset(self, sim_state):
+        self.last_step_size = 0
+
+    def _increment(self, sim_state, step_size):
+        self.last_step_size = step_size
+
+    def _process(self, sim_state):
+        proportion = sim_state.status[self.proportion_status]
+        if self.cond_status is None:
+            cond = False
+        else:
+            cond = sim_state.status[self.cond_status]
+            if self.cond_status_invert:
+                cond = not cond
+
+        if cond:
+            reward = self.scale * proportion + self.bias
+        else:
+            reward = 0
+
+        return reward
+
+
 class SuccessRewardProcessor(RewardProcessor):
     def __init__(self, name=None, success_status=None, reward=None):
         super().__init__(name=name, reward=reward)
@@ -219,6 +273,36 @@ class DockingVelocityLimit(StatusProcessor):
             vel_limit += self.slope * target_mean_motion * (dist - self.threshold_dist)
 
         return vel_limit
+
+
+class DockingVelocityLimitViolation(StatusProcessor):
+    def __init__(self, name, target, ref, vel_limit_status, lower_bound=False):
+        self.target = target
+        self.ref = ref
+        self.lower_bound = lower_bound
+        self.vel_limit_status = vel_limit_status
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        pass
+
+    def _process(self, sim_state):
+        target_obj = sim_state.env_objs[self.target]
+        ref_obj = sim_state.env_objs[self.ref]
+
+        vel_limit = sim_state.status[self.vel_limit_status]
+
+        rel_vel = target_obj.velocity - ref_obj.velocity
+        rel_vel_mag = np.linalg.norm(rel_vel)
+
+        violation = rel_vel_mag - vel_limit
+        if self.lower_bound:
+            violation *= -1
+
+        return violation
 
 
 class RelativeVelocityConstraint(StatusProcessor):
