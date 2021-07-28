@@ -4,7 +4,7 @@ env_config:
   step_size: 1
   env_objs:
   - name: lead
-    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
+    class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
       v_min: 200
       v_max: 400
@@ -14,14 +14,21 @@ env_config:
         v: [250, 250]
         x: [-4000, 4000]
         y: [-4000, 4000]
+        z: [-2000, 2000]
   - name: wingman
-    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
+    class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
       v_min: 200
       v_max: 400
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
+        - name: ailerons
+          space: discrete
+          points: 5
+        - name: elevator
+          space: discrete
+          points: 5
         - name: rudder
           space: discrete
           bounds: [-0.1745329, 0.1745329]
@@ -34,16 +41,17 @@ env_config:
         initializer: saferl.aerospace.tasks.rejoin.initializers.WingmanPolarInitializer
         heading: [0, 6.283185307179586]
         v: [200, 400]
-        x: [-4000, 4000]
-        y: [-4000, 4000]
-
+        radius: [1000, 4000]
+        angle: [0, 6.283185307179586]
+        z: [-2000, 2000]
   - name: rejoin_region
-    class: saferl.environment.models.geometry.RelativeCircle
+    class: saferl.environment.models.geometry.RelativeCylinder
     config:
       ref: lead
       aspect_angle: 60
       r_offset: 500
       radius: 150
+      height: 300
       track_orientation: true
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
