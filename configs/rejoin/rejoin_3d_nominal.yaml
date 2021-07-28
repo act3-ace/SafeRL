@@ -1,7 +1,7 @@
 env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
 env_config:
   agent: wingman
-  step_size: 1
+  step_size: 0.1
   env_objs:
   - name: lead
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
@@ -11,10 +11,10 @@ env_config:
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 6.283185307179586]
-        v: [250, 250]
-        x: [-4000, 4000]
-        y: [-4000, 4000]
-        z: [-2000, 2000]
+        v: [250, 300]
+        x: [5000, 10000]
+        y: [5000, 10000]
+        z: [12000, 14000]
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
@@ -38,16 +38,16 @@ env_config:
         ref: lead
         heading: [0, 6.283185307179586]
         v: [200, 400]
-        radius: [1000, 4000]
+        radius: [5000, 10000]
         angle: [0, 6.283185307179586]
-        z: [-2000, 2000]
+        z: [10000, 16000]
   - name: rejoin_region
     class: saferl.environment.models.geometry.RelativeCylinder
     config:
       ref: lead
       aspect_angle: 60
       r_offset: 500
-      radius: 150
+      radius: 100
       height: 300
       track_orientation: true
       init:
@@ -123,7 +123,7 @@ env_config:
     class: saferl.aerospace.tasks.rejoin.processors.DubinsFailureStatus
     config:
       lead_distance: lead_distance
-      max_goal_distance: 40000
+      max_goal_distance: 100000
       safety_margin:
         aircraft: 100
       time_elapsed: time_elapsed
