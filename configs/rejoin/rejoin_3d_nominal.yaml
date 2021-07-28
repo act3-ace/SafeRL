@@ -29,16 +29,13 @@ env_config:
         - name: elevator
           space: discrete
           points: 5
-        - name: rudder
-          space: discrete
-          bounds: [-0.1745329, 0.1745329]
-          points: 5
         - name: throttle
           space: discrete
           bounds: [-96.5, 96.5]
           points: 5
       init:
         initializer: saferl.aerospace.tasks.rejoin.initializers.WingmanPolarInitializer
+        ref: lead
         heading: [0, 6.283185307179586]
         v: [200, 400]
         radius: [1000, 4000]
