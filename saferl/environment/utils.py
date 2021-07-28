@@ -42,6 +42,9 @@ def initializer_from_config(ref_obj, config, default_initializer):
 def get_ref_objs(env_objs, config):
     if "ref" in config.keys():
         config["ref"] = env_objs[config["ref"]]
+    for k, v in config.items():
+        if isinstance(v, dict):
+            config[k] = get_ref_objs(env_objs, v)
     return config
 
 
@@ -92,6 +95,26 @@ def _build_lookup(pkg, parent, checked_modules=None):
         m_lookup, checked_modules = _build_lookup(m[1], parent=parent, checked_modules=checked_modules)
         local_lookup = {**local_lookup, **m_lookup}
     return local_lookup, checked_modules
+
+
+def dict_merge(dict_a, dict_b, recursive=True):
+    '''
+    Merges dictionaries dict_a, dict_b
+    key collisions take value from dict_b
+    recursive flag allows dict values to be merged recursively
+    '''
+    dict_merged = copy.deepcopy(dict_a)
+
+    for k, v_b in dict_b.items():
+        if recursive and k in dict_a:
+            v_a = dict_a[k]
+            if isinstance(v_a, dict) and isinstance(v_b, dict):
+                dict_merged[k] = dict_merge(v_a, v_b, recursive=recursive)
+            else:
+                dict_merged[k] = copy.deepcopy(v_b)
+        else:
+            dict_merged[k] = copy.deepcopy(v_b)
+    return dict_merged
 
 
 class YAMLParser:
