@@ -1,7 +1,7 @@
 env: saferl.aerospace.tasks.rejoin.task.DubinsRejoin
 env_config:
   agent: wingman
-  step_size: 0.1
+  step_size: 1
   env_objs:
   - name: lead
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
@@ -26,9 +26,11 @@ env_config:
         - name: ailerons
           space: discrete
           points: 5
+          bounds: [-0.17, 0.17]
         - name: elevator
           space: discrete
           points: 5
+          bounds: [-0.09, 0.09]
         - name: throttle
           space: discrete
           bounds: [-96.5, 96.5]
