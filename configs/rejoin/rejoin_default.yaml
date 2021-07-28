@@ -3,6 +3,17 @@ env_config:
   agent: wingman
   step_size: 1
   env_objs:
+  - name: lead
+    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
+    config:
+      v_min: 10
+      v_max: 100
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        heading: [0, 6.283185307179586]
+        v: [40, 60]
+        x: [-4000, 4000]
+        y: [-4000, 4000]
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
@@ -18,22 +29,12 @@ env_config:
           space: discrete
           points: 5
       init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        initializer: saferl.aerospace.tasks.rejoin.initializers.WingmanPolarInitializer
         heading: [0, 6.283185307179586]
         v: [10, 100]
-        x: [-4000, 4000]
-        y: [-4000, 4000]
-  - name: lead
-    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
-    config:
-      v_min: 10
-      v_max: 100
-      init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        heading: [0, 6.283185307179586]
-        v: [40, 60]
-        x: [-4000, 4000]
-        y: [-4000, 4000]
+        ref: lead
+        radius: [1000, 10000]
+        angle: [0, 6.283185307179586]
   - name: rejoin_region
     class: saferl.environment.models.geometry.RelativeCircle
     config:
