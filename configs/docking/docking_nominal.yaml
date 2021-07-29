@@ -59,40 +59,18 @@ env_config:
         vel_threshold: 0.2
         threshold_dist: 0.1
         slope: 2
-    - name: min_vel_limit
-      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimit
-      config:
-        target: deputy
-        dist_status: docking_distance
-        vel_threshold: -0.2
-        threshold_dist: 0.1
-        slope: 0.5
     - name: max_vel_violation
       class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
       config:
         target: deputy
         ref: chief
         vel_limit_status: max_vel_limit
-    - name: min_vel_violation
-      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
-      config:
-        target: deputy
-        ref: chief
-        vel_limit_status: min_vel_limit
-        lower_bound: True
     - name: max_vel_constraint
       class: saferl.aerospace.tasks.docking.processors.RelativeVelocityConstraint
       config:
         target: deputy
         ref: chief
         vel_limit_status: max_vel_limit
-    - name: min_vel_constraint
-      class: saferl.aerospace.tasks.docking.processors.RelativeVelocityConstraint
-      config:
-        target: deputy
-        ref: chief
-        vel_limit_status: min_vel_limit
-        lower_bound: True
     - name: failure
       class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
       config:
@@ -130,14 +108,6 @@ env_config:
         bias: -0.1
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
-        cond_status_invert: True
-    - name: min_vel_constraint
-      class: saferl.aerospace.tasks.docking.processors.ProportionalRewardProcessor
-      config:
-        scale: -0.1
-        bias: -0.1
-        proportion_status: min_vel_violation
-        cond_status: min_vel_constraint
         cond_status_invert: True
     - name: failure_reward
       class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
