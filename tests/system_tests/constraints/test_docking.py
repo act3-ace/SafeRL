@@ -10,7 +10,7 @@ import pytest
 @pytest.fixture()
 def config_path():
     # define the relative path of the environment under test in this module
-    return "../configs/docking/docking_default.yaml"
+    return "../configs/docking/docking_nominal.yaml"
 
 
 class TestVelocityConstraint:
@@ -26,6 +26,7 @@ class TestVelocityConstraint:
         return base_environment
 
     @pytest.mark.system_test
+    @pytest.mark.one
     def test_velocity_constraint(self, step):
         # decompose the results of an environment step and assert the desired response from the environment.
         obs, reward, done, info = step
