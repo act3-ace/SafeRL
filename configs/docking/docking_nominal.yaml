@@ -37,7 +37,7 @@ env_config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      radius: 20
+      radius: 0.1
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   status:
