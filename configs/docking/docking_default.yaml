@@ -29,9 +29,8 @@ env_config:
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         ref: chief
-        radius: [1000, 1500]
+        radius: [750, 1250]
         angle: [0, 6.283185307179586]
-        enforce_safety_constraints: True
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
     config:
