@@ -6,7 +6,7 @@ Author: John McCarroll
 """
 
 from ray.tune.stopper import Stopper
-from constants import *
+from tests.system_tests.training.constants import *
 
 
 class SuccessCriteria(Stopper):

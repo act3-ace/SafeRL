@@ -5,7 +5,7 @@ Author: John McCarroll
 """
 
 import pytest
-from constants import *
+from tests.system_tests.training.constants import *
 
 
 """
