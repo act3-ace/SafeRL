@@ -56,7 +56,7 @@ env_config:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
   - name: observation_processor
-    class: saferl.aerospace.tasks.rejoin.processors.DubinsObservationProcessor
+    class: saferl.aerospace.tasks.rejoin.processors.Dubins3dObservationProcessor
     config:
       lead: lead
       mode: magnorm
