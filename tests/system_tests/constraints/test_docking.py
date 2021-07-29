@@ -34,5 +34,3 @@ class TestVelocityConstraint:
         assert info["status"]["max_vel_limit"] > 1
         assert info["reward"]["max_vel_constraint"] < 0
         assert done
-
-# - lookup bug
