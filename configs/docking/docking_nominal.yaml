@@ -102,7 +102,7 @@ env_config:
         docking_region: docking_region
         reward: -1.0e-03
     - name: max_vel_constraint
-      class: saferl.aerospace.tasks.docking.processors.ProportionalRewardProcessor
+      class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
         scale: -0.1
         bias: -0.1
