@@ -69,6 +69,18 @@ class RewardComponentsCallback:
             episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val
 
 
+class StatusCustomMetricsCallback:
+    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
+                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
+                       env_index: int, **kwargs):
+        status = episode.last_info_for()['status']
+        custom_metric_keys = [k for k in status.keys() if 'custom_metrics.' in k]
+        for k in custom_metric_keys:
+            metric_name = k.split('.', 1)[1]
+            metric_val = status[k]
+            episode.custom_metrics[metric_name] = metric_val
+
+
 class LogContents(Enum):
     """
     Simple Enum class for log contents options
