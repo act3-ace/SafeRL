@@ -43,7 +43,7 @@ class ProportionalRewardProcessor(RewardProcessor):
     def _process(self, sim_state):
         proportion = sim_state.status[self.proportion_status]
         if self.cond_status is None:
-            cond = False
+            cond = True
         else:
             cond = sim_state.status[self.cond_status]
             if self.cond_status_invert:
