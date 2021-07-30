@@ -128,6 +128,7 @@ class ConditionalRewardProcessor(RewardProcessor):
         super().__init__(name, reward)
 
     def reset(self, sim_state):
+        super().reset(sim_state)
         self.last_step_size = 0
 
     def _increment(self, sim_state, step_size):
@@ -153,6 +154,7 @@ class ProportionalRewardProcessor(RewardProcessor):
         super().__init__(name, reward=0)
 
     def reset(self, sim_state):
+        super().reset(sim_state)
         self.last_step_size = 0
 
     def _increment(self, sim_state, step_size):
