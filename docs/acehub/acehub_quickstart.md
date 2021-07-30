@@ -82,6 +82,57 @@ This completes the Git Configuration for your ACE Hub user account.
 This step only needs to be done once per ACE Hub account.
 
 
+### Environment Setup Scripts
+
+Adding environment setup scripts to your ACE Hub User Configuration
+helps facilitate easy environment creation and setup.
+
+To add an environment setup script, navigate to the "User
+Configuration" page on ACE Hub:
+
+![User Config Image](images/user_config.png)
+
+In the Environment Variables panel, click the "+" button to add a
+new environment variable:
+
+![Environment Variable Blank Image](images/environment_var_blank.png)
+
+In the Key field, enter a descriptive name for your script. In the
+Value field, copy and paste the appropriate script based on your
+environment type:
+
+#### VSCode
+
+```bash
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+export GIT_ASKPASS="/ace/hub/envfile/GIT_ASKPASS" 
+conda create -y -n saferl_env python=3.7 pip
+conda activate saferl_env
+git clone https://git.act3-ace.com/rta/have-deepsky.git
+cd have-deepsky/
+pip --default-timeout=1000 install -e .
+conda init bash && exec bash
+```
+
+#### JuptyerLab
+
+```bash
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+sudo apt update && sudo apt install -y libglib2.0-0
+sudo apt update && sudo apt install -y git
+conda create -y -n saferl_env python=3.7 pip
+conda activate saferl_env
+git clone https://git.act3-ace.com/rta/have-deepsky.git
+cd have-deepsky/
+pip --default-timeout=1000 install -e .
+```
+
+You will need to create an environment variable for each type of script
+you use. It is recommended to create one each for VSCode and JupyterLab
+with descriptive variable names distinguishing them (ex.
+```SAFERL_VSCODE_SETUP``` or ```SAFERL_JUPYTERLAB_SETUP```).
+
+
 ### Creating an Environment
 
 ACE Hub works under the principle that compute resources should accessed
@@ -136,11 +187,35 @@ under "Other" in the "Launcher" tab:
 
 ![Terminal Tab Image](images/terminal_tab.png)
 
-### Setting Up The Environment for SafeRL
+## Setting Up The Environment for SafeRL
 
 The following steps show how to set up the ACE Hub JupyterLab environment for use with
-the saferl package. All of the following commands should be run in
-the JupyterLab environment Terminal tab.
+the saferl package.
+
+### Using Environment Setup Script (Recommended)
+
+The easiest way to set up your ACE Hub environment is using the
+envrionment setup scripts detailed previously.
+
+To use these scripts, enter the following into your ACE Hub pod
+terminal:
+
+```bash
+bash $<my_script_name>
+```
+
+where ```<my_script_name>``` is the name of the environment setup
+script in your ACE Hub User Configuration settings that you wish
+to use. Follow any prompts in your terminal and your environment
+will be set up to use the saferl package!
+
+
+### Manual Setup (Not Recommended)
+
+The following instructions explain how to manually set up a
+JupyterLab ACE Hub pod for using the saferl package. All of the
+following commands should be run in the JupyterLab environment
+Terminal tab.
 
 #### Installing libglib2.0 library
 
