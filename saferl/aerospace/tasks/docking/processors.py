@@ -20,13 +20,16 @@ class DockingObservationProcessor(ObservationProcessor):
 
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
+            self.norm_const = np.array([1000, 1000, 10, 10])
         elif self.mode == '3d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
+            self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
+        obs = obs / self.norm_const
         return obs
 
 
