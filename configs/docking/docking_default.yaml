@@ -81,6 +81,14 @@ env_config:
     config:
       deputy: deputy
       docking_region: docking_region
+  - name: delta_v
+    class: saferl.aerospace.tasks.docking.processors.DockingThrustDeltaVStatusProcessor
+    config:
+      target: deputy
+  - name: custom_metrics.delta_v_total
+    class: saferl.aerospace.tasks.docking.processors.AccumulatorStatusProcessor
+    config:
+      status: delta_v
   - name: failure
     class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
     config:
