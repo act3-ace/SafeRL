@@ -13,24 +13,76 @@ def config_path():
     return "../configs/docking/docking_nominal.yaml"
 
 
-class TestVelocityConstraint:
+class TestVelocityConstraintExceedance:
     # write one class per constraint under test
+    # testing exceedance of velocity limits
+
+    test_states = [
+        [1500, 0, 3.1, 0],
+        [0, 1500, 0, 3.1],
+        [1060.6, 1060.6, 0, 3.1],
+
+        [0.1, 0, 0.1, 0],
+        [0, 0.1, 0, 0.1],
+        [0.1, 0.1, 0.1, 0.1],
+
+        [500, 0, 1.1, 0],
+        [0, 500, 0, 1.1],
+        [353.6, 353.6, 0.73, 0.73]
+    ]
 
     @pytest.fixture()
-    def modified_environment(self, base_environment):
-        # override the modified_environment fixture to manually set up the state before "step()" is called on the
-        # environment.
-        base_environment.env_objs["deputy"].state._vector[0] = 0.1
-        base_environment.env_objs["deputy"].state._vector[1] = 0.2
-        base_environment.env_objs["deputy"].state._vector[2] = 5
-        return base_environment
+    def state(self, request):
+        return request.param
+
+    @pytest.fixture()
+    def agent(self):
+        return "deputy"
 
     @pytest.mark.system_test
     @pytest.mark.one
+    @pytest.mark.parametrize("state", test_states, indirect=True)
     def test_velocity_constraint(self, step):
         # decompose the results of an environment step and assert the desired response from the environment.
         obs, reward, done, info = step
         assert info["status"]["max_vel_constraint"]
         assert info["status"]["max_vel_limit"] > 1
-        assert info["reward"]["max_vel_constraint"] < 0
+        assert info["reward"]["components"]["step"]["max_vel_constraint"] < 0
+        assert done
+
+class TestVelocityConstraintConformity:
+    # write one class per constraint under test
+    # testing conforming to velocity limits
+
+    test_states = [
+        [1500, 0, 2.9, 0],
+        [0, 1500, 0, 2.9],
+        [1060.6, 1060.6, 0, 3.1],
+
+        [0.1, 0, 0.1, 0],
+        [0, 0.1, 0, 0.1],
+        [0.1, 0.1, 0.1, 0.1],
+
+        [500, 0, 1.1, 0],
+        [0, 500, 0, 1.1],
+        [353.6, 353.6, 0.73, 0.73]
+    ]
+
+    @pytest.fixture()
+    def state(self, request):
+        return request.param
+
+    @pytest.fixture()
+    def agent(self):
+        return "deputy"
+
+    @pytest.mark.system_test
+    @pytest.mark.one
+    @pytest.mark.parametrize("state", test_states, indirect=True)
+    def test_velocity_constraint(self, step):
+        # decompose the results of an environment step and assert the desired response from the environment.
+        obs, reward, done, info = step
+        assert info["status"]["max_vel_constraint"]
+        assert info["status"]["max_vel_limit"] > 1
+        assert info["reward"]["components"]["step"]["max_vel_constraint"] < 0
         assert done

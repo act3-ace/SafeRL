@@ -53,3 +53,33 @@ def config(config_path, seed):
         return config
     else:
         raise FileNotFoundError("Unable to locate: {}".format(config_path))
+
+
+# fixtures for rllib environment setup and step testing
+@pytest.fixture()
+def environment(config):
+    env = config["env"](config["env_config"])
+    return env
+
+
+@pytest.fixture()
+def modified_environment_platform_state(environment, state, agent):
+
+
+    if agent in environment.env_objs:
+        for index, value in enumerate(state):
+            environment.env_objs[agent].state._vector[index] = value
+
+    return environment
+
+
+@pytest.fixture()
+def step(modified_environment_platform_state, action):
+    obs, reward, done, info = modified_environment_platform_state.step(action)
+    return obs, reward, done, info
+
+
+@pytest.fixture()
+def action():
+    # placeholder to enable extensible constraint testing setup
+    return None
