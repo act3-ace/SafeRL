@@ -1,11 +1,12 @@
 import gym.spaces
 import numpy as np
 
+from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
 
-
 # --------------------- Observation Processors ------------------------
+
 
 class DockingObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
@@ -298,6 +299,45 @@ class SafetyConstraintsProcessor(StatusProcessor):
     def _process(self, sim_state):
         in_docking = sim_state.env_objs[self.docking_region].contains(sim_state.env_objs[self.deputy])
         return in_docking
+
+
+class DockingThrustDeltaVStatusProcessor(StatusProcessor):
+    def __init__(self, name, target):
+        super().__init__(name=name)
+        self.target = target
+        self.step_delta_v = 0
+
+    def reset(self, sim_state):
+        self.step_delta_v = 0
+
+    def _increment(self, sim_state, step_size):
+        # status derived directly from simulation state. No state machine necessary
+        target_platform = sim_state.env_objs[self.target]
+        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d)
+        control_vec = target_platform.control_cur
+        mass = target_platform.dynamics.m
+
+        self.step_delta_v = np.sum(np.abs(control_vec)) / mass * step_size
+
+    def _process(self, sim_state):
+        return self.step_delta_v
+
+
+class AccumulatorStatusProcessor(StatusProcessor):
+    def __init__(self, name, status):
+        super().__init__(name=name)
+        self.status = status
+        self.total = 0
+
+    def reset(self, sim_state):
+        self.total = 0
+
+    def _increment(self, sim_state, step_size):
+        # status derived directly from simulation state. No state machine necessary
+        self.total += sim_state.status[self.status]
+
+    def _process(self, sim_state):
+        return self.total
 
 
 class FailureStatusProcessor(StatusProcessor):
