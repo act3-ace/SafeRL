@@ -92,8 +92,8 @@ Configuration" page on ACE Hub:
 
 ![User Config Image](images/user_config.png)
 
-In the Environment Variables panel, click the "+" button to add a
-new environment variable:
+In the Environment File panel, click the "+" button to add a
+new environment file:
 
 ![Environment Variable Blank Image](images/environment_var_blank.png)
 
@@ -127,9 +127,9 @@ cd have-deepsky/
 pip --default-timeout=1000 install -e .
 ```
 
-You will need to create an environment variable for each type of script
+You will need to create an environment file for each type of script
 you use. It is recommended to create one each for VSCode and JupyterLab
-with descriptive variable names distinguishing them (ex.
+with descriptive file names distinguishing them (ex.
 ```SAFERL_VSCODE_SETUP``` or ```SAFERL_JUPYTERLAB_SETUP```).
 
 
