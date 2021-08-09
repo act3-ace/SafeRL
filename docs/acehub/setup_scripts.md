@@ -30,7 +30,7 @@ pip --default-timeout=1000 install -e .
 conda init bash && exec bash
 ```
 
-#### JuptyerLab
+#### JupyterLab
 
 ```bash
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
