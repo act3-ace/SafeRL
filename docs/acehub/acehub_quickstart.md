@@ -92,10 +92,10 @@ Configuration" page on ACE Hub:
 
 ![User Config Image](images/user_config.png)
 
-In the Environment File panel, click the "+" button to add a
+In the Environment Files panel, click the "+" button to add a
 new environment file:
 
-![Environment Variable Blank Image](images/environment_var_blank.png)
+![Environment File Blank Image](images/env_file_blank.png)
 
 In the Key field, enter a descriptive name for your script. In the
 Value field, copy and paste the appropriate script based on your
