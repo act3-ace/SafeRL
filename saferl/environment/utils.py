@@ -44,6 +44,9 @@ def initializer_from_config(ref_obj, config, default_initializer):
 def get_ref_objs(env_objs, config):
     if "ref" in config.keys():
         config["ref"] = env_objs[config["ref"]]
+    for k, v in config.items():
+        if isinstance(v, dict):
+            config[k] = get_ref_objs(env_objs, v)
     return config
 
 

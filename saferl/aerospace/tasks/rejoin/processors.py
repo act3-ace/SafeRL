@@ -81,6 +81,12 @@ class DubinsObservationProcessor(ObservationProcessor):
         wingman_vel = reference_rotation.apply(wingman_vel)
         lead_vel = reference_rotation.apply(lead_vel)
 
+        # drop z axis
+        wingman_lead_r = wingman_lead_r[0:2]
+        wingman_rejoin_r = wingman_rejoin_r[0:2]
+        wingman_vel = wingman_vel[0:2]
+        lead_vel = lead_vel[0:2]
+
         if self.mode == 'magnorm':
             wingman_lead_r = self.vec2magnorm(wingman_lead_r)
             wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
@@ -89,10 +95,10 @@ class DubinsObservationProcessor(ObservationProcessor):
             lead_vel = self.vec2magnorm(lead_vel)
 
         obs = np.concatenate([
-            wingman_lead_r[0:3],
-            wingman_rejoin_r[0:3],
-            wingman_vel[0:3],
-            lead_vel[0:3]
+            wingman_lead_r,
+            wingman_rejoin_r,
+            wingman_vel,
+            lead_vel
         ])
 
         return obs
