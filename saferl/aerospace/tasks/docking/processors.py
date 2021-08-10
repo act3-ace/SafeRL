@@ -33,6 +33,9 @@ class DockingObservationProcessor(ObservationProcessor):
 
 class DockingObservationProcessorOriented(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
         # Initialize member variables from config
         self.mode = mode
         self.deputy = deputy
@@ -40,26 +43,15 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
-        # vet post_processors for custom normalization
-        has_custom_normalization = False
-        if post_processors:
-            for post_processor in post_processors:
-                assert "class" in post_processor, \
-                    "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
-                if post_processor["class"] is Normalize:
-                    has_custom_normalization = True
-
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            if normalization is None and not has_custom_normalization:
+            if not self.has_normalization:
                 # if no custom normalization defined
-                normalization = [1000, 1000, np.pi, 100, 100, 0.4, 500]
+                self._add_normalization([1000, 1000, np.pi, 100, 100, 0.4, 500])
         elif self.mode == '3d':
             raise NotImplementedError
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
-
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
