@@ -83,7 +83,9 @@ class ObservationProcessor(Processor):
 
         super().__init__(name=name)
         self.obs = None
-        # self.observation_space = None
+        self.observation_space = None
+        self.has_normalization = False
+        self.has_clipping = False
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == min clip bound, clip[1] == max clip bound
@@ -118,6 +120,7 @@ class ObservationProcessor(Processor):
         # TODO: directly support setting mu
         normalization_post_proc = Normalize(sigma=normalization_vector)
         self.post_processors.append(normalization_post_proc)
+        self.has_normalization = True
 
     def _add_clipping(self, clip_bounds):
         # ensure clip_bounds format
@@ -129,6 +132,7 @@ class ObservationProcessor(Processor):
         # create clipping PostProcessor and add it to list
         clipping_post_proc = Clip(high=clip_bounds[1], low=clip_bounds[0])
         self.post_processors.append(clipping_post_proc)
+        self.has_clipping = True
 
     def _post_process(self, obs):
         """
