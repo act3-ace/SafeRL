@@ -314,7 +314,7 @@ class DockingThrustDeltaVStatusProcessor(StatusProcessor):
         # status derived directly from simulation state. No state machine necessary
         target_platform = sim_state.env_objs[self.target]
         assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d)
-        control_vec = target_platform.control_cur
+        control_vec = target_platform.current_control
         mass = target_platform.dynamics.m
 
         self.step_delta_v = np.sum(np.abs(control_vec)) / mass * step_size
