@@ -25,6 +25,7 @@ setuptools.setup(
         "tqdm==4.59.0",
         "jsonlines==2.0.0",
         "matplotlib==3.3.4",
-        "pytest==6.2.4"
+        "pytest==6.2.4",
+        "flatten_json==0.1.13"
     ]
 )
