@@ -64,12 +64,9 @@ def environment(config):
 
 @pytest.fixture()
 def modified_environment_platform_state(environment, state, agent):
-
-
     if agent in environment.env_objs:
         for index, value in enumerate(state):
             environment.env_objs[agent].state._vector[index] = value
-
     return environment
 
 
