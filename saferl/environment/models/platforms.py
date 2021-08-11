@@ -9,7 +9,7 @@ import numpy as np
 class BaseEnvObj(abc.ABC):
 
     @abc.abstractmethod
-    def __init__(self,name):
+    def __init__(self, name):
         self.name = name
 
     @property
@@ -134,7 +134,7 @@ class AgentController(BaseController):
                 # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
                     actuator.bounds = actuator_config['bounds']
-                
+
                 bounds_min = actuator.bounds[0]
                 bounds_max = actuator.bounds[1]
 
