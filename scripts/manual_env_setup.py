@@ -1,6 +1,6 @@
 import argparse
-#from saferl import lookup
 from saferl.environment.utils import YAMLParser, build_lookup
+
 # create env from config
 
 # use the saferl.environment to set it up
@@ -18,7 +18,7 @@ args = parser.parse_args()
 # behavior of YAMLParser changed in master
 
 lookup = build_lookup()
-parser = YAMLParser(args.config,lookup)
+parser = YAMLParser(args.config, lookup)
 mod_config = parser.parse_env()
 
 env_class = mod_config['env']
