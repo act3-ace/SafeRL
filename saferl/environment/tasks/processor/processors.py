@@ -98,12 +98,20 @@ class ObservationProcessor(Processor):
                     "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
                 assert "config" in post_processor, \
                     "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
-                self.post_processors.append(post_processor["class"](**post_processor["config"]))
+
+                post_processor_class = post_processor["class"]
+                self.post_processors.append(post_processor_class(**post_processor["config"]))
+
+                # check if PostProcessor was normalization or clipping
+                if issubclass(post_processor_class, Normalize):
+                    self.has_normalization = True
+                if issubclass(post_processor_class, Clip):
+                    self.has_clipping = True
 
         # add norm + clipping postprocessors
-        if self.normalization is not None:
+        if self.normalization is not None and not self.has_normalization:
             self._add_normalization(self.normalization)
-        if self.clip is not None:
+        if self.clip is not None and not self.has_clipping:
             self._add_clipping(self.clip)
 
     def reset(self, sim_state):
