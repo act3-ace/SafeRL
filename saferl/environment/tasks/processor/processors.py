@@ -65,7 +65,30 @@ class Processor(abc.ABC):
 class ObservationProcessor(Processor):
     def __init__(self, name=None, normalization=None, clip=None, post_processors=None):
         """
-        The class constructor handles the assignment of member variables.
+        The class constructor handles the assignment of member variables and the instantiation of PostProcessors.
+        If the 'normalization' kwarg is assigned a list of floats, a default normalization PostProcessor is instantiated
+        using the values in the given list as constants.
+        If the 'clip' kwarg is assigned a two element list, a default clipping PostProcessor is created, using the first
+        element of the given list as the lower bound and the second element as the upper bound.
+        If the 'post_processors' kwarg is assigned a list of dict configs, they are instantiated and maintained in
+        order.
+
+        NOTE: To avoid redundant applications of PostProcessors, two flags are maintained - has_normalization and
+        has_clipping. If a PostProcessor that extends Normalize or Clip is defined in the list of PostProcessor configs,
+        the respective flag is mutated. This is to ensure that normalization or clipping defined in the post_processors
+        list takes priority over normalization or clipping defined via the 'normalization' or 'clip' kwarg shortcuts.
+        While extended this class, if default normalization or clipping are desired, it is recommended that you use the
+        proper flags and private factory methods. Here's an example:
+
+        if not self.has_normalization:
+            # if no custom normalization defined
+            self._add_normalization(LIST_OF_DESIRED_DEFAULT_NORMALIZATION_CONSTANTS)
+
+        Checking the 'has_normalization' flag ensures that no other normalization PostProcessors have been created yet
+        and using the '_add_normalization' method handles the creation and insertion of a normalization
+        PostProcessor and subsequent setting of  the 'has_normalization' flag. The same applies for the 'has_clipping'
+        flag and '_add_clipping' method.
+
 
         Parameters
         ----------
