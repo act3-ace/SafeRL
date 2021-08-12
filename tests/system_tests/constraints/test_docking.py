@@ -1,11 +1,11 @@
 """
 This module tests the constraints of the docking environment.
 
-Author: Umberto Ravaioli John McCarroll
+Author: Umberto Ravaioli and John McCarroll
 """
 
 import pytest
-import sys
+
 
 @pytest.fixture()
 def config_path():
@@ -24,7 +24,6 @@ def expected_max_vel_limit(request):
 
 
 class TestVelocityConstraintExceedance:
-    # write one class per constraint under test
     # testing exceedance of velocity limits
 
     test_states = [
@@ -57,21 +56,32 @@ class TestVelocityConstraintExceedance:
 
 
 class TestVelocityConstraintConformity:
-    # write one class per constraint under test
     # testing conforming to velocity limits
 
     test_states = [
-        ([1500, 0, 3.2, 0], 3.288),
-        ([0, 1500, 0, 3.2], 3.288),
-        ([1060.6, 1060.6, 2.3, 2.3], 3.288),
+        # below boundary
+        ([1500, 0, 3.2, 0], 3.287),
+        ([0, 1500, 0, 3.2], 3.287),
+        ([1060.6, 1060.6, 2.3, 2.3], 3.287),
 
-        ([0.11, 0, 0.19, 0], 0.200),
-        ([0, 0.11, 0, 0.19], 0.200),
-        ([0.077, 0.077, 0.134, 0.134], 0.200),
+        ([0.11, 0, 0.19, 0], 0.200),#done == True
+        ([0, 0.11, 0, 0.19], 0.200),#done == True
+        ([0.077, 0.077, 0.134, 0.134], 0.200),#done == True
 
         ([500, 0, 1.2, 0], 1.229),
         ([0, 500, 0, 1.2], 1.229),
-        ([353.6, 353.6, 0.84, 0.84], 1.230)
+        ([353.6, 353.6, 0.84, 0.84], 1.229),
+
+        # on boundary
+        ([1500, 0, 3.287, 0], 3.288),# info[status][max_vel_constraint] == False
+        ([0, 1500, 0, 3.287], 3.288),
+
+        ([0.11, 0, 0.2, 0], 0.200),#done == True
+        ([0, 0.11, 0, 0.2], 0.200),#done == True
+
+        ([500, 0, 1.228, 0], 1.229),# info[status][max_vel_constraint] == False
+        ([0, 500, 0, 1.229], 1.229)
+
     ]
 
     @pytest.fixture()
@@ -84,22 +94,19 @@ class TestVelocityConstraintConformity:
         # decompose the results of an environment step and assert the desired response from the environment.
         obs, reward, done, info = step
         assert info["status"]["max_vel_constraint"]
-        assert info["status"]["max_vel_limit"] == expected_max_vel_limit
+        assert round(info["status"]["max_vel_limit"], 3) == expected_max_vel_limit
         assert info["reward"]["components"]["step"]["max_vel_constraint"] == 0
         assert not done
 
 
 class TestDockingVelocityConstraintExceedance:
-    # new test_states -> one case inside region
-    # new fixture -> set state so deputy inside region
-    # new test -> assert failure (crash)
+    # testing exceedance of velocity limits inside docking region (ie. crashing)
 
     @pytest.fixture()
     def state(self, request):
         return [0.5, 0, 0.21, 0]
 
     @pytest.mark.system_test
-    # @pytest.mark.parametrize("state,expected_max_vel_limit", test_states, indirect=True)
     def test_velocity_constraint(self, step):
         # decompose the results of an environment step and assert the desired response from the environment.
         obs, reward, done, info = step
@@ -110,15 +117,19 @@ class TestDockingVelocityConstraintExceedance:
 
 
 class TestDockingVelocityConstraintConformity:
-    # write one class per constraint under test
-    # testing conforming to velocity limits
+    # testing conforming to velocity limits inside docking region (ie. successful docking)
+
+    test_states = [
+        [0.5, 0, 0.19, 0],
+        [0.5, 0, 0.2, 0]
+    ]
 
     @pytest.fixture()
     def state(self, request):
-        return [0.5, 0, 0.19, 0]
+        return request.param
 
     @pytest.mark.system_test
-    # @pytest.mark.parametrize("state,expected_max_vel_limit", test_states, indirect=True)
+    @pytest.mark.parametrize("state", test_states, indirect=True)
     def test_velocity_constraint(self, step):
         # decompose the results of an environment step and assert the desired response from the environment.
         obs, reward, done, info = step
@@ -126,6 +137,3 @@ class TestDockingVelocityConstraintConformity:
         # assert info["status"]["max_vel_limit"] == expected_max_vel_limit
         assert info["status"]["success"]
         assert not info["status"]["failure"]
-
-
-# TODO: test ON vel constraint boundary
