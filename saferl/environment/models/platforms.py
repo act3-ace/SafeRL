@@ -8,6 +8,10 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
+    @abc.abstractmethod
+    def __init__(self, name):
+        self.name = name
+
     @property
     @abc.abstractmethod
     def x(self):
@@ -130,7 +134,7 @@ class AgentController(BaseController):
                 # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
                     actuator.bounds = actuator_config['bounds']
-                
+
                 bounds_min = actuator.bounds[0]
                 bounds_max = actuator.bounds[1]
 
@@ -259,13 +263,14 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, controller, rta=None):
+    def __init__(self, name, dynamics, actuator_set, state, controller, rta=None):
 
         if controller is None:
             controller = PassThroughController()
         elif type(controller) == dict:
             controller = controller["class"](actuator_set, config=controller)
 
+        super().__init__(name)
         self.action_space = controller.action_space
 
         self.dependent_objs = []
