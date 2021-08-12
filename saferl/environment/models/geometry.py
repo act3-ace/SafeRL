@@ -46,7 +46,7 @@ class BaseGeometry(BaseEnvObj):
 
 class Point(BaseGeometry):
 
-    def __init__(self, name, x=0, y=0, z=0):
+    def __init__(self,name,x=0, y=0, z=0):
         super().__init__(name)
         self._center = np.array([x, y, z], dtype=np.float64)
 
@@ -102,8 +102,8 @@ class Point(BaseGeometry):
 
 class Circle(Point):
 
-    def __init__(self, name, x=0, y=0, z=0, radius=1):
-        super().__init__(name, x=x, y=y, z=z)
+    def __init__(self,name, x=0, y=0, z=0, radius=1):
+        super().__init__(name,x=x, y=y, z=z)
         self.radius = radius
 
     def contains(self, other):
@@ -128,9 +128,9 @@ class Sphere(Circle):
 
 class Cylinder(Circle):
 
-    def __init__(self, name, x=0, y=0, z=0, radius=1, height=1):
+    def __init__(self,name, x=0, y=0, z=0, radius=1, height=1):
         self.height = height
-        super().__init__(name, x=x, y=y, z=z, radius=radius)
+        super().__init__(name,x=x, y=y, z=z, radius=radius)
 
     def contains(self, other):
         radial_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
