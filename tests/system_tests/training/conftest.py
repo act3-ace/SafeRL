@@ -9,7 +9,7 @@ import os
 import shutil
 import ray.rllib.agents.ppo as ppo
 from ray import tune
-from constants import *
+from constants import DEFAULT_GPUS, DEFAULT_WORKERS, DEFAULT_FAKE_GPUS, DEFAULT_OUTPUT, CUSTOM_METRICS, SUCCESS_MEAN
 
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
     RewardComponentsCallback

@@ -5,7 +5,7 @@ Author: John McCarroll
 """
 
 import pytest
-from constants import *
+from constants import DEFAULT_SUCCESS_THRESHOLD, DEFAULT_SEED, DEFAULT_MAX_ITERATIONS
 
 
 """
