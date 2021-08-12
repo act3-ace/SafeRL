@@ -48,4 +48,3 @@ def test_training(success_rate, success_threshold):
     """
 
     assert success_rate >= success_threshold
-
