@@ -1,1 +1,1 @@
-from saferl.aerospace.models import dubins, cwhspacecraft
+from saferl.aerospace.models import dubins, cwhspacecraft  # noqa: F401
