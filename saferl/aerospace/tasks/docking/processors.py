@@ -8,8 +8,8 @@ from saferl.environment.models.geometry import distance
 # --------------------- Observation Processors ------------------------
 
 class DockingObservationProcessor(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
-        super().__init__(name=name, normalization=normalization, clip=clip)
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
 
         # Initialize member variables from config
         self.mode = mode
@@ -31,7 +31,10 @@ class DockingObservationProcessor(ObservationProcessor):
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
-    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
         # Initialize member variables from config
         self.mode = mode
         self.deputy = deputy
@@ -41,14 +44,13 @@ class DockingObservationProcessorOriented(ObservationProcessor):
 
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            if normalization is None:
-                normalization = [1000, 1000, np.pi, 100, 100, 0.4, 500]
+            if not self.has_normalization:
+                # if no custom normalization defined
+                self._add_normalization([1000, 1000, np.pi, 100, 100, 0.4, 500])
         elif self.mode == '3d':
             raise NotImplementedError
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
-
-        super().__init__(name=name, normalization=normalization, clip=clip)
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
