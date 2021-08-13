@@ -1,1 +1,1 @@
-from saferl.aerospace.tasks import rejoin, docking
+from saferl.aerospace.tasks import rejoin, docking  # noqa: F401
