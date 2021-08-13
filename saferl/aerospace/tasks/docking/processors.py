@@ -3,7 +3,6 @@ import numpy as np
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
-from saferl.environment.utils import Normalize
 
 
 # --------------------- Observation Processors ------------------------
