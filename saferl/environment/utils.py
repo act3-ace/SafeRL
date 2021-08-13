@@ -4,7 +4,6 @@ import os
 import copy
 import inspect
 
-import gym
 import yaml
 import jsonlines
 import numpy as np
