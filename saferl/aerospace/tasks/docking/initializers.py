@@ -45,7 +45,7 @@ def get_constrainted_velocity(ref, x, y, mean_motion=0.001027, max_vel_constrain
     # Velocity bound based on relative position
     # TODO: get rid of hardcoded values in constraint
     park_orbit_max_vel = 0.2 + 2 * mean_motion * math.sqrt(rel_x**2 + rel_y**2)
-    park_orbit_min_vel = -0.2 + 1/2 * mean_motion * math.sqrt(rel_x**2 + rel_y**2)
+    park_orbit_min_vel = 0
 
     max_vel = min(park_orbit_max_vel, max_vel_constraint)
     min_vel = park_orbit_min_vel

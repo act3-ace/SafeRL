@@ -19,17 +19,15 @@ env_config:
         class: saferl.environment.models.platforms.AgentController
         actuators:
         - name: thrust_x
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
         - name: thrust_y
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         ref: chief
-        radius: [1000, 1500]
+        radius: [100, 150]
         angle: [0, 6.283185307179586]
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
@@ -37,7 +35,7 @@ env_config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      radius: 0.1
+      radius: 0.5
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   status:
@@ -65,7 +63,7 @@ env_config:
         target: deputy
         dist_status: docking_distance
         vel_threshold: 0.2
-        threshold_dist: 0.1
+        threshold_dist: 0.5
         slope: 2
     - name: max_vel_violation
       class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
@@ -118,8 +116,8 @@ env_config:
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.1
-        bias: -0.1
+        scale: -0.001
+        bias: -0.01
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
         cond_status_invert: True

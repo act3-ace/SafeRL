@@ -1,11 +1,12 @@
 import gym.spaces
 import numpy as np
 
+from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
 
-
 # --------------------- Observation Processors ------------------------
+
 
 class DockingObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None):
@@ -20,13 +21,16 @@ class DockingObservationProcessor(ObservationProcessor):
 
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
+            self.norm_const = np.array([1000, 1000, 10, 10])
         elif self.mode == '3d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
+            self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
         else:
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
+        obs = obs / self.norm_const
         return obs
 
 
@@ -119,60 +123,6 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
         dist_z_change = self.cur_z_distance - self.prev_z_distance
         step_reward = dist_z_change * self.reward
         return step_reward
-
-
-class ConditionalRewardProcessor(RewardProcessor):
-    def __init__(self, name, reward, cond_status):
-        self.cond_status = cond_status
-        self.last_step_size = 0
-        super().__init__(name, reward)
-
-    def reset(self, sim_state):
-        self.last_step_size = 0
-
-    def _increment(self, sim_state, step_size):
-        self.last_step_size = step_size
-
-    def _process(self, sim_state):
-        cond = sim_state.status[self.cond_status]
-
-        if cond:
-            return self.reward
-        else:
-            return 0
-
-
-class ProportionalRewardProcessor(RewardProcessor):
-    def __init__(self, name, scale, bias, proportion_status, cond_status=None, cond_status_invert=False):
-        self.scale = scale
-        self.bias = bias
-        self.proportion_status = proportion_status
-        self.cond_status = cond_status
-        self.cond_status_invert = cond_status_invert
-        self.last_step_size = 0
-        super().__init__(name, reward=0)
-
-    def reset(self, sim_state):
-        self.last_step_size = 0
-
-    def _increment(self, sim_state, step_size):
-        self.last_step_size = step_size
-
-    def _process(self, sim_state):
-        proportion = sim_state.status[self.proportion_status]
-        if self.cond_status is None:
-            cond = False
-        else:
-            cond = sim_state.status[self.cond_status]
-            if self.cond_status_invert:
-                cond = not cond
-
-        if cond:
-            reward = self.scale * proportion + self.bias
-        else:
-            reward = 0
-
-        return reward
 
 
 class SuccessRewardProcessor(RewardProcessor):
@@ -349,6 +299,45 @@ class SafetyConstraintsProcessor(StatusProcessor):
     def _process(self, sim_state):
         in_docking = sim_state.env_objs[self.docking_region].contains(sim_state.env_objs[self.deputy])
         return in_docking
+
+
+class DockingThrustDeltaVStatusProcessor(StatusProcessor):
+    def __init__(self, name, target):
+        super().__init__(name=name)
+        self.target = target
+        self.step_delta_v = 0
+
+    def reset(self, sim_state):
+        self.step_delta_v = 0
+
+    def _increment(self, sim_state, step_size):
+        # status derived directly from simulation state. No state machine necessary
+        target_platform = sim_state.env_objs[self.target]
+        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d)
+        control_vec = target_platform.control_cur
+        mass = target_platform.dynamics.m
+
+        self.step_delta_v = np.sum(np.abs(control_vec)) / mass * step_size
+
+    def _process(self, sim_state):
+        return self.step_delta_v
+
+
+class AccumulatorStatusProcessor(StatusProcessor):
+    def __init__(self, name, status):
+        super().__init__(name=name)
+        self.status = status
+        self.total = 0
+
+    def reset(self, sim_state):
+        self.total = 0
+
+    def _increment(self, sim_state, step_size):
+        # status derived directly from simulation state. No state machine necessary
+        self.total += sim_state.status[self.status]
+
+    def _process(self, sim_state):
+        return self.total
 
 
 class FailureStatusProcessor(StatusProcessor):

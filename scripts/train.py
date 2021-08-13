@@ -11,7 +11,8 @@ import ray.rllib.agents.ppo as ppo
 
 from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
-                                        RewardComponentsCallback, LoggingCallback, LogContents
+                                        RewardComponentsCallback, LoggingCallback, LogContents, \
+                                        StatusCustomMetricsCallback
 
 
 # Training defaults
@@ -114,7 +115,8 @@ def experiment_setup(args):
                                                   RewardComponentsCallback(),
                                                   LoggingCallback(num_logging_workers=args.logging_workers,
                                                                   episode_log_interval=args.log_interval,
-                                                                  contents=CONTENTS)])
+                                                                  contents=CONTENTS),
+                                                  StatusCustomMetricsCallback()])
 
     config['batch_mode'] = "complete_episodes" if args.complete_episodes else "truncate_episodes"
     if args.rollout_fragment_length is not None:
