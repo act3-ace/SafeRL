@@ -1,1 +1,1 @@
-from saferl.aerospace import models, tasks
+from saferl.aerospace import models, tasks  # noqa: F401
