@@ -31,9 +31,9 @@ class TestVelocityConstraintExceedance:
         ([0, 1500, 0, 3.3], 3.288),
         ([1060.6, 1060.6, 2.4, 2.4], 3.288),
 
-        ([0.11, 0, 0.21, 0], 0.200),
-        ([0, 0.11, 0, 0.21], 0.200),
-        ([0.077, 0.077, 0.149, 0.149], 0.200),
+        ([-0.32, 0, 0.21, 0], 0.200),
+        ([0, -0.32, 0, 0.21], 0.200),
+        ([-0.226, -0.226, 0.149, 0.149], 0.200),
 
         ([500, 0, 1.25, 0], 1.229),
         ([0, 500, 0, 1.25], 1.229),
@@ -73,15 +73,14 @@ class TestVelocityConstraintConformity:
         ([353.6, 353.6, 0.84, 0.84], 1.229),
 
         # on boundary
-        ([1500, 0, 3.287, 0], 3.288),# info[status][max_vel_constraint] == False
-        ([0, 1500, 0, 3.287], 3.288),
+        ([1500, 0, 3.28225, 0.00675], 3.288),
+        ([0, 1500, -0.00675, 3.287], 3.288),
 
-        ([0.11, 0, 0.2, 0], 0.200),
-        ([0, 0.11, 0, 0.2], 0.200),
+        ([-0.31, 0, 0.2, 0.00041], 0.200),
+        ([0, -0.31, -0.00041, 0.2], 0.200),
 
-        ([500, 0, 1.229, 0], 1.229),# info[status][max_vel_constraint] == False
-        ([0, 500, 0, 1.229], 1.229)
-
+        ([500, 0, 1.22742, 0.00252], 1.229),
+        ([0, 500, -0.00252, 1.229], 1.229)
     ]
 
     @pytest.fixture()
@@ -104,7 +103,7 @@ class TestDockingVelocityConstraintExceedance:
 
     @pytest.fixture()
     def state(self, request):
-        return [0.5, 0, 0.21, 0]
+        return [-0.26, 0, 0.21, 0]
 
     @pytest.mark.system_test
     def test_velocity_constraint(self, step):
@@ -120,8 +119,8 @@ class TestDockingVelocityConstraintConformity:
     # testing conforming to velocity limits inside docking region (ie. successful docking)
 
     test_states = [
-        [0.5, 0, 0.19, 0],
-        [0.5, 0, 0.2, 0]
+        [-0.24, 0, 0.19, 0.00039],
+        [-0.25, 0, 0.199999947, 0.0004108]
     ]
 
     @pytest.fixture()
