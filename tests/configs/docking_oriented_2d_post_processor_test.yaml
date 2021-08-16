@@ -4,25 +4,25 @@ env_config:
   step_size: 1
   env_objs:
   - name: deputy
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraftOriented2d
     config:
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
-        - name: thrust_x
+        - name: thrust
           space: discrete
           points: 11
           bounds: [-10, 10]
-        - name: thrust_y
+        - name: reaction_wheel
           space: discrete
           points: 11
-          bounds: [-10, 10]
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: [-2000, 2000]
+        x: -1000
         x_dot: 0
-        y: [-2000, 2000]
+        y: 0
         y_dot: 0
+        theta: [0, 6.283185]
   - name: chief
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
@@ -43,15 +43,15 @@ env_config:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
   - name: observation_processor
-    class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
+    class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessorOriented
     config:
       deputy: deputy
       mode: 2d
+      # defining PostProcessors
       post_processors:
         - class: saferl.environment.utils.Normalize
           config:
-            mu: 0
-            sigma: 5
+            sigma: [1000, 1000, 3.14159265359, 100, 100, 0.4, 500]
   reward:
   - name: time_reward
     class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor

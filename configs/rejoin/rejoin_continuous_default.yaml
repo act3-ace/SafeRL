@@ -6,15 +6,18 @@ env_config:
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
+      v_min: 10
+      v_max: 100
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
         - name: rudder
-          space: discrete
-          points: 5
+          space: continuous
+          rescale: true
         - name: throttle
-          space: discrete
-          points: 5
+          space: continuous
+          rescale: true
+          bounds: [-10, 10]
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 6.283185307179586]
@@ -24,6 +27,8 @@ env_config:
   - name: lead
     class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
+      v_min: 10
+      v_max: 100
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 6.283185307179586]
@@ -49,11 +54,6 @@ env_config:
       reference: wingman
       rejoin_region: rejoin_region
       wingman: wingman
-      post_processors:
-        - class: saferl.environment.utils.Normalize
-          config:
-            mu: 0
-            sigma: 5
   reward:
   - name: rejoin_reward
     class: saferl.aerospace.tasks.rejoin.processors.RejoinRewardProcessor

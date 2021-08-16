@@ -3,17 +3,6 @@ env_config:
   agent: wingman
   step_size: 1
   env_objs:
-  - name: lead
-    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
-    config:
-      v_min: 10
-      v_max: 100
-      init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        heading: [0, 6.283185307179586]
-        v: [40, 60]
-        x: [-4000, 4000]
-        y: [-4000, 4000]
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
@@ -29,12 +18,22 @@ env_config:
           space: discrete
           points: 5
       init:
-        initializer: saferl.aerospace.tasks.rejoin.initializers.WingmanPolarInitializer
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 6.283185307179586]
         v: [10, 100]
-        ref: lead
-        radius: [1000, 10000]
-        angle: [0, 6.283185307179586]
+        x: [-4000, 4000]
+        y: [-4000, 4000]
+  - name: lead
+    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
+    config:
+      v_min: 10
+      v_max: 100
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        heading: [0, 6.283185307179586]
+        v: [40, 60]
+        x: [-4000, 4000]
+        y: [-4000, 4000]
   - name: rejoin_region
     class: saferl.environment.models.geometry.RelativeCircle
     config:
@@ -54,6 +53,15 @@ env_config:
       reference: wingman
       rejoin_region: rejoin_region
       wingman: wingman
+      # defining PostProcessors
+      post_processors:
+        - class: saferl.environment.utils.Normalize
+          config:
+            sigma: [10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1]
+        - class: saferl.environment.utils.Clip
+          config:
+            low: -1
+            high: 1
   reward:
   - name: rejoin_reward
     class: saferl.aerospace.tasks.rejoin.processors.RejoinRewardProcessor

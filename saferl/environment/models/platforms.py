@@ -8,6 +8,10 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
+    @abc.abstractmethod
+    def __init__(self, name):
+        self.name = name
+
     @property
     @abc.abstractmethod
     def x(self):
@@ -78,7 +82,11 @@ class ContinuousActuator(BaseActuator):
 
     @property
     def bounds(self) -> list:
-        return copy.deepcopy(self._bounds)
+        return self._bounds.copy()
+
+    @bounds.setter
+    def bounds(self, val):
+        self._bounds = val.copy()
 
     @property
     def default(self):
@@ -125,16 +133,18 @@ class AgentController(BaseController):
                 # determine upper and lower bounds of actuator range.
                 # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
-                    bounds_min = max(actuator.bounds[0], actuator_config['bounds'][0])
-                    bounds_max = min(actuator.bounds[1], actuator_config['bounds'][1])
-                else:
-                    bounds_min = actuator.bounds[0]
-                    bounds_max = actuator.bounds[1]
+                    actuator.bounds = actuator_config['bounds']
+
+                bounds_min = actuator.bounds[0]
+                bounds_max = actuator.bounds[1]
 
                 if ('space' not in actuator_config) or (actuator_config['space'] == 'continuous'):
-                    # if both actuator and config are continuous, simply pass through value to control
-                    preprocessor = ActionPreprocessorPassThrough(actuator_name)
-                    actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
+                    if ('rescale' not in actuator_config) or (actuator_config['rescale']):
+                        preprocessor = ActionPreprocessorContinuousRescale(actuator_name, [bounds_min, bounds_max])
+                        actuator_action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
+                    else:
+                        preprocessor = ActionPreprocessorPassThrough(actuator_name)
+                        actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
                 elif actuator_config['space'] == 'discrete':
                     # if actuator in continuous but config is discrete, discretize actuator bounds
                     vals = np.linspace(bounds_min, bounds_max, actuator_config['points'])
@@ -198,6 +208,20 @@ class ActionPreprocessorPassThrough(ActionPreprocessor):
         return action
 
 
+class ActionPreprocessorContinuousRescale(ActionPreprocessor):
+    def __init__(self, name, bounds):
+        self.bounds = bounds
+        super().__init__(name)
+
+    def preprocess(self, action):
+        low = self.bounds[0]
+        high = self.bounds[1]
+
+        scaled_action = low + (action + 1.0) * (high - low) / 2.0
+
+        return scaled_action
+
+
 class ActionPreprocessorDiscreteMap(ActionPreprocessor):
 
     def __init__(self, name, vals):
@@ -239,13 +263,14 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, controller):
+    def __init__(self, name, dynamics, actuator_set, state, controller):
 
         if controller is None:
             controller = PassThroughController()
         elif type(controller) == dict:
             controller = controller["class"](actuator_set, config=controller)
 
+        super().__init__(name)
         self.action_space = controller.action_space
 
         self.dependent_objs = []
