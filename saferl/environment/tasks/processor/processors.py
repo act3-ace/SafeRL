@@ -68,7 +68,30 @@ class Processor(abc.ABC):
 class ObservationProcessor(Processor):
     def __init__(self, name=None, normalization=None, clip=None, post_processors=None, observation_space_shape=None):
         """
-        The class constructor handles the assignment of member variables.
+        The class constructor handles the assignment of member variables and the instantiation of PostProcessors.
+        If the 'normalization' kwarg is assigned a list of floats, a default normalization PostProcessor is instantiated
+        using the values in the given list as constants.
+        If the 'clip' kwarg is assigned a two element list, a default clipping PostProcessor is created, using the first
+        element of the given list as the lower bound and the second element as the upper bound.
+        If the 'post_processors' kwarg is assigned a list of dict configs, they are instantiated and maintained in
+        order.
+
+        NOTE: To avoid redundant applications of PostProcessors, two flags are maintained - has_normalization and
+        has_clipping. If a PostProcessor that extends Normalize or Clip is defined in the list of PostProcessor configs,
+        the respective flag is mutated. This is to ensure that normalization or clipping defined in the post_processors
+        list takes priority over normalization or clipping defined via the 'normalization' or 'clip' kwarg shortcuts.
+        While extended this class, if default normalization or clipping are desired, it is recommended that you use the
+        proper flags and private factory methods. Here's an example:
+
+        if not self.has_normalization:
+            # if no custom normalization defined
+            self._add_normalization(LIST_OF_DESIRED_DEFAULT_NORMALIZATION_CONSTANTS)
+
+        Checking the 'has_normalization' flag ensures that no other normalization PostProcessors have been created yet
+        and using the '_add_normalization' method handles the creation and insertion of a normalization
+        PostProcessor and subsequent setting of  the 'has_normalization' flag. The same applies for the 'has_clipping'
+        flag and '_add_clipping' method.
+
 
         Parameters
         ----------
@@ -87,6 +110,11 @@ class ObservationProcessor(Processor):
         super().__init__(name=name)
         self.obs = None
 
+        # define post_processor flags
+        self.observation_space = None
+        self.has_normalization = False
+        self.has_clipping = False
+
         # define Box observation space
         if observation_space_shape:
             # observation space defined in config
@@ -97,7 +125,7 @@ class ObservationProcessor(Processor):
             self.observation_space = self.define_observation_space()
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
-        self.clip = clip                            # clip[0] == max clip bound, clip[1] == min clip bound
+        self.clip = clip                            # clip[0] == min clip bound, clip[1] == max clip bound
         self.post_processors = []                   # list of PostProcessors
 
         # create and store post processors
@@ -107,16 +135,24 @@ class ObservationProcessor(Processor):
                     "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
                 assert "config" in post_processor, \
                     "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
-                self.post_processors.append(post_processor["class"](**post_processor["config"]))
+
+                post_processor_class = post_processor["class"]
+                self.post_processors.append(post_processor_class(**post_processor["config"]))
+
+                # check if PostProcessor was normalization or clipping
+                if issubclass(post_processor_class, Normalize):
+                    self.has_normalization = True
+                if issubclass(post_processor_class, Clip):
+                    self.has_clipping = True
 
         # apply postprocessors to Box observation space definition
         for post_processor in post_processors:
             self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
         # add norm + clipping postprocessors
-        if self.normalization is not None:
+        if self.normalization is not None and not self.has_normalization:
             self._add_normalization(self.normalization)
-        if self.clip is not None:
+        if self.clip is not None and not self.has_clipping:
             self._add_clipping(self.clip)
 
     @abc.abstractmethod
@@ -145,6 +181,7 @@ class ObservationProcessor(Processor):
         # TODO: directly support setting mu
         normalization_post_proc = Normalize(sigma=normalization_vector)
         self.post_processors.append(normalization_post_proc)
+        self.has_normalization = True
 
     def _add_clipping(self, clip_bounds):
         # ensure clip_bounds format
@@ -154,8 +191,9 @@ class ObservationProcessor(Processor):
             "Expected a list of length 2 for variable \'clip\', but instead got: {}".format(len(clip_bounds))
 
         # create clipping PostProcessor and add it to list
-        clipping_post_proc = Clip(high=clip_bounds[0], low=clip_bounds[1])
+        clipping_post_proc = Clip(high=clip_bounds[1], low=clip_bounds[0])
         self.post_processors.append(clipping_post_proc)
+        self.has_clipping = True
 
     def _post_process(self, obs, sim_state):
         """

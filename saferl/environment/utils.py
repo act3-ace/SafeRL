@@ -4,7 +4,6 @@ import os
 import copy
 import inspect
 
-import gym
 import yaml
 import jsonlines
 import numpy as np
@@ -44,6 +43,9 @@ def initializer_from_config(ref_obj, config, default_initializer):
 def get_ref_objs(env_objs, config):
     if "ref" in config.keys():
         config["ref"] = env_objs[config["ref"]]
+    for k, v in config.items():
+        if isinstance(v, dict):
+            config[k] = get_ref_objs(env_objs, v)
     return config
 
 
@@ -62,11 +64,10 @@ def setup_env_objs_from_config(config, default_initializer):
         cfg = obj_config["config"]
 
         # Populate ref obj in config if it exists
+        cfg['name'] = name
         cfg = get_ref_objs(env_objs, cfg)
 
         # Instantiate object
-        if type(cls) is str:
-            print()
         obj = cls(**{k: v for k, v in cfg.items() if k != "init"})
         env_objs[name] = obj
         if name == agent_name:

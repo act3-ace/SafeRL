@@ -22,6 +22,9 @@ class DubinsObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None):
 
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -31,17 +34,18 @@ class DubinsObservationProcessor(ObservationProcessor):
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            if normalization is None:
-                normalization = [10000, 10000, 10000, 10000, 100, 100, 100, 100]
+            if not self.has_normalization:
+                # if no custom normalization defined
+                self._add_normalization([10000, 10000, 10000, 10000, 100, 100, 100, 100])
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            if normalization is None:
-                normalization = [10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1]
+            if not self.has_normalization:
+                # if no custom normalization defined
+                self._add_normalization([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1])
 
-        if clip is None:
-            clip = [-1, 1]
-
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+        if not self.has_clipping:
+            # if no custom clipping defined
+            self._add_clipping([-1, 1])
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -65,6 +69,12 @@ class DubinsObservationProcessor(ObservationProcessor):
         wingman_vel = reference_rotation.apply(wingman_vel)
         lead_vel = reference_rotation.apply(lead_vel)
 
+        # drop z axis
+        wingman_lead_r = wingman_lead_r[0:2]
+        wingman_rejoin_r = wingman_rejoin_r[0:2]
+        wingman_vel = wingman_vel[0:2]
+        lead_vel = lead_vel[0:2]
+
         if self.mode == 'magnorm':
             wingman_lead_r = self.vec2magnorm(wingman_lead_r)
             wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
@@ -73,10 +83,10 @@ class DubinsObservationProcessor(ObservationProcessor):
             lead_vel = self.vec2magnorm(lead_vel)
 
         obs = np.concatenate([
-            wingman_lead_r[0:3],
-            wingman_rejoin_r[0:3],
-            wingman_vel[0:3],
-            lead_vel[0:3]
+            wingman_lead_r,
+            wingman_rejoin_r,
+            wingman_vel,
+            lead_vel
         ])
 
         return obs
@@ -94,6 +104,9 @@ class Dubins3dObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None):
 
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -103,18 +116,19 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
-            if normalization is None:
-                normalization = [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100,
-                                 math.pi, math.pi],
+            if not self.has_normalization:
+                # if no custom normalization defined
+                self._add_normalization(
+                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi])
         elif self.mode == 'magnorm':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            if normalization is None:
-                normalization = [10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi]
+            if not self.has_normalization:
+                # if no custom normalization defined
+                self._add_normalization([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi])
 
-        if clip is None:
-            clip = [-1, 1]
-
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+        if not self.has_clipping:
+            # if no custom clipping defined
+            self._add_clipping([-1, 1])
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
