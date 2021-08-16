@@ -52,7 +52,7 @@ class TestVelocityConstraintExceedance:
         assert not info["status"]["max_vel_constraint"]
         assert round(info["status"]["max_vel_limit"], 3) == expected_max_vel_limit
         assert info["reward"]["components"]["step"]["max_vel_constraint"] < 0
-        assert done
+        assert not done
 
 
 class TestVelocityConstraintConformity:
