@@ -7,7 +7,7 @@ Author: John McCarroll
 import pytest
 import os
 import ray.rllib.agents.ppo as ppo
-from constants import *
+from constants import DEFAULT_GPUS, DEFAULT_WORKERS, DEFAULT_FAKE_GPUS
 
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback,\
     RewardComponentsCallback
