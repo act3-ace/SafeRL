@@ -5,16 +5,16 @@ Author: John McCarroll
 """
 
 import pytest
-from tests.system_tests.training.constants import *
+from constants import DEFAULT_SUCCESS_THRESHOLD, DEFAULT_SEED, DEFAULT_MAX_ITERATIONS
 
 
 """
 test_configs : Construct your Training Test Assay
 
-Declare this variable as a list of tuples. Each tuple is a configuration for a training system test, containing three 
-elements, in order: config_path, success_threshold, and max_iterations. 
+Declare this variable as a list of tuples. Each tuple is a configuration for a training system test, containing three
+elements, in order: config_path, success_threshold, and max_iterations.
 
-config_path is the relative path to the config file for the training run under test. 
+config_path is the relative path to the config file for the training run under test.
 success_threshold is the decimal rate of successful episodes required to determine if training still functions.
 max_iterations is the maximum allowed training iterations before test termination.
 """

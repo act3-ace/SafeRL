@@ -89,14 +89,14 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self,name, controller=None, v_min=10, v_max=100):
+    def __init__(self, name, controller=None, v_min=10, v_max=100):
 
         dynamics = Dubins2dDynamics(v_min=v_min, v_max=v_max)
         actuator_set = Dubins2dActuatorSet()
 
         state = Dubins2dState()
 
-        super().__init__(name,dynamics, actuator_set, state, controller)
+        super().__init__(name, dynamics, actuator_set, state, controller)
 
 
 class Dubins2dState(BaseDubinsState):
@@ -224,13 +224,13 @@ class Dubins2dDynamics(BaseODESolverDynamics):
 
 class Dubins3dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, name,controller=None, v_min=10, v_max=100):
+    def __init__(self, name, controller=None, v_min=10, v_max=100):
 
         dynamics = Dubins3dDynamics(v_min=v_min, v_max=v_max)
         actuator_set = Dubins3dActuatorSet()
         state = Dubins3dState()
 
-        super().__init__(name,dynamics, actuator_set, state, controller)
+        super().__init__(name, dynamics, actuator_set, state, controller)
 
     def generate_info(self):
         info = {

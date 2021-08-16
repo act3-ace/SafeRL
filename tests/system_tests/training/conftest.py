@@ -9,7 +9,7 @@ import os
 import shutil
 import ray.rllib.agents.ppo as ppo
 from ray import tune
-from tests.system_tests.training.constants import *
+from constants import DEFAULT_OUTPUT, CUSTOM_METRICS, SUCCESS_MEAN
 
 from success_criteria import SuccessCriteria
 
@@ -18,8 +18,8 @@ from success_criteria import SuccessCriteria
 def success_threshold(request):
     """
     This fixture determines the rate of successful episodes a task must reach during training in order to pass the
-    system test. The returned success_threshold float is parameterized to return value(s) defined in test_configs variable in
-    the test_training.py module.
+    system test. The returned success_threshold float is parameterized to return value(s) defined in test_configs
+    variable in the test_training.py module.
 
     Parameters
     ----------
@@ -39,8 +39,8 @@ def success_threshold(request):
 def max_iterations(request):
     """
     This fixture defines the maximum training iterations before termination during a test of task training
-    functionality. The returned max_iterations int is parameterized to return value(s) defined in test_configs variable in
-    the test_training.py module.
+    functionality. The returned max_iterations int is parameterized to return value(s) defined in test_configs variable
+    in the test_training.py module.
 
     Parameters
     ----------
