@@ -5,7 +5,7 @@ import numpy as np
 import math
 from collections.abc import Iterable
 
-from post_processors import *
+from saferl.environment.tasks.processor.post_processors import Normalize, Clip
 
 
 class Processor(abc.ABC):
@@ -146,7 +146,7 @@ class ObservationProcessor(Processor):
                     self.has_clipping = True
 
         # apply postprocessors to Box observation space definition
-        for post_processor in post_processors:
+        for post_processor in self.post_processors:
             self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
         # add norm + clipping postprocessors
