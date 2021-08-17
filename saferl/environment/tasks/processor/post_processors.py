@@ -137,15 +137,26 @@ class Rotate(PostProcessor):
     def __call__(self, input_array, sim_state):
         # assumes the entire input_array is positional info*
 
-        # ensure reference and target both in environment
+        # ensure reference in environment
         assert self.reference in sim_state.env_objs, \
             "The provided reference object, {}, is not found within the state's environment objects"\
             .format(self.reference)
+
+        # check input dims
+        input_is_2d = False
+        if len(input_array) == 2:
+            input_is_2d = True
+            input_array = np.concatenate([input_array, [0]])
+        assert len(input_array) == 3, \
+            "Three dimensional input expected for rotation, but received: {}".format(input_array)
 
         # apply rotation
         reference = sim_state.env_objs[self.reference]
         relative_rotation = reference.orientation.inv()
         input_array = relative_rotation.apply(input_array)
+
+        # restore correct dimensions
+        input_array = input_array[0:2] if input_is_2d else input_array
 
         return input_array
 

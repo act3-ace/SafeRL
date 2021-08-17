@@ -22,9 +22,9 @@ class SpatialObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None,
                  is_2d=False):
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
         assert type(is_2d) == bool, "Expected bool for 'is_2d' parameter, but found {}".format(type(is_2d))
         self.is_2d = is_2d
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
 
     def define_observation_space(self) -> gym.spaces.Box:
         """
@@ -59,11 +59,14 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
                  reference=None,
                  target=None,
                  is_2d=False):
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        super().__init__(name=name,
+                         normalization=normalization,
+                         clip=clip,
+                         post_processors=post_processors,
+                         is_2d=is_2d)
         self.reference = reference
         self.target = target
-        assert type(is_2d) == bool, "Expected bool for 'is_2d' parameter, but found {}".format(type(is_2d))
-        self.is_2d = is_2d
 
     def _process(self, sim_state) -> np.ndarray:
         # ensure both objects are within env_objs
@@ -71,15 +74,14 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
             "The provided reference object, {}, is not found within the state's environment objects"\
             .format(self.reference)
         assert self.target in sim_state.env_objs, \
-            "The provided target object, {}, is not found within the state's environment objects"\
-            .format(self.target)
+            "The provided target object, {}, is not found within the state's environment objects".format(self.target)
 
         reference = sim_state.env_objs[self.reference]
         target = sim_state.env_objs[self.target]
 
         # ensure both object have positions
-        assert "position" in reference.__dict__, "The provided reference object, {}, has no 'position' attribute!"
-        assert "position" in target.__dict__, "The provided target object, {}, has no 'position' attribute!"
+        assert hasattr(reference, "position"), "The provided reference object, {}, has no 'position' attribute!"
+        assert hasattr(target, "position"), "The provided target object, {}, has no 'position' attribute!"
 
         positional_diff = target.position - reference.position
 
@@ -88,6 +90,10 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
         # relative_position = relative_rotation.apply(absolute_position)
         # relative_position = np.array(relative_position)
         # return relative_position
+
+        # apply dimensionality
+        if self.is_2d:
+            positional_diff = positional_diff[0:2]
 
         return positional_diff
 
@@ -104,29 +110,31 @@ class VelocityObservationProcessor(SpatialObservationProcessor):
                  post_processors=None,
                  env_object_name=None,
                  is_2d=False):
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        super().__init__(name=name,
+                         normalization=normalization,
+                         clip=clip,
+                         post_processors=post_processors,
+                         is_2d=is_2d)
         self.env_object_name = env_object_name
         self.attribute = "velocity"
-        assert type(is_2d) == bool, "Expected bool for 'is_2d' parameter, but found {}".format(type(is_2d))
-        self.is_2d = is_2d
 
     def _process(self, sim_state) -> np.ndarray:
         # ensure both objects are within env_objs
         assert self.env_object_name in sim_state.env_objs, \
             "The provided env_object, {}, is not found within the state's environment objects" \
             .format(self.env_object_name)
-        assert self.attribute in sim_state.env_objs, \
-            "The provided attribute, {}, is not found within the state's environment objects" \
-            .format(self.attribute)
 
         env_object = sim_state.env_objs[self.env_object_name]
 
         # ensure object has desired attribute
-        assert self.attribute in env_object.__dict__, \
+        assert hasattr(env_object, self.attribute), \
             "The provided env_object, {}, has no {} attribute!".format(self.env_object_name, self.attribute)
 
-        value = env_object.__dict__[self.attribute]
+        value = getattr(env_object, self.attribute)
 
-        value = np.array([value])
+        # apply dimensionality
+        if self.is_2d and len(value) > 2:
+            value = value[0:2]
 
         return value
