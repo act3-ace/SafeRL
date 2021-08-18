@@ -5,7 +5,7 @@ import numpy as np
 import math
 from collections.abc import Iterable
 
-from saferl.environment.tasks.processor.post_processors import Normalize, Clip
+from saferl.environment.tasks.processor.post_processors import Normalize, Clip, Rotate
 
 
 class Processor(abc.ABC):
@@ -66,7 +66,13 @@ class Processor(abc.ABC):
 
 
 class ObservationProcessor(Processor):
-    def __init__(self, name=None, normalization=None, clip=None, post_processors=None, observation_space_shape=None):
+    def __init__(self,
+                 name=None,
+                 normalization=None,
+                 clip=None,
+                 # rotation_reference=None,
+                 post_processors=None,
+                 observation_space_shape=None):
         """
         The class constructor handles the assignment of member variables and the instantiation of PostProcessors.
         If the 'normalization' kwarg is assigned a list of floats, a default normalization PostProcessor is instantiated
@@ -126,6 +132,7 @@ class ObservationProcessor(Processor):
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == min clip bound, clip[1] == max clip bound
+        # self.rotation_reference = rotation_reference
         self.post_processors = []                   # list of PostProcessors
 
         # create and store post processors
@@ -135,6 +142,12 @@ class ObservationProcessor(Processor):
                     "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
                 assert "config" in post_processor, \
                     "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
+
+                # # check if PostProcessor is form of rotation
+                # if self.rotation_reference is not None and issubclass(post_processor_class, Rotate):
+                #     raise TypeError(
+                #         "Rotation defined in {} config and PostProcessor list. \
+                #         Please use PostProcessors to combine multiple rotations".format(self.__name__))
 
                 post_processor_class = post_processor["class"]
                 self.post_processors.append(post_processor_class(**post_processor["config"]))
@@ -148,6 +161,7 @@ class ObservationProcessor(Processor):
         # apply postprocessors to Box observation space definition
         for post_processor in self.post_processors:
             self.observation_space = post_processor.modify_observation_space(self.observation_space)
+            1+1
 
         # add norm + clipping postprocessors
         if self.normalization is not None and not self.has_normalization:

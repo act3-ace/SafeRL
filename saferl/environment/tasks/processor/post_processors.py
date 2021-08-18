@@ -89,7 +89,6 @@ class Normalize(PostProcessor):
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
         # obs_space dimensions not altered by normalization
-        # TODO: alter high and low to (-1:1) b/c normalized?
         return obs_space
 
 
@@ -118,15 +117,7 @@ class Clip(PostProcessor):
         return input_array
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
-        # # adjust bounds of obs_space values
-        # size = obs_space.shape[0]          # assumes 1d obs space
-        # low_array = [self.low] * size
-        # obs_space.low = np.array(low_array)
-        #
-        # size = obs_space.shape[0]          # assumes 1d obs space
-        # high_array = [self.high] * size
-        # obs_space.low = np.array(high_array)
-
+        # obs_space dimensions not altered by clipping
         return obs_space
 
 
@@ -175,16 +166,9 @@ class MagNorm(PostProcessor):
         return mag_norm_array
 
     def modify_observation_space(self, obs_space: gym.spaces.Box):
-        # find bounds of magnorm of obs space
-        min_magnorm = 0
-        max_magnorm = np.linalg.norm(obs_space.high)
-
-        # set obs space
-        size = obs_space.shape[0]           # assumes 1d obs space
-        low = [-1] * size
-        high = [1] * size
-        obs_space.low = np.concatenate([min_magnorm, low])
-        obs_space.high = np.concatenate([max_magnorm, high])
+        # add magnitude to obs space shape
+        obs_space.low = np.concatenate([obs_space.low, [-math.inf]])
+        obs_space.high = np.concatenate([obs_space.high, [math.inf]])
 
         return obs_space
 
