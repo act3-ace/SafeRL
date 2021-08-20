@@ -19,6 +19,7 @@ close:
 """
 
 
+import time
 import math
 from gym.envs.classic_control import rendering
 
@@ -35,13 +36,15 @@ class RejoinRender:
                  r_aircraft=15,
                  show_res=False,
                  termination_condition=False,
-                 trace=0):
+                 trace=0,
+                 render_speed=0.03):
 
         self.x_threshold = x_threshold      # ft (To the left)
         self.y_threshold = y_threshold      # ft (Up or down)
         self.r_aircraft = r_aircraft        # ft - radius of the aircraft
         self.plane_scale = plane_scale      # dialation of aircraft size
-        self.scale_factor = scale_factor    # TODO: find out these magic numbers
+        self.scale_factor = scale_factor
+        self.render_speed = render_speed
         self.viewer = None
 
         # Toggle shown items
@@ -58,17 +61,13 @@ class RejoinRender:
         self.bg_color = (0, 0, .15)  # r,g,b
 
     def renderSim(self, state, mode='human'):
+        # collect state data and set screen
         x_thresh = self.x_threshold / self.scale_factor
         y_thresh = self.y_threshold / self.scale_factor
 
-        screen_width = x_thresh + x_thresh  # calculate the screen width by adding the distance to the goal and the left threshold.
-        # An extra x_threshold is added to provide buffer space
-        screen_height = y_thresh * 2  # calculate the screen height by doubling the y thresh (up and down)
+        screen_width = x_thresh * 2
+        screen_height = y_thresh * 2
         screen_width, screen_height = int(screen_width), int(screen_height)  # convert the screen width and height to integers
-        if self.showRes:
-            print("Height: " + str(screen_height))
-            print("Width: " + str(screen_width))
-            self.showRes = False
 
         wingwidth = 25 * self.r_aircraft * self.plane_scale / self.scale_factor
         wingheight = 5 * self.r_aircraft * self.plane_scale / self.scale_factor
@@ -76,6 +75,36 @@ class RejoinRender:
         bodyheight = 20 * self.r_aircraft * self.plane_scale / self.scale_factor
         tailwidth = 10 * self.r_aircraft * self.plane_scale / self.scale_factor
 
+        # process agent state
+        wingman_state = state.env_objs["wingman"].state._vector
+
+        # get position of wingman
+        wingman_x = (wingman_state[0] + self.x_threshold) / self.scale_factor
+        wingman_y = (wingman_state[1] + self.y_threshold) / self.scale_factor
+
+        d = -bodyheight / 3  # set distance  #find distance to travel
+        thetashift = wingman_state[2] - 90.0  # convert graphics direction to Cartesian angles
+        radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
+        wingman_trans_x, wingman_trans_y = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
+
+        # process lead state
+        lead_state = state.env_objs["lead"].state._vector
+
+        # get position of lead
+        lead_x = (lead_state[0] + self.x_threshold) / self.scale_factor
+        lead_y = (lead_state[1] + self.y_threshold) / self.scale_factor
+
+        d = -bodyheight / 3  # set distance  #find distance to travel
+        thetashift = 0 - 90.0  # convert graphics direction to Cartesian angles
+        radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
+        lead_trans_x, lead_trans_y = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
+
+        if self.showRes:
+            print("Height: " + str(screen_height))
+            print("Width: " + str(screen_width))
+            self.showRes = False
+
+        # draw animation render in viewer
         if self.viewer is None:
             # if no self.viewer exists, create it
             self.viewer = rendering.Viewer(screen_width, screen_height)  # creates a render
@@ -142,39 +171,26 @@ class RejoinRender:
                 self.viewer.add_geom(ring)  # adds ring into render
 
         # render agent plane
-        wingman_state = state.env_objs["wingman"].state._vector
-
-        # get position of wingman
-        wingman_x = (wingman_state[0] + self.x_threshold) / self.scale_factor
-        wingman_y = (wingman_state[1] + self.y_threshold) / self.scale_factor
         self.bodytrans.set_rotation(wingman_state[2])  # rotate body
         self.bodytrans.set_translation(wingman_x, wingman_y)  # translate body
-
-        d = -bodyheight / 3  # set distance  #find distance to travel
         self.tailtrans.set_rotation(wingman_state[2])  # rotate tail
-        thetashift = wingman_state[2] - 90.0  # convert graphics direction to Cartesian angles
-        radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
-        transx, transy = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
-        self.tailtrans.set_translation(wingman_x - transx, wingman_y + transy)  # translate tail
+        self.tailtrans.set_translation(wingman_x - wingman_trans_x, wingman_y + wingman_trans_y)  # translate tail
 
         # render lead plane
-        lead_state = state.env_objs["lead"].state._vector
-
-        # get position of lead
-        lead_x = (lead_state[0] + self.x_threshold) / self.scale_factor
-        lead_y = (lead_state[1] + self.y_threshold) / self.scale_factor
-
         self.bodytrans_target.set_rotation(lead_state[2])  # rotate body
         self.bodytrans_target.set_translation(lead_x, lead_y)  # translate body
-
-        d = -bodyheight / 3  # set distance  #find distance to travel
         self.tailtrans_target.set_rotation(0)  # rotate tail
-        thetashift = 0 - 90.0  # convert graphics direction to Cartesian angles
-        radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
-        transx, transy = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
-        self.tailtrans_target.set_translation(lead_x - transx, lead_y + transy)  # translate tail
+        self.tailtrans_target.set_translation(lead_x - lead_trans_x, lead_y + lead_trans_y)  # translate tail
+
+
 
         # TODO: render rejoin region
+        # ring = rendering.make_circle(wingwidth / 2, 30, False)  # creates ring dimensions
+        # self.ringtrans = rendering.Transform()  # allows ring to be moved
+        # ring.add_attr(self.ringtrans)
+        # ring.add_attr(self.bodytrans)  # sets ring as part of body
+        # ring.set_color(.9, .0, .0)  # sets color of ring
+        # self.viewer.add_geom(ring)  # adds ring into render
 
         # render trace
         if self.trace != 0:
@@ -191,6 +207,9 @@ class RejoinRender:
             else:
                 self.tracectr += 1
             self.tracetrans.set_translation(wingman_x, wingman_y)  # translate trace
+
+        # sleep to slow down animation
+        time.sleep(self.render_speed)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
@@ -228,7 +247,9 @@ class RejoinRender:
 
 
     # TODO:
-    #  render rejoin region
-    #  adjust screen width properly
+    #  render rejoin region             []
+    #  fix plane tail                   []
+    #  adjust screen width properly     [check]
     #  get correct values from state    [check]
     #  remove goal line                 [check]
+    #  refactor code                    [check]
