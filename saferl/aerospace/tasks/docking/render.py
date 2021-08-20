@@ -55,7 +55,7 @@ class DockingRender:
         self.traceMin = trace_min  # sets trace size to 1 (minimum) if true
         self.tracectr = self.trace
 
-    def renderSim(self, state, mode='human'):
+    def render(self, state, mode='human'):
         # create scale-adjusted variables
         x_thresh = self.x_threshold * self.scale_factor
         y_thresh = self.y_threshold * self.scale_factor

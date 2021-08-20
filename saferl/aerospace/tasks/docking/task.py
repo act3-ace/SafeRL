@@ -6,8 +6,8 @@ class DockingEnv(BaseEnv):
 
     def __init__(self, env_config):
         super().__init__(env_config)
-        render_config = env_config["render"] if "render" in env_config.keys() else {}
-        self.renderer = DockingRender(**render_config)
+        if self.renderer is None:
+            self.renderer = DockingRender(**self.render_config)
 
     def reset(self):
         return super().reset()
@@ -29,6 +29,3 @@ class DockingEnv(BaseEnv):
         }
 
         return info
-
-    def render(self, mode='human'):
-        self.renderer.renderSim(state=self.sim_state)
