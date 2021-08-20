@@ -182,15 +182,29 @@ class RejoinRender:
         self.tailtrans_target.set_rotation(0)  # rotate tail
         self.tailtrans_target.set_translation(lead_x - lead_trans_x, lead_y + lead_trans_y)  # translate tail
 
-
-
-        # TODO: render rejoin region
-        # ring = rendering.make_circle(wingwidth / 2, 30, False)  # creates ring dimensions
-        # self.ringtrans = rendering.Transform()  # allows ring to be moved
-        # ring.add_attr(self.ringtrans)
-        # ring.add_attr(self.bodytrans)  # sets ring as part of body
-        # ring.set_color(.9, .0, .0)  # sets color of ring
-        # self.viewer.add_geom(ring)  # adds ring into render
+        # # TODO: render rejoin region
+        # # process rejoin state
+        # rejoin_region = state.env_objs["rejoin_region"]
+        # rejoin_region_shape = rejoin_region.shape
+        #
+        # rejoin_region_x = (rejoin_region_shape._center[0] + self.x_threshold) / self.scale_factor
+        # rejoin_region_y = (rejoin_region_shape._center[1] + self.y_threshold) / self.scale_factor
+        # print("lead")
+        # print(lead_x, lead_y)
+        # print("rejoin_region")
+        # print(rejoin_region_x, rejoin_region_y)
+        #
+        # rejoin_region_r = rejoin_region_shape.radius / self.scale_factor
+        #
+        # # render rejoin region
+        # if self.show_rejoin:
+        #     ring = rendering.make_circle(rejoin_region_r, 30, False)  # creates ring dimensions
+        #     self.rejoin_trans = rendering.Transform()  # allows ring to be moved
+        #     # ring.add_attr(self.ringtrans)
+        #     # ring.add_attr(self.bodytrans)  # sets ring as part of body
+        #     ring.set_color(.9, .0, .0)  # sets color of ring
+        #     self.viewer.add_geom(ring)  # adds ring into render
+        #     self.rejoin_trans.set_translation(rejoin_region_x, rejoin_region_y)
 
         # render trace
         if self.trace != 0:
