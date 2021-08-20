@@ -84,7 +84,7 @@ env_config:
       config:
         docking_distance: docking_distance
         max_goal_distance: 40000
-        timeout: 1000
+        timeout: 2000
         in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
     - name: success
@@ -102,7 +102,7 @@ env_config:
     - name: time_reward
       class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
       config:
-        reward: -0.01
+        reward: -0.001
     - name: dist_change_reward
       class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
       config:
@@ -112,13 +112,13 @@ env_config:
     - name: delta_v
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.001   # change me
+        scale: -0.001
         bias: 0
         proportion_status: delta_v
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.001
+        scale: 0
         bias: -0.01
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
