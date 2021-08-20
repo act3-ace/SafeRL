@@ -110,7 +110,7 @@ env_config:
     - name: delta_v
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.001   # change me
+        scale: -0.001
         bias: 0
         proportion_status: delta_v
     - name: max_vel_constraint
