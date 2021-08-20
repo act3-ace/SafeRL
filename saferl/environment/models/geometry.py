@@ -264,6 +264,13 @@ class RelativeGeometry(BaseEnvObj):
             self.shape.orientation = self.ref.orientation
 
     def step(self, *args, **kwargs):
+        self.step_compute()
+        self.step_apply()
+
+    def step_compute(self, *args, **kwargs):
+        pass
+
+    def step_apply(self, *args, **kwargs):
         self.update()
 
     def reset(self, **kwargs):
@@ -432,3 +439,14 @@ class RelativeCylinder(RelativeGeometry):
 
 def distance(a, b):
     return np.linalg.norm(a.position - b.position)
+
+
+def angle_wrap(angle, mode='pi'):
+    assert mode == 'pi' or mode == '2pi', "invalid mode, must be on of ('pi', '2pi')"
+
+    if mode == 'pi':
+        offset = math.pi
+    else:
+        offset = 0
+
+    return ((angle + offset) % (2 * math.pi)) - offset
