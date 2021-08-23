@@ -237,7 +237,7 @@ class DockingRender:
         # Get current state
         deputy_state = state.env_objs["deputy"]
         chief_state = state.env_objs["chief"]
-        x_force, y_force = deputy_state.control_cur
+        x_force, y_force = deputy_state.current_control
 
         # Pull and scale deputy's position
         tx = (deputy_state.position[0] + self.x_thresh / self.scale_factor) * self.scale_factor
