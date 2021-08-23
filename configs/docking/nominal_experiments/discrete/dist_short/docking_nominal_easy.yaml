@@ -37,7 +37,7 @@ env_config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      radius: 0.5
+      radius: 20
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   status:
@@ -65,7 +65,7 @@ env_config:
         target: deputy
         dist_status: docking_distance
         vel_threshold: 0.2
-        threshold_dist: 0.5
+        threshold_dist: 20
         slope: 2
     - name: max_vel_violation
       class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
@@ -102,7 +102,7 @@ env_config:
     - name: time_reward
       class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
       config:
-        reward: -0.001
+        reward: -0.01
     - name: dist_change_reward
       class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
       config:
@@ -130,7 +130,7 @@ env_config:
         reward:
           crash: -1
           distance: -1
-          timeout: -5
+          timeout: -1
     - name: success_reward
       class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
       config:

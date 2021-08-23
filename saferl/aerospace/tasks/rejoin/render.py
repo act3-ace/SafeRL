@@ -54,7 +54,7 @@ class RejoinRender:
 
         # Trace params
         # self.trace = trace                  # (steps) spacing between trace dots
-        self.tracectr = self.trace
+        # self.tracectr = self.trace
 
     def renderSim(self, state, mode='human'):
         # collect state data and set screen

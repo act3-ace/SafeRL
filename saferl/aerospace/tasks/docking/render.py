@@ -1,0 +1,429 @@
+'''
+Rendering for 2D Spacecraft Docking Simulation
+
+Created by Kai Delsing
+Mentor: Kerianne Hobbs
+
+Description:
+    A class for rendering the SpacecraftDocking environment.
+
+renderSim:
+    Create, run, and update the rendering
+create_particle:
+    Instantiate and initialize a particle object in the necessary lists
+clean_particles:
+    Delete particles past their ttl or all at once
+close:
+    Close the viewer and rendering
+'''
+
+
+import math
+import random
+from gym.envs.classic_control import rendering
+
+
+class DockingRender:
+
+    def __init__(self, x_threshold=1500, y_threshold=1500, scale_factor=.25, velocity_arrow=False,
+                 force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
+                 ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5, trace_min=True):
+        self.scale_factor = scale_factor  # TODO: find out these magic numbers
+        self.x_thresh = x_threshold * self.scale_factor  # 1.5 * deputy position (scaled)
+        self.y_thresh = y_threshold * self.scale_factor  # 1.5 * deputy position (scaled)
+        self.viewer = None
+
+        self.bg_color = (0, 0, .15)  # r,g,b
+
+        # Toggle shown items
+        self.show_vel_arrow = velocity_arrow
+        self.show_force_arrow = force_arrow
+        self.thrustVis = thrust_vis
+        self.stars = stars
+        self.termination_condition = termination_condition  # Set to true to print termination condition
+
+        # Ellipse params
+        self.ellipse_a1 = ellipse_a1  # m
+        self.ellipse_b1 = ellipse_b1  # m
+        self.ellipse_a2 = ellipse_a2  # m
+        self.ellipse_b2 = ellipse_b2  # m
+        self.ellipse_quality = ellipse_quality  # 1/x * pi
+
+        # Trace params
+        self.trace = trace  # (steps) spacing between trace dots
+        self.trace_size = 1 if trace_min else int((30 * self.scale_factor) / 8) + 1
+        self.tracectr = self.trace
+
+        # Dynamic Objects
+        self.sky = None
+        self.chief = None
+        self.deputy = None
+        self.particle_system = None
+        self.velocity_arrow = None
+        self.force_arrow = None
+
+    def make_sky(self, color):
+        # SKY #
+        b, t, l, r = 0, self.y_thresh * 2, 0, self.x_thresh * 2  # creates sky dimensions
+        sky = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])  # creates sky polygon
+        sky_trans = rendering.Transform()  # allows sky to be moved
+        sky.add_attr(sky_trans)
+        sky.set_color(color[0], color[1], color[2])  # sets color of sky
+        return sky, sky_trans
+
+    def make_satellite(self):
+        # Create dimensions of satellites
+        bodydim = 30 * self.scale_factor
+        panel_width = 50 * self.scale_factor
+        panel_height = 20 * self.scale_factor
+
+        # BODY #
+        b, t, l, r = -bodydim, bodydim, -bodydim, bodydim
+        body = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])  # creates body polygon
+        body_trans = rendering.Transform()  # allows body to be moved
+        body.add_attr(body_trans)
+        body.set_color(.5, .5, .5)  # sets color of body
+
+        # SOLAR PANEL #
+        b, t, l, r = -panel_height, panel_height, -panel_width * 2, panel_width * 2
+        panel = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])  # creates solar panel polygon
+        panel_trans = rendering.Transform()  # allows panel to be moved
+        panel.add_attr(panel_trans)
+        panel.add_attr(body_trans)  # sets panel as part of deputy object
+        panel.set_color(.2, .2, .5)  # sets color of panel
+
+        return body, body_trans, panel, panel_trans
+
+    def make_arrow(self, parent_trans, color, start, end):
+        arrow = rendering.Line(start, end)
+        arrow_trans = rendering.Transform()
+        arrow.add_attr(arrow_trans)
+        arrow.add_attr(parent_trans)
+        arrow.set_color(color[0], color[1], color[2])
+        return arrow, arrow_trans
+
+    def make_dot(self, size, color, position):
+        x, y = position
+        dot = rendering.make_circle(size)  # creates dot
+        dot_trans = rendering.Transform()  # allows dot to be moved
+        dot.add_attr(dot_trans)
+        dot.set_color(color[0], color[1], color[2])  # sets color of dot
+        dot_trans.set_translation(x, y)
+        return dot, dot_trans
+
+    def make_stars(self, num_stars, dim, color):
+        stars = []
+        for i in range(num_stars):
+            x, y = random.random() * (self.x_thresh * 2), random.random() * (self.y_thresh * 2)
+            if dim <= 0:
+                dim = 1
+            stars.append(self.make_dot(size=dim, color=color, position=(x, y)))
+        return stars
+
+    def make_ellipse(self, a, b, color):
+        thetaList = []
+        i = 0
+        while i <= math.pi * 2:
+            thetaList.append(i)
+            i += (1 / 100) * math.pi
+
+        dotsize = int(self.scale_factor) + 1
+        if dotsize < 0:
+            dotsize += 1
+
+        dots = []
+        for i in range(0, len(thetaList)):  # ellipse 1
+            x, y = b * math.cos(thetaList[i]), a * math.sin(thetaList[i])
+            x = (x * self.scale_factor) + self.x_thresh
+            y = (y * self.scale_factor) + self.y_thresh
+            dots.append(self.make_dot(size=dotsize, color=color, position=(x, y)))
+        return dots
+
+    def initial_view(self):
+        screen_width, screen_height = int(self.x_thresh * 2), int(self.y_thresh * 2)
+
+        # create dimensions of satellites
+        bodydim = 30 * self.scale_factor
+        panelwid = 50 * self.scale_factor
+        panelhei = 20 * self.scale_factor
+
+        self.viewer = rendering.Viewer(screen_width, screen_height)  # create render viewer object
+
+        # SKY #
+        self.sky = self.make_sky(color=self.bg_color)
+        self.viewer.add_geom(self.sky[0])  # adds sky to viewer
+
+        # CHIEF AND DEPUTY #
+        self.deputy = self.make_satellite()
+        self.chief = self.make_satellite()
+
+        # STARS #
+        if self.stars > 0:
+            stars = self.make_stars(
+                num_stars=self.stars,
+                dim=bodydim / 10,
+                color=(.9, .9, .9)
+            )
+            for star, star_trans in stars:
+                self.viewer.add_geom(star)  # adds trace into render
+
+        # ELLIPSES #
+        if self.ellipse_quality > 0:
+            ellipse_1 = self.make_ellipse(
+                a=self.ellipse_a1,
+                b=self.ellipse_b1,
+                color=(.1, .9, .1)
+            )
+            for dot, dot_trans in ellipse_1:
+                self.viewer.add_geom(dot)
+
+            ellipse_2 = self.make_ellipse(
+                a=self.ellipse_a2,
+                b=self.ellipse_b2,
+                color=(.8, .9, .1)
+            )
+            for dot, dot_trans in ellipse_2:
+                self.viewer.add_geom(dot)
+
+        self.viewer.add_geom(self.chief[2])  # adds chief solar panel to viewer
+        self.viewer.add_geom(self.chief[0])  # adds chief body to viewer
+
+        # THRUST BLOCKS #
+        if self.thrustVis == 'Block':
+            self.particle_system = ThrustBlocks(
+                viewer=self.viewer,
+                parent_trans=self.deputy[1],
+                scale_factor=self.scale_factor,
+                x_thresh=self.x_thresh,
+                y_thresh=self.y_thresh
+            )
+        else:
+            self.particle_system = ThrustParticles(
+                viewer=self.viewer,
+                bg_color=self.bg_color,
+                x_thresh=self.x_thresh,
+                y_thresh=self.y_thresh,
+                scale_factor=self.scale_factor
+            )
+
+        self.viewer.add_geom(self.deputy[2])  # adds deputy solar panel to viewer
+
+        # VELOCITY ARROW #
+        if self.show_vel_arrow:
+            self.velocity_arrow = self.make_arrow(
+                parent_trans=self.deputy[1],
+                color=(.8, .1, .1),
+                start=(0, 0),
+                end=(panelwid * 2, 0)
+            )
+            self.viewer.add_geom(self.velocity_arrow[0])  # adds velocity arrow to viewer
+
+        # FORCE ARROW #
+        if self.show_force_arrow:
+            self.force_arrow = self.make_arrow(
+                parent_trans=self.deputy[1],
+                color=(.1, .8, .1),
+                start=(0, 0),
+                end=(panelwid * 2, 0)
+            )
+            self.viewer.add_geom(self.force_arrow[0])  # adds velocity arrow to viewer
+
+        self.viewer.add_geom(self.deputy[0])  # adds deputy body to viewer
+
+    def render(self, state, mode='human'):
+        if self.viewer is None:
+            self.initial_view()
+
+        # Get current state
+        deputy_state = state.env_objs["deputy"]
+        chief_state = state.env_objs["chief"]
+        x_force, y_force = deputy_state.control_cur
+
+        # Pull and scale deputy's position
+        tx = (deputy_state.position[0] + self.x_thresh / self.scale_factor) * self.scale_factor
+        ty = (deputy_state.position[1] + self.y_thresh / self.scale_factor) * self.scale_factor
+
+        # Translate satellite geometry
+        self.deputy[1].set_translation(tx, ty)
+        self.chief[1].set_translation(
+            chief_state.position[0] + self.x_thresh, chief_state.position[1] + self.y_thresh)
+
+        # Update particle system
+        self.particle_system.update(state=state)
+
+        # Add trace
+        if self.tracectr % self.trace == 0:  # if time to draw a trace, draw, else increment counter
+            trace, trace_trans = self.make_dot(size=self.trace_size, color=(.9, .1, .9), position=(tx, ty))
+            self.viewer.add_geom(trace)  # adds trace into render
+        self.tracectr += 1
+
+        # VELOCITY ARROW #
+        if self.velocity_arrow is not None:
+            tv = math.atan(deputy_state.y_dot / deputy_state.x_dot)  # angle of velocity
+            if deputy_state.x_dot < 0:  # arctan adjustment
+                tv += math.pi
+            self.velocity_arrow[1].set_rotation(tv)
+
+        # FORCE ARROW #
+        if self.force_arrow is not None:
+            if x_force == 0:
+                tf = math.atan(0)  # angle of velocity
+            else:
+                tf = math.atan(y_force / x_force)  # angle of velocity
+            if x_force < 0:  # arctan adjustment
+                tf += math.pi
+            self.force_arrow[1].set_rotation(tf)
+
+        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+
+    def close(self):  # if a viewer exists, close and kill it
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None
+
+
+class ParticleSystem:
+    def __init__(self, viewer, x_thresh, y_thresh, scale_factor):
+        self.x_thresh = x_thresh
+        self.y_thresh = y_thresh
+        self.scale_factor = scale_factor
+        self.viewer = viewer
+
+    def update(self, state):
+        raise NotImplementedError
+
+
+class ThrustBlocks(ParticleSystem):
+    def __init__(self, viewer, parent_trans, scale_factor, x_thresh, y_thresh):
+        super().__init__(viewer=viewer, x_thresh=x_thresh, y_thresh=y_thresh, scale_factor=scale_factor)
+        self.scale_factor = scale_factor
+        bodydim = 30 * self.scale_factor
+        panelwid = 50 * self.scale_factor
+        self.l_thrust = self.make_thrust_block(
+            coords=[-bodydim / 2, bodydim / 2, -panelwid, panelwid],
+            parent_trans=parent_trans,
+            color=(.7, .3, .1)
+        )
+        self.r_thrust = self.make_thrust_block(
+            coords=[-bodydim / 2, bodydim / 2, -panelwid, panelwid],
+            parent_trans=parent_trans,
+            color=(.7, .3, .1)
+        )
+        self.t_thrust = self.make_thrust_block(
+            coords=[-bodydim / 2, bodydim / 2, -bodydim / 2, bodydim / 2],
+            parent_trans=parent_trans,
+            color=(.7, .3, .1)
+        )
+        self.b_thrust = self.make_thrust_block(
+            coords=[-bodydim / 2, bodydim / 2, -bodydim / 2, bodydim / 2],
+            parent_trans=parent_trans,
+            color=(.7, .3, .1)
+        )
+        self.viewer.add_geom(self.l_thrust[0])  # adds left thrust block to viewer
+        self.viewer.add_geom(self.r_thrust[0])  # adds right thrust block to viewer
+        self.viewer.add_geom(self.t_thrust[0])  # adds top thrust block to viewer
+        self.viewer.add_geom(self.b_thrust[0])  # adds bottom thrust block to viewer
+
+    def update(self, state):
+        deputy_state = state.env_objs["deputy"]
+        x_dot, y_dot = deputy_state.x_dot, deputy_state.y_dot
+        inc_l, inc_r, inc_b, inc_t = -25, 25, -5, 5  # create block dimensions
+        # calculate block translations
+        if x_dot > 0:
+            inc_l = -65 * self.scale_factor
+            inc_r = 25 * self.scale_factor
+        elif x_dot < 0:
+            inc_r = 65 * self.scale_factor
+            inc_l = -25 * self.scale_factor
+        if y_dot > 0:
+            inc_b = -35 * self.scale_factor
+            inc_t = 5 * self.scale_factor
+        elif y_dot < 0:
+            inc_t = 35 * self.scale_factor
+            inc_b = -5 * self.scale_factor
+
+        # translate blocks
+        self.l_thrust[1].set_translation(inc_l, 0)
+        self.r_thrust[1].set_translation(inc_r, 0)
+        self.t_thrust[1].set_translation(0, inc_t)
+        self.b_thrust[1].set_translation(0, inc_b)
+
+    @staticmethod
+    def make_thrust_block(coords, parent_trans, color):
+        bottom, top, left, right = coords
+        thrust = rendering.FilledPolygon(
+            [(left, bottom), (left, top), (right, top), (right, bottom)])  # creates thrust polygon
+        thrust_trans = rendering.Transform()  # allows thrust to be moved
+        thrust.add_attr(thrust_trans)
+        thrust.add_attr(parent_trans)
+        thrust.set_color(color[0], color[1], color[2])  # sets color of thrust
+        return thrust, thrust_trans
+
+
+class ThrustParticles(ParticleSystem):
+    def __init__(self, viewer, bg_color, x_thresh, y_thresh, scale_factor):
+        # Thrust & Particle Variables #
+        super().__init__(viewer=viewer, x_thresh=x_thresh, y_thresh=y_thresh, scale_factor=scale_factor)
+        self.bg_color = bg_color
+        self.particles = []  # list containing particle references
+        self.p_obj = []  # list containing particle objects
+        self.trans = []  # list containing particle
+        self.p_velocity = 20  # velocity of particle
+        self.p_ttl = 4  # (steps) time to live per particle
+        self.p_var = 3  # (deg) the variation of launch angle (multiply by 2 to get full angle)
+
+    def update(self, state):
+        deputy_state = state.env_objs["deputy"]
+        x, y = (deputy_state.position[0]) * self.scale_factor, (deputy_state.position[1]) * self.scale_factor
+        x_force, y_force = 0, 0  # TODO: set actual force
+        v = random.randint(-self.p_var, self.p_var)
+        if x_force > 0:
+            self.create_particle(180 + v, x, y)
+        elif x_force < 0:
+            self.create_particle(0 + v, x, y)
+        if y_force > 0:
+            self.create_particle(270 + v, x, y)
+        elif y_force < 0:
+            self.create_particle(90 + v, x, y)
+
+        for i in range(0, len(self.particles)):
+            # velocity, theta, x, y, ttl
+            self.particles[i][4] -= 1  # decrement the ttl
+            r = (self.particles[i][1] * math.pi) / 180
+            self.particles[i][2] += (self.particles[i][0] * math.cos(r))
+            self.particles[i][3] += (self.particles[i][0] * math.sin(r))
+
+        self.clean_particles(all=False)
+
+        # translate & rotate all particles
+        for i in range(0, len(self.p_obj)):
+            self.trans[i].set_translation(self.x_thresh + self.particles[i][2],
+                                          self.y_thresh + self.particles[i][3])  # translate particle
+            self.trans[i].set_rotation(self.particles[i][1])
+
+    def create_particle(self, theta, x, y):
+        p = [self.p_velocity, theta, x, y, self.p_ttl]
+        obj_len = len(self.p_obj)  # position of particle in list
+        p_len = len(self.particles)  # position of particle in list
+        trans_len = len(self.trans)  # position of particle in list
+
+        self.particles.append(p)
+        self.p_obj.append(self.particles[p_len])
+        self.p_obj[obj_len] = rendering.make_circle(1)  # creates particle dot
+        self.trans.append(rendering.Transform())  # allows particle to be moved
+        self.p_obj[obj_len].add_attr(self.trans[trans_len])
+        self.p_obj[obj_len].set_color(.9, .9, .6)  # sets color of particle
+
+        self.trans[trans_len].set_translation(self.particles[p_len][2], self.particles[p_len][3])  # translate particle
+        self.trans[trans_len].set_rotation(self.particles[p_len][1])
+        self.viewer.add_geom(self.p_obj[obj_len])  # adds particle into render
+
+        self.clean_particles(all=False)
+        return p
+
+    def clean_particles(self, all):
+        while self.particles and (all or self.particles[0][4] < 0):
+            self.p_obj[0].set_color(self.bg_color[0], self.bg_color[1], self.bg_color[2])  # sets color of particle
+            self.particles.pop(0)  # delete particle at beginning of list
+            self.p_obj.pop(0)  # position of particle in list
+            self.trans.pop(0)  # position of particle in list

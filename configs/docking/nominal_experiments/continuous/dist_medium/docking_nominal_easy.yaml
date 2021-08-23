@@ -19,17 +19,15 @@ env_config:
         class: saferl.environment.models.platforms.AgentController
         actuators:
         - name: thrust_x
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
         - name: thrust_y
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         ref: chief
-        radius: [100, 150]
+        radius: [400, 600]
         angle: [0, 6.283185307179586]
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
@@ -37,7 +35,7 @@ env_config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      radius: 0.5
+      radius: 20
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   status:
@@ -65,7 +63,7 @@ env_config:
         target: deputy
         dist_status: docking_distance
         vel_threshold: 0.2
-        threshold_dist: 0.5
+        threshold_dist: 20
         slope: 2
     - name: max_vel_violation
       class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
@@ -84,7 +82,7 @@ env_config:
       config:
         docking_distance: docking_distance
         max_goal_distance: 40000
-        timeout: 2000
+        timeout: 3000
         in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
     - name: success
@@ -102,17 +100,17 @@ env_config:
     - name: time_reward
       class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
       config:
-        reward: -0.001
+        reward: -0.01
     - name: dist_change_reward
       class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
       config:
         deputy: deputy
         docking_region: docking_region
-        reward: -1.0e-02
+        reward: -1.0e-03
     - name: delta_v
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: 0   # change me
+        scale: -0.001   # change me
         bias: 0
         proportion_status: delta_v
     - name: max_vel_constraint
@@ -130,10 +128,10 @@ env_config:
         reward:
           crash: -1
           distance: -1
-          timeout: -5
+          timeout: -1
     - name: success_reward
       class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
       config:
-        reward: 5
+        reward: 1
         success_status: success
   verbose: false
