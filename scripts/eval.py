@@ -1,6 +1,6 @@
 import os
 import argparse
-import pickle
+import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
@@ -43,11 +43,13 @@ def get_args():
                         help="The full path to the directory to write evaluation logs in")
     parser.add_argument('--num_rollouts', type=int, default=10,
                         help="Number of randomly initialized episodes to evaluate")
+    parser.add_argument('--render', action="store_true",
+                        help="Flag to render environment during rollout")
 
     return parser.parse_args()
 
 
-def run_rollouts(agent, env, log_dir, num_rollouts=1):
+def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
     """
     A function to coordinate policy evaluation via RLLib API.
 
@@ -61,6 +63,8 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
         The path to the output directory in which evaluation logs will be run.
     num_rollouts : int
         The number of randomly initialized episodes conducted to evaluate the agent on.
+    render : bool
+        Flag to render the environment in a separate window during rollouts.
     """
     for i in tqdm.tqdm(range(num_rollouts)):
         # run until episode ends
@@ -91,6 +95,8 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
 
                 # write state to file
                 writer.write(state)
+                if render:
+                    env.render()
 
 
 def verify_experiment_dir(expr_dir_path):
@@ -205,7 +211,7 @@ def main():
     env_config = ray_config['env_config']
     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
     agent.restore(ckpt_path)
-    env = ray_config['env'](config=env_config)
+    env = ray_config['env'](env_config=env_config)
     # set seed and explore
     seed = args.seed if args.seed is not None else ray_config['seed']
     env.seed(seed)
@@ -213,7 +219,7 @@ def main():
     agent.get_policy().config['explore'] = args.explore
 
     # run inference episodes and log results
-    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts)
+    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts, render=args.render)
 
 
 if __name__ == "__main__":
