@@ -4,11 +4,13 @@ import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
+import yaml
 
 import ray
 import ray.rllib.agents.ppo as ppo
 
 from saferl.environment.utils import jsonify, is_jsonable
+from saferl.environment.constants import RENDER
 
 """
 This script loads an agent's policy from a saved checkpoint in the specified experiment directory. It randomly
@@ -45,6 +47,8 @@ def get_args():
                         help="Number of randomly initialized episodes to evaluate")
     parser.add_argument('--render', action="store_true",
                         help="Flag to render environment during rollout")
+    parser.add_argument('--render_config', type=str, default=None,
+                        help="The full path to a custom rendering config file")
 
     return parser.parse_args()
 
@@ -206,9 +210,17 @@ def main():
     with open(ray_config_path, 'rb') as ray_config_f:
         ray_config = pickle.load(ray_config_f)
 
+    # Load render config
+    render_config = None
+    if args.render_config is not None:
+        with open(args.render_config, "r") as f:
+            render_config = yaml.load(f)
+
     ray.init()
     # load policy and env
     env_config = ray_config['env_config']
+    if render_config is not None:
+        env_config[RENDER] = render_config
     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
     agent.restore(ckpt_path)
     env = ray_config['env'](env_config=env_config)
