@@ -62,6 +62,9 @@ class DockingRender:
         self.velocity_arrow = None
         self.force_arrow = None
 
+    def reset(self):
+        self.close()
+
     def make_sky(self, color):
         # SKY #
         b, t, l, r = 0, self.y_thresh * 2, 0, self.x_thresh * 2  # creates sky dimensions
@@ -71,12 +74,7 @@ class DockingRender:
         sky.set_color(color[0], color[1], color[2])  # sets color of sky
         return sky, sky_trans
 
-    def make_satellite(self):
-        # Create dimensions of satellites
-        bodydim = 30 * self.scale_factor
-        panel_width = 50 * self.scale_factor
-        panel_height = 20 * self.scale_factor
-
+    def make_satellite(self, bodydim, panel_width, panel_height):
         # BODY #
         b, t, l, r = -bodydim, bodydim, -bodydim, bodydim
         body = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])  # creates body polygon
@@ -121,10 +119,10 @@ class DockingRender:
         return stars
 
     def make_ellipse(self, a, b, color):
-        thetaList = []
+        theta_list = []
         i = 0
         while i <= math.pi * 2:
-            thetaList.append(i)
+            theta_list.append(i)
             i += (1 / 100) * math.pi
 
         dotsize = int(self.scale_factor) + 1
@@ -132,8 +130,8 @@ class DockingRender:
             dotsize += 1
 
         dots = []
-        for i in range(0, len(thetaList)):  # ellipse 1
-            x, y = b * math.cos(thetaList[i]), a * math.sin(thetaList[i])
+        for i in range(0, len(theta_list)):  # ellipse 1
+            x, y = b * math.cos(theta_list[i]), a * math.sin(theta_list[i])
             x = (x * self.scale_factor) + self.x_thresh
             y = (y * self.scale_factor) + self.y_thresh
             dots.append(self.make_dot(size=dotsize, color=color, position=(x, y)))
@@ -154,8 +152,16 @@ class DockingRender:
         self.viewer.add_geom(self.sky[0])  # adds sky to viewer
 
         # CHIEF AND DEPUTY #
-        self.deputy = self.make_satellite()
-        self.chief = self.make_satellite()
+        self.deputy = self.make_satellite(
+            bodydim=bodydim,
+            panel_width=panelwid,
+            panel_height=panelhei
+        )
+        self.chief = self.make_satellite(
+            bodydim=bodydim,
+            panel_width=panelwid,
+            panel_height=panelhei
+        )
 
         # STARS #
         if self.stars > 0:
@@ -237,7 +243,7 @@ class DockingRender:
         # Get current state
         deputy_state = state.env_objs["deputy"]
         chief_state = state.env_objs["chief"]
-        x_force, y_force = deputy_state.control_cur
+        x_force, y_force = deputy_state.current_control
 
         # Pull and scale deputy's position
         tx = (deputy_state.position[0] + self.x_thresh / self.scale_factor) * self.scale_factor
