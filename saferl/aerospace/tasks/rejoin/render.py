@@ -30,8 +30,8 @@ class RejoinRender:
                  x_threshold=10000,
                  y_threshold=10000,
                  scale_factor=25,
-                 show_ring=True,
                  show_rejoin=True,
+                 show_ring=False,
                  plane_scale=1,
                  r_aircraft=15,
                  show_res=False,
@@ -82,10 +82,10 @@ class RejoinRender:
         wingman_x = (wingman_state[0] + self.x_threshold) / self.scale_factor
         wingman_y = (wingman_state[1] + self.y_threshold) / self.scale_factor
 
-        d = -bodyheight / 3  # set distance  #find distance to travel
-        thetashift = wingman_state[2] - 90.0  # convert graphics direction to Cartesian angles
-        radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
-        wingman_trans_x, wingman_trans_y = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
+        # d = -bodyheight / 3  # set distance  #find distance to travel
+        # thetashift = wingman_state[2] - 90.0  # convert graphics direction to Cartesian angles
+        # radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
+        # wingman_trans_x, wingman_trans_y = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
 
         # process lead state
         lead_state = state.env_objs["lead"].state._vector
@@ -94,10 +94,18 @@ class RejoinRender:
         lead_x = (lead_state[0] + self.x_threshold) / self.scale_factor
         lead_y = (lead_state[1] + self.y_threshold) / self.scale_factor
 
-        d = -bodyheight / 3  # set distance  #find distance to travel
-        thetashift = 0 - 90.0  # convert graphics direction to Cartesian angles
-        radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
-        lead_trans_x, lead_trans_y = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
+        # d = -bodyheight / 3  # set distance  #find distance to travel
+        # thetashift = 0 - 90.0  # convert graphics direction to Cartesian angles
+        # radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
+        # lead_trans_x, lead_trans_y = math.sin(radtheta) * d, math.cos(radtheta) * d  # use trig to find actual x and y translations
+
+        # process rejoin state
+        rejoin_region = state.env_objs["rejoin_region"]
+        rejoin_region_shape = rejoin_region.shape
+
+        rejoin_region_x = (rejoin_region_shape._center[0] + self.x_threshold) / self.scale_factor
+        rejoin_region_y = (rejoin_region_shape._center[1] + self.y_threshold) / self.scale_factor
+        rejoin_region_r = rejoin_region_shape.radius / self.scale_factor
 
         if self.showRes:
             print("Height: " + str(screen_height))
@@ -170,100 +178,52 @@ class RejoinRender:
                 ring.set_color(.9, .0, .0)  # sets color of ring
                 self.viewer.add_geom(ring)  # adds ring into render
 
+            if self.show_rejoin:
+                ring = rendering.make_circle(rejoin_region_r, 30, False)  # creates ring dimensions
+                self.rejoin_trans = rendering.Transform()  # allows ring to be moved
+                ring.add_attr(self.rejoin_trans)
+                ring.set_color(.9, .0, .0)  # sets color of ring
+                self.rejoin_trans.set_translation(rejoin_region_x, rejoin_region_y)
+                self.viewer.add_geom(ring)  # adds ring into render
+
         # render agent plane
         self.bodytrans.set_rotation(wingman_state[2])  # rotate body
         self.bodytrans.set_translation(wingman_x, wingman_y)  # translate body
-        self.tailtrans.set_rotation(wingman_state[2])  # rotate tail
-        self.tailtrans.set_translation(wingman_x - wingman_trans_x, wingman_y + wingman_trans_y)  # translate tail
+        # self.tailtrans.set_rotation(wingman_state[2])  # rotate tail
+        # self.tailtrans.set_translation(wingman_x - wingman_trans_x, wingman_y - wingman_trans_y)  # translate tail
 
         # render lead plane
         self.bodytrans_target.set_rotation(lead_state[2])  # rotate body
         self.bodytrans_target.set_translation(lead_x, lead_y)  # translate body
-        self.tailtrans_target.set_rotation(0)  # rotate tail
-        self.tailtrans_target.set_translation(lead_x - lead_trans_x, lead_y + lead_trans_y)  # translate tail
+        # self.tailtrans_target.set_rotation(0)  # rotate tail
+        # self.tailtrans_target.set_translation(lead_x - lead_trans_x, lead_y + lead_trans_y)  # translate tail
 
-        # # TODO: render rejoin region
-        # # process rejoin state
-        # rejoin_region = state.env_objs["rejoin_region"]
-        # rejoin_region_shape = rejoin_region.shape
-        #
-        # rejoin_region_x = (rejoin_region_shape._center[0] + self.x_threshold) / self.scale_factor
-        # rejoin_region_y = (rejoin_region_shape._center[1] + self.y_threshold) / self.scale_factor
-        # print("lead")
-        # print(lead_x, lead_y)
-        # print("rejoin_region")
-        # print(rejoin_region_x, rejoin_region_y)
-        #
-        # rejoin_region_r = rejoin_region_shape.radius / self.scale_factor
-        #
-        # # render rejoin region
-        # if self.show_rejoin:
-        #     ring = rendering.make_circle(rejoin_region_r, 30, False)  # creates ring dimensions
-        #     self.rejoin_trans = rendering.Transform()  # allows ring to be moved
-        #     # ring.add_attr(self.ringtrans)
-        #     # ring.add_attr(self.bodytrans)  # sets ring as part of body
-        #     ring.set_color(.9, .0, .0)  # sets color of ring
-        #     self.viewer.add_geom(ring)  # adds ring into render
-        #     self.rejoin_trans.set_translation(rejoin_region_x, rejoin_region_y)
+        # render rejoin region
+        if self.show_rejoin:
+            self.rejoin_trans.set_translation(rejoin_region_x, rejoin_region_y)
 
-        # render trace
-        if self.trace != 0:
-            if self.tracectr == self.trace:
-                tracewidth = int(bodywidth / 2)
-                if tracewidth < 1:
-                    tracewidth = 1
-                trace = rendering.make_circle(tracewidth)  # creates trace dot
-                self.tracetrans = rendering.Transform()  # allows trace to be moved
-                trace.add_attr(self.tracetrans)
-                trace.set_color(.9, .1, .9)  # sets color of trace
-                self.viewer.add_geom(trace)  # adds trace into render
-                self.tracectr = 0
-            else:
-                self.tracectr += 1
-            self.tracetrans.set_translation(wingman_x, wingman_y)  # translate trace
+        # # render trace
+        # if self.trace != 0:
+        #     if self.tracectr == self.trace:
+        #         tracewidth = int(bodywidth / 2)
+        #         if tracewidth < 1:
+        #             tracewidth = 1
+        #         trace = rendering.make_circle(tracewidth)  # creates trace dot
+        #         self.tracetrans = rendering.Transform()  # allows trace to be moved
+        #         trace.add_attr(self.tracetrans)
+        #         trace.set_color(.9, .1, .9)  # sets color of trace
+        #         self.viewer.add_geom(trace)  # adds trace into render
+        #         self.tracectr = 0
+        #     else:
+        #         self.tracectr += 1
+        #     self.tracetrans.set_translation(wingman_x, wingman_y)  # translate trace
 
         # sleep to slow down animation
         time.sleep(self.render_speed)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
-    # def create_particle(self, velocity, theta, x, y, ttl):
-    #     p = [velocity, theta, x, y, ttl]
-    #     obj_len = len(self.p_obj)  # position of particle in list
-    #     p_len = len(self.particles)  # position of particle in list
-    #     trans_len = len(self.trans)  # position of particle in list
-    #
-    #     self.particles.append(p)
-    #     self.p_obj.append(self.particles[p_len])
-    #     self.p_obj[obj_len] = rendering.make_circle(1)  # creates particle dot
-    #     self.trans.append(rendering.Transform())  # allows particle to be moved
-    #     self.p_obj[obj_len].add_attr(self.trans[trans_len])
-    #     self.p_obj[obj_len].set_color(.9, .9, .6)  # sets color of particle
-    #
-    #     self.trans[trans_len].set_translation(self.particles[p_len][2], self.particles[p_len][3])  # translate particle
-    #     self.trans[trans_len].set_rotation(self.particles[p_len][1])
-    #     self.viewer.add_geom(self.p_obj[obj_len])  # adds particle into render
-    #
-    #     RejoinRender.clean_particles(self, False)
-    #     return p
-    #
-    # def clean_particles(self, all):
-    #     while self.particles and (all or self.particles[0][4] < 0):  # if all or if the first particle has reached its ttl
-    #         self.p_obj[0].set_color(self.bg_color[0], self.bg_color[1], self.bg_color[2])  # sets color of particle
-    #         self.particles.pop(0)  # delete particle at beginning of list
-    #         self.p_obj.pop(0)  # position of particle in list
-    #         self.trans.pop(0)  # position of particle in list
-
     def close(self):  # if a viewer exists, close and kill it
         if self.viewer is not None:
             self.viewer.close()
             self.viewer = None
-
-
-    # TODO:
-    #  render rejoin region             []
-    #  fix plane tail                   []
-    #  adjust screen width properly     [check]
-    #  get correct values from state    [check]
-    #  remove goal line                 [check]
-    #  refactor code                    [check]
