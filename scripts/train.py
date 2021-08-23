@@ -61,6 +61,22 @@ def get_args():
     parser.add_argument('--fake_gpus', action="store_true", help="use simulated gpus")
     parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
+    parser.add_argument(
+        '--restore',
+        type=str,
+        default=None,
+        help="""restore agent from checkpoint and resume training with the passed config file.
+                Must be path to tune checkpoint file within the checkpoint directory.
+                E.g. --restore <path to experiment>/checkpoint_xx/checkpoint-xx"""
+    )
+    parser.add_argument(
+        '--resume',
+        type=str,
+        default=None,
+        help="""name of experiment to restore. Note that --output_dir must contain the resumed experiment directory.
+                If no saved checkpoint is present, training will resume from first iteration.
+                Make sure --checkpoint_freq is set to a reasonable value"""
+    )
 
     parser.add_argument('--complete_episodes', action="store_true",
                         help="True if using complete episodes during training desired, "
@@ -152,24 +168,34 @@ def experiment_setup(args):
     with open(ray_config_yaml_filepath, 'w') as ray_config_yaml_file:
         yaml.dump(config, ray_config_yaml_file)
 
+    return expr_name, config
+
+
+def main(args):
+
     # Initialize stop dict
     stop_dict = {
         'training_iteration': args.stop_iteration,
     }
 
-    return expr_name, config, stop_dict
-
-
-def main(args):
-
-    # Setup experiment
-    expr_name, config, stop_dict = experiment_setup(args=args)
-
     # Run training
     if not args.debug:
-        tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
-                 checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name)
+        if args.resume:
+            expr_name = args.resume
+            tune.run(ppo.PPOTrainer, stop=stop_dict, local_dir=args.output_dir,
+                     checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
+                     resume=True)
+        else:
+            # Setup experiment
+            expr_name, config = experiment_setup(args=args)
+
+            tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
+                     checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
+                     restore=args.restore)
     else:
+        # Setup experiment
+        expr_name, config = experiment_setup(args=args)
+
         # Run training in a single process for debugging
         config["num_workers"] = 0
         trainer = ppo.PPOTrainer(config=config)
