@@ -53,7 +53,7 @@ class RejoinRender:
         self.termination_condition = termination_condition  # Set to true to print termination condition
 
         # Trace params
-        self.trace = trace                  # (steps) spacing between trace dots
+        # self.trace = trace                  # (steps) spacing between trace dots
         self.tracectr = self.trace
 
     def renderSim(self, state, mode='human'):
