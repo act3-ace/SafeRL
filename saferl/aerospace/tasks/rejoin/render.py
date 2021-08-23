@@ -20,7 +20,6 @@ close:
 
 
 import time
-import math
 from gym.envs.classic_control import rendering
 
 
@@ -36,7 +35,7 @@ class RejoinRender:
                  r_aircraft=15,
                  show_res=False,
                  termination_condition=False,
-                 trace=0,
+                 # trace=0,
                  render_speed=0.03):
 
         self.x_threshold = x_threshold      # ft (To the left)
@@ -56,9 +55,6 @@ class RejoinRender:
         # Trace params
         self.trace = trace                  # (steps) spacing between trace dots
         self.tracectr = self.trace
-
-        # TODO: unknowns
-        self.bg_color = (0, 0, .15)  # r,g,b
 
     def renderSim(self, state, mode='human'):
         # collect state data and set screen
@@ -82,6 +78,7 @@ class RejoinRender:
         wingman_x = (wingman_state[0] + self.x_threshold) / self.scale_factor
         wingman_y = (wingman_state[1] + self.y_threshold) / self.scale_factor
 
+        # TODO: render tail position accurately
         # d = -bodyheight / 3  # set distance  #find distance to travel
         # thetashift = wingman_state[2] - 90.0  # convert graphics direction to Cartesian angles
         # radtheta = (thetashift * 3.1415926535) / 180.0  # convert angle to radians
@@ -202,7 +199,7 @@ class RejoinRender:
         if self.show_rejoin:
             self.rejoin_trans.set_translation(rejoin_region_x, rejoin_region_y)
 
-        # # render trace
+        # #TODO: render trace
         # if self.trace != 0:
         #     if self.tracectr == self.trace:
         #         tracewidth = int(bodywidth / 2)
