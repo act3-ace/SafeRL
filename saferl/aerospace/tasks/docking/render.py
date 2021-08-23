@@ -62,6 +62,9 @@ class DockingRender:
         self.velocity_arrow = None
         self.force_arrow = None
 
+    def reset(self):
+        self.close()
+
     def make_sky(self, color):
         # SKY #
         b, t, l, r = 0, self.y_thresh * 2, 0, self.x_thresh * 2  # creates sky dimensions

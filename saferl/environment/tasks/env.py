@@ -110,6 +110,10 @@ class BaseEnv(gym.Env):
         # generate reset state observations
         obs = self._generate_obs()
 
+        # Reset render viewer
+        if self.renderer is not None:
+            self.renderer.reset()
+
         if self.verbose:
             print("env reset with params {}".format(self.generate_info()))
 
