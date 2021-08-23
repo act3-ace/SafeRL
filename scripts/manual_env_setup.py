@@ -1,36 +1,45 @@
 import argparse
 from saferl.environment.utils import YAMLParser, build_lookup
-# create env from config
 
-# use the saferl.environment to set it up
 
-# default config set to docking env
-CONFIG = '../configs/docking/docking_default.yaml'
+def main():
+    # create env from config
 
-# 1. setup an argeparse block to take in config parameters
-parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=str, help='path to config file', default=CONFIG)
-args = parser.parse_args()
+    # use the saferl.environment to set it up
 
-# 2. parse yaml file and call appropriate classes
+    # default config set to docking env
+    CONFIG = '../configs/docking/docking_default.yaml'
 
-# behavior of YAMLParser changed in master
+    # 1. setup an argeparse block to take in config parameters
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, help='path to config file', default=CONFIG)
+    args = parser.parse_args()
 
-lookup = build_lookup()
-parser = YAMLParser(args.config, lookup)
-mod_config = parser.parse_env()
+    # 2. parse yaml file and call appropriate classes
 
-env_class = mod_config['env']
-env_config = mod_config['env_config']
+    # behavior of YAMLParser changed in master
 
-# 3 . instantiate the environment class
-setup_env = env_class(env_config)
+    lookup = build_lookup()
+    parser = YAMLParser(args.config, lookup)
+    mod_config = parser.parse_env()
 
-# 4 - a step on the environment
+    env_class = mod_config['env']
+    env_config = mod_config['env_config']
 
-obs, reward, done, info = setup_env.step(None)
+    # 3 . instantiate the environment class
+    setup_env = env_class(env_config)
 
-print('obs=', obs)
-print('reward=', reward)
-print('done=', done)
-print('info=', info)
+    # 4 - a step on the environment
+
+    for i in range(1000):
+        obs, reward, done, info = setup_env.step(None)
+        setup_env.render()
+
+    print('obs=', obs)
+    print('reward=', reward)
+    print('done=', done)
+    print('info=', info)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,7 +1,7 @@
 import os
 import argparse
 # import pickle
-import pickle5
+import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
@@ -63,6 +63,8 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
         The path to the output directory in which evaluation logs will be run.
     num_rollouts : int
         The number of randomly initialized episodes conducted to evaluate the agent on.
+    render : bool
+        Flag to render the environment in a separate window during rollouts.
     """
     for i in tqdm.tqdm(range(num_rollouts)):
         # run until episode ends
@@ -93,6 +95,8 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
 
                 # write state to file
                 writer.write(state)
+                if render:
+                    env.render()
 
                 if render:
                     # attempt to render environment state
@@ -204,7 +208,7 @@ def main():
 
     # load checkpoint
     with open(ray_config_path, 'rb') as ray_config_f:
-        ray_config = pickle5.load(ray_config_f)
+        ray_config = pickle.load(ray_config_f)
 
     ray.init()
     # load policy and env

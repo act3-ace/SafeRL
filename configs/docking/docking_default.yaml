@@ -21,15 +21,15 @@ env_config:
         - name: thrust_x
           space: discrete
           points: 11
-          bounds: [-10, 10]
+          bounds: [-1, 1]
         - name: thrust_y
           space: discrete
           points: 11
-          bounds: [-10, 10]
+          bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         ref: chief
-        radius: [750, 1250]
+        radius: [100, 150]
         angle: [0, 6.283185307179586]
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
@@ -37,58 +37,103 @@ env_config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      radius: 20
+      radius: 0.5
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-  observation:
-  - name: observation_processor
-    class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
-    config:
-      deputy: deputy
-      mode: 2d
-  reward:
-  - name: time_reward
-    class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
-    config:
-      reward: -0.01
-  - name: dist_change_reward
-    class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
-    config:
-      deputy: deputy
-      docking_region: docking_region
-      reward: -1.0e-03
-  - name: failure_reward
-    class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
-    config:
-      failure_status: failure
-      reward:
-        crash: -1
-        distance: -1
-        timeout: -1
-  - name: success_reward
-    class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
-    config:
-      reward: 1
-      success_status: success
   status:
-  - name: docking_status
-    class: saferl.aerospace.tasks.docking.processors.DockingStatusProcessor
-    config:
-      deputy: deputy
-      docking_region: docking_region
-  - name: docking_distance
-    class: saferl.aerospace.tasks.docking.processors.DockingDistanceStatusProcessor
-    config:
-      deputy: deputy
-      docking_region: docking_region
-  - name: failure
-    class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
-    config:
-      docking_distance: docking_distance
-      max_goal_distance: 40000
-      timeout: 1000
-  - name: success
-    class: saferl.aerospace.tasks.docking.processors.SuccessStatusProcessor
-    config:
-      docking_status: docking_status
+    - name: in_docking
+      class: saferl.aerospace.tasks.docking.processors.InDockingStatusProcessor
+      config:
+        deputy: deputy
+        docking_region: docking_region
+    - name: docking_distance
+      class: saferl.aerospace.tasks.docking.processors.DockingDistanceStatusProcessor
+      config:
+        deputy: deputy
+        docking_region: docking_region
+    - name: delta_v
+      class: saferl.aerospace.tasks.docking.processors.DockingThrustDeltaVStatusProcessor
+      config:
+        target: deputy
+    - name: custom_metrics.delta_v_total
+      class: saferl.aerospace.tasks.docking.processors.AccumulatorStatusProcessor
+      config:
+        status: delta_v
+    - name: max_vel_limit
+      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimit
+      config:
+        target: deputy
+        dist_status: docking_distance
+        vel_threshold: 0.2
+        threshold_dist: 0.5
+        slope: 2
+    - name: max_vel_violation
+      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
+      config:
+        target: deputy
+        ref: chief
+        vel_limit_status: max_vel_limit
+    - name: max_vel_constraint
+      class: saferl.aerospace.tasks.docking.processors.RelativeVelocityConstraint
+      config:
+        target: deputy
+        ref: chief
+        vel_limit_status: max_vel_limit
+    - name: failure
+      class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
+      config:
+        docking_distance: docking_distance
+        max_goal_distance: 40000
+        timeout: 2000
+        in_docking_status: in_docking
+        max_vel_constraint_status: max_vel_constraint
+    - name: success
+      class: saferl.aerospace.tasks.docking.processors.SuccessStatusProcessor
+      config:
+        in_docking_status: in_docking
+        max_vel_constraint_status: max_vel_constraint
+  observation:
+    - name: observation_processor
+      class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
+      config:
+        deputy: deputy
+        mode: 2d
+  reward:
+    - name: time_reward
+      class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
+      config:
+        reward: -0.001
+    - name: dist_change_reward
+      class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
+      config:
+        deputy: deputy
+        docking_region: docking_region
+        reward: -1.0e-02
+    - name: delta_v
+      class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
+      config:
+        scale: 0   # change me
+        bias: 0
+        proportion_status: delta_v
+    - name: max_vel_constraint
+      class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
+      config:
+        scale: -0.001
+        bias: -0.01
+        proportion_status: max_vel_violation
+        cond_status: max_vel_constraint
+        cond_status_invert: True
+    - name: failure_reward
+      class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
+      config:
+        failure_status: failure
+        reward:
+          crash: -1
+          distance: -1
+          timeout: -5
+    - name: success_reward
+      class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
+      config:
+        reward: 5
+        success_status: success
   verbose: false
