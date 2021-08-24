@@ -28,9 +28,9 @@ class DockingRenderer(BaseRenderer):
 
     def __init__(self, scale_factor=.25, velocity_arrow=False,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
-                 ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5, trace_min=True):
-        self.scale_factor = scale_factor  # TODO: find out these magic numbers
-        self.viewer = None
+                 ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5):
+        super().__init__()
+        self.scale_factor = scale_factor
         self.screen_width = 750
         self.screen_height = 750
         self.x_thresh = self.screen_width // 2
