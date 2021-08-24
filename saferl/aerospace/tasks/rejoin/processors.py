@@ -58,10 +58,10 @@ class DubinsObservationProcessor(ObservationProcessor):
 
         wingman_vel = sim_state.env_objs[self.wingman].velocity
         lead_vel = sim_state.env_objs[self.lead].velocity
-        
+
         reference_rotation = Rotation.from_quat([0, 0, 0, 1])
-        if self.reference == self.wingman:
-            reference_rotation = sim_state.env_objs[self.wingman].orientation.inv()
+
+        reference_rotation = sim_state.env_objs[self.reference].orientation.inv()
 
         wingman_lead_r = reference_rotation.apply(wingman_lead_r)
         wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
@@ -143,8 +143,8 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         lead_vel = sim_state.env_objs[self.lead].velocity
 
         reference_rotation = Rotation.from_quat([0, 0, 0, 1])
-        if self.reference == self.wingman:
-            reference_rotation = sim_state.env_objs[self.wingman].orientation.inv()
+
+        reference_rotation = sim_state.env_objs[self.reference].orientation.inv()
 
         wingman_lead_r = reference_rotation.apply(wingman_lead_r)
         wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
