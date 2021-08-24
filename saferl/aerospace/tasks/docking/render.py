@@ -28,7 +28,7 @@ class DockingRenderer(BaseRenderer):
 
     def __init__(self, max_distance=1500, padding=50, velocity_arrow=False, dot_size=1,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
-                 ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5):
+                 ellipse_b1=100, draw_ellipse=True, trace=5):
         super().__init__()
         self.screen_width = 750
         self.screen_height = 750
@@ -48,9 +48,7 @@ class DockingRenderer(BaseRenderer):
         # Ellipse params
         self.ellipse_a1 = ellipse_a1  # m
         self.ellipse_b1 = ellipse_b1  # m
-        self.ellipse_a2 = ellipse_a2  # m
-        self.ellipse_b2 = ellipse_b2  # m
-        self.ellipse_quality = ellipse_quality  # 1/x * pi
+        self.draw_ellipse = draw_ellipse  # 1/x * pi
 
         # Trace params
         self.trace = trace  # (steps) spacing between trace dots
@@ -187,7 +185,7 @@ class DockingRenderer(BaseRenderer):
                 self.viewer.add_geom(star)  # adds trace into render
 
         # ELLIPSES #
-        if self.ellipse_quality > 0:
+        if self.draw_ellipse:
             ellipse_1 = self.make_ellipse(
                 a=self.ellipse_a1,
                 b=self.ellipse_b1,
@@ -195,15 +193,6 @@ class DockingRenderer(BaseRenderer):
                 dot_size=self.dot_size
             )
             for dot, dot_trans in ellipse_1:
-                self.viewer.add_geom(dot)
-
-            ellipse_2 = self.make_ellipse(
-                a=self.ellipse_a2,
-                b=self.ellipse_b2,
-                color=(.8, .9, .1),
-                dot_size=self.dot_size
-            )
-            for dot, dot_trans in ellipse_2:
                 self.viewer.add_geom(dot)
 
         self.viewer.add_geom(self.chief[2])  # adds chief solar panel to viewer
