@@ -35,7 +35,7 @@ EVALUATION_NUM_WORKERS = 1
 EVALUATION_SEED = 1
 DEBUG = False
 COMPLETE = False
-ROLLOUT_FRAGMENT_LENGTH = None
+ROLLOUT_FRAGMENT_LENGTH = 200
 
 
 def get_args():
@@ -50,16 +50,16 @@ def get_args():
     parser.add_argument('--log_interval', type=int, default=LOGGING_INTERVAL, help="number of episodes between logging")
     parser.add_argument('--checkpoint_freq', type=int, default=CHECKPOINT_FREQUENCY, help="tune checkpoint frequency")
     parser.add_argument('--cuda_visible', type=str, default=CUDA_VISIBLE_DEVICES, help="list of cuda visible devices")
-    parser.add_argument('--gpus', type=int, default=NUM_GPUS, help="number of gpus used for training")
-    parser.add_argument('--workers', type=int, default=NUM_WORKERS, help="number of cpu workers used for training")
+    parser.add_argument('--gpus', type=int, default=None, help="number of gpus used for training")
+    parser.add_argument('--workers', type=int, default=None, help="number of cpu workers used for training")
     parser.add_argument(
         '--envs_per_worker',
         type=int,
-        default=NUM_ENVS_PER_WORKER,
+        default=None,
         help="number of environments per cpu worker used for training"
     )
     parser.add_argument('--fake_gpus', action="store_true", help="use simulated gpus")
-    parser.add_argument('--seed', type=int, default=SEED, help="set random seed")
+    parser.add_argument('--seed', type=int, default=None, help="set random seed")
     parser.add_argument('--stop_iteration', type=int, default=STOP_ITERATION, help="number of iterations to run")
     parser.add_argument(
         '--restore',
@@ -81,7 +81,7 @@ def get_args():
     parser.add_argument('--complete_episodes', action="store_true",
                         help="True if using complete episodes during training desired, "
                              "False if using truncated episodes")
-    parser.add_argument('--rollout_fragment_length', type=int, default=ROLLOUT_FRAGMENT_LENGTH,
+    parser.add_argument('--rollout_fragment_length', type=int, default=None,
                         help="size of batches collected by each worker if truncated episodes")
 
     parser.add_argument('--evaluation_during_training', action="store_true",
@@ -116,16 +116,23 @@ def experiment_setup(args):
     # Initialize Ray
     ray.init(num_gpus=args.gpus)
 
-    # TODO: allow choice of default config
-
     # Setup default PPO config
-    config = ppo.DEFAULT_CONFIG.copy()
-    config["num_gpus"] = args.gpus
-    config["num_workers"] = args.workers
+    default_config = ppo.DEFAULT_CONFIG.copy()
+
+    # Setup custom config
+    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup())
+    config = parser.parse_env()
+
+    config_fill_with_arg(config, 'num_gpus', args.gpus, NUM_GPUS)
+    config_fill_with_arg(config, 'num_workers', args.workers, NUM_WORKERS)
+    config_fill_with_arg(config, 'seed', args.seed, SEED)
+    config_fill_with_arg(config, 'num_envs_per_worker', args.envs_per_worker, NUM_ENVS_PER_WORKER)
+    config_fill_with_arg(config, 'rollout_fragment_length', args.rollout_fragment_length, ROLLOUT_FRAGMENT_LENGTH)
+
     config['_fake_gpus'] = args.fake_gpus
-    config['seed'] = args.seed
-    if args.envs_per_worker > 1:
-        config["num_envs_per_worker"] = args.envs_per_worker
+    if args.complete_episodes:
+        config['batch_mode'] = "complete_episodes"
+
     config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
                                                   FailureCodeCallback(),
                                                   RewardComponentsCallback(),
@@ -133,14 +140,6 @@ def experiment_setup(args):
                                                                   episode_log_interval=args.log_interval,
                                                                   contents=CONTENTS),
                                                   StatusCustomMetricsCallback()])
-
-    config['batch_mode'] = "complete_episodes" if args.complete_episodes else "truncate_episodes"
-    if args.rollout_fragment_length is not None:
-        config['rollout_fragment_length'] = args.rollout_fragment_length
-
-    # Setup custom config
-    parser = YAMLParser(yaml_file=args.config, lookup=build_lookup())
-    custom_config = parser.parse_env()
 
     if args.evaluation_during_training:
         # set evaluation parameters
@@ -159,7 +158,7 @@ def experiment_setup(args):
         }
 
     # Merge custom and default configs
-    config = dict_merge(config, custom_config, recursive=True)
+    config = dict_merge(default_config, config, recursive=True)
 
     # Save experiment params
     with open(args_yaml_filepath, 'w') as args_yaml_file:
@@ -169,6 +168,16 @@ def experiment_setup(args):
         yaml.dump(config, ray_config_yaml_file)
 
     return expr_name, config
+
+
+def config_fill_with_arg(config, key, arg, arg_default):
+    if arg is not None:
+        config[key] = arg
+    elif key not in config:
+        if arg is not None:
+            config[key] = arg
+        else:
+            config[key] = arg_default
 
 
 def main(args):
