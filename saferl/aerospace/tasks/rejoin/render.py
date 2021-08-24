@@ -3,19 +3,6 @@ Rendering for 2D Dubins Rejoin Simulation
 
 Created by Kai Delsing
 Adapted by John McCarroll
-Mentor: Kerianne Hobbs
-
-Description:
-    A class for rendering the 2D Dubins Rejoin environment.
-
-renderSim:
-    Create, run, and update the rendering
-create_particle:
-    Instantiate and initialize a particle object in the necessary lists
-clean_particles:
-    Delete particles past their ttl or all at once
-close:
-    Close the viewer and rendering
 """
 
 
