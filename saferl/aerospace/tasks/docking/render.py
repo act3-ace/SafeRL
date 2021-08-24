@@ -21,17 +21,20 @@ close:
 import math
 import random
 from gym.envs.classic_control import rendering
+from saferl.environment.tasks.render import BaseRender
 
 
-class DockingRender:
+class DockingRender(BaseRender):
 
     def __init__(self, x_threshold=1500, y_threshold=1500, scale_factor=.25, velocity_arrow=False,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
                  ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5, trace_min=True):
+
+        super().__init__()
+
         self.scale_factor = scale_factor  # TODO: find out these magic numbers
         self.x_thresh = x_threshold * self.scale_factor  # 1.5 * deputy position (scaled)
         self.y_thresh = y_threshold * self.scale_factor  # 1.5 * deputy position (scaled)
-        self.viewer = None
 
         self.bg_color = (0, 0, .15)  # r,g,b
 
@@ -61,9 +64,6 @@ class DockingRender:
         self.particle_system = None
         self.velocity_arrow = None
         self.force_arrow = None
-
-    def reset(self):
-        self.close()
 
     def make_sky(self, color):
         # SKY #
@@ -281,11 +281,6 @@ class DockingRender:
             self.force_arrow[1].set_rotation(tf)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
-
-    def close(self):  # if a viewer exists, close and kill it
-        if self.viewer is not None:
-            self.viewer.close()
-            self.viewer = None
 
 
 class ParticleSystem:
