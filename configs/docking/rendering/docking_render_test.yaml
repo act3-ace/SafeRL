@@ -1,0 +1,4 @@
+class: saferl.aerospace.tasks.docking.render.DockingRender
+config:
+  velocity_arrow: True
+  force_arrow: True

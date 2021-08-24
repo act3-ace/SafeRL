@@ -4,12 +4,11 @@ import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
-import yaml
 
 import ray
 import ray.rllib.agents.ppo as ppo
 
-from saferl.environment.utils import jsonify, is_jsonable
+from saferl.environment.utils import jsonify, is_jsonable, YAMLParser, build_lookup
 from saferl.environment.constants import RENDER
 
 """
@@ -213,8 +212,8 @@ def main():
     # Load render config
     render_config = None
     if args.render_config is not None:
-        with open(args.render_config, "r") as f:
-            render_config = yaml.load(f)
+        parser = YAMLParser(yaml_file=args.render_config, lookup=build_lookup())
+        render_config = parser.parse_env()
 
     ray.init()
     # load policy and env
