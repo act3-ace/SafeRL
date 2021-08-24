@@ -38,7 +38,7 @@ class DockingRender:
         # Toggle shown items
         self.show_vel_arrow = velocity_arrow
         self.show_force_arrow = force_arrow
-        self.thrustVis = thrust_vis
+        self.thrust_vis = thrust_vis
         self.stars = stars
         self.termination_condition = termination_condition  # Set to true to print termination condition
 
@@ -195,7 +195,7 @@ class DockingRender:
         self.viewer.add_geom(self.chief[0])  # adds chief body to viewer
 
         # THRUST BLOCKS #
-        if self.thrustVis == 'Block':
+        if self.thrust_vis == 'Block':
             self.particle_system = ThrustBlocks(
                 viewer=self.viewer,
                 parent_trans=self.deputy[1],
@@ -203,7 +203,7 @@ class DockingRender:
                 x_thresh=self.x_thresh,
                 y_thresh=self.y_thresh
             )
-        else:
+        elif self.thrust_vis == 'Particles':
             self.particle_system = ThrustParticles(
                 viewer=self.viewer,
                 bg_color=self.bg_color,
@@ -255,7 +255,8 @@ class DockingRender:
             chief_state.position[0] + self.x_thresh, chief_state.position[1] + self.y_thresh)
 
         # Update particle system
-        self.particle_system.update(state=state)
+        if self.particle_system is not None:
+            self.particle_system.update(state=state)
 
         # Add trace
         if self.tracectr % self.trace == 0:  # if time to draw a trace, draw, else increment counter
@@ -381,7 +382,7 @@ class ThrustParticles(ParticleSystem):
     def update(self, state):
         deputy_state = state.env_objs["deputy"]
         x, y = (deputy_state.position[0]) * self.scale_factor, (deputy_state.position[1]) * self.scale_factor
-        x_force, y_force = 0, 0  # TODO: set actual force
+        x_force, y_force = deputy_state.current_control
         v = random.randint(-self.p_var, self.p_var)
         if x_force > 0:
             self.create_particle(180 + v, x, y)
