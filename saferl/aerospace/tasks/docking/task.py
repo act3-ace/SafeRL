@@ -1,5 +1,5 @@
 from saferl.environment.tasks.env import BaseEnv
-from saferl.aerospace.tasks.docking.render import DockingRender
+from saferl.aerospace.tasks.docking.render import DockingRenderer
 
 
 class DockingEnv(BaseEnv):
@@ -7,7 +7,7 @@ class DockingEnv(BaseEnv):
     def __init__(self, env_config):
         super().__init__(env_config)
         if self.renderer is None:
-            self.renderer = DockingRender(**self.render_config)
+            self.renderer = DockingRenderer(**self.render_config)
         docking_distance = self.sim_state.status["docking_distance"]
         self.renderer.scale_factor = ((self.renderer.screen_width - 50) // 2) / docking_distance
 
