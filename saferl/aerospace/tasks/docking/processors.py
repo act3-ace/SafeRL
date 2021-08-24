@@ -1,6 +1,5 @@
 import gym.spaces
 import numpy as np
-
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
 
@@ -10,10 +9,13 @@ from saferl.environment.models.geometry import distance
 class DockingObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
         super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
+
+        # 2d or 3d
         self.mode = mode
+        # not platform ref, string for name of deputy
         self.deputy = deputy
+
 
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
@@ -26,7 +28,7 @@ class DockingObservationProcessor(ObservationProcessor):
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
-        obs = sim_state.env_objs['deputy'].state.vector
+        obs = sim_state.env_objs[self.deputy].state.vector
         return obs
 
 
@@ -53,7 +55,7 @@ class DockingObservationProcessorOriented(ObservationProcessor):
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
-        obs = sim_state.env_objs['deputy'].state.vector
+        obs = sim_state.env_objs[self.deputy].state.vector
 
         # if self.config['mode'] == '2d':
         #     obs[2]
