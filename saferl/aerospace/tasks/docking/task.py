@@ -1,5 +1,6 @@
 from saferl.environment.tasks.env import BaseEnv
-
+from saferl.environment.models.platforms import BasePlatform
+import pdb
 
 class DockingEnv(BaseEnv):
 
@@ -10,19 +11,25 @@ class DockingEnv(BaseEnv):
         return super().reset()
 
     def _step_sim(self, action):
-        self.sim_state.env_objs['chief'].step(self.step_size)
-        self.sim_state.env_objs['deputy'].step(self.step_size, action)
+        agent_name = self.sim_state.agent.name
+        for obj_name,obj in self.sim_state.env_objs.items():
+            if isinstance(obj,BasePlatform):
+                if obj_name == agent_name:
+                    self.sim_state.env_objs[obj_name].step(self.step_size,action)
+                else:
+                    self.sim_state.env_objs[obj_name].step(self.step_size)
 
     def generate_info(self):
-        info = {
-            'deputy': self.env_objs['deputy'].generate_info(),
-            'chief': self.env_objs['chief'].generate_info(),
-            'docking_region': self.env_objs['docking_region'].generate_info(),
-            'failure': self.status['failure'],
-            'success': self.status['success'],
-            'status': self.status,
-            'reward': self.reward_manager.generate_info(),
-            'timestep_size': self.step_size
-        }
+
+        info = {}
+        for obj_name in self.env_objs:
+            info[obj_name] = self.env_objs[obj_name].generate_info()
+
+        for status in self.status:
+            info[status] = self.status[status]
+
+        info['status'] = self.status
+        info['reward'] = self.reward_manager.generate_info()
+        info['timestep_size'] = self.step_size
 
         return info
