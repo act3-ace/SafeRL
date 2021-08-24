@@ -1,12 +1,15 @@
-"""
-Class to define the BaseRender class template.
-"""
+import abc
 
 
-class BaseRenderer:
+class BaseRenderer(abc.ABC):
+    """
+    Class to define the BaseRender class template.
+    """
+
     def __init__(self):
         self.viewer = None
 
+    @abc.abstractmethod
     def renderSim(self, state, mode='human'):
         raise NotImplementedError
 
