@@ -21,10 +21,10 @@ close:
 
 import time
 from gym.envs.classic_control import rendering
-from saferl.environment.tasks.render import BaseRender
+from saferl.environment.tasks.render import BaseRenderer
 
 
-class RejoinRender(BaseRender):
+class RejoinRenderer(BaseRenderer):
 
     def __init__(self,
                  x_threshold=10000,
@@ -125,7 +125,7 @@ class RejoinRender(BaseRender):
             wingman_body = rendering.FilledPolygon([(wing_y, left_wing_x), (wing_y, right_wing_x), (nose_y, nose_x)])
             self.wingman_transform = rendering.Transform()  # allows body to be moved
             wingman_body.add_attr(self.wingman_transform)
-            wingman_body.set_color(0.9, 0.0, 0.9)  # sets color of body
+            wingman_body.set_color(1, 0, 1)  # sets color of body
             self.viewer.add_geom(wingman_body)  # adds body to viewer
 
             # Create lead plane
@@ -141,7 +141,7 @@ class RejoinRender(BaseRender):
                 self.wingman_ring_transform = rendering.Transform()  # allows ring to be moved
                 ring.add_attr(self.wingman_ring_transform)
                 ring.add_attr(self.wingman_transform)  # sets ring as part of body
-                ring.set_color(.9, .0, .0)  # sets color of ring
+                ring.set_color(1, .0, .0)  # sets color of ring
                 self.viewer.add_geom(ring)  # adds ring into render
 
                 # circle lead too
@@ -149,14 +149,14 @@ class RejoinRender(BaseRender):
                 self.lead_ring_transform = rendering.Transform()  # allows ring to be moved
                 ring.add_attr(self.lead_ring_transform)
                 ring.add_attr(self.lead_transform)  # sets ring as part of body
-                ring.set_color(.9, .0, .0)  # sets color of ring
+                ring.set_color(1, .0, .0)  # sets color of ring
                 self.viewer.add_geom(ring)  # adds ring into render
 
             if self.show_rejoin:
                 ring = rendering.make_circle(rejoin_region_r, 50, False)  # creates ring dimensions
                 self.rejoin_trans = rendering.Transform()  # allows ring to be moved
                 ring.add_attr(self.rejoin_trans)
-                ring.set_color(.9, .0, .0)  # sets color of ring
+                ring.set_color(1, .0, .0)  # sets color of ring
                 self.rejoin_trans.set_translation(rejoin_region_x, rejoin_region_y)
                 self.viewer.add_geom(ring)  # adds ring into render
 

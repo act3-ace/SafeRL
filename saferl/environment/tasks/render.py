@@ -3,7 +3,7 @@ Class to define the BaseRender class template.
 """
 
 
-class BaseRender:
+class BaseRenderer:
     def __init__(self):
         self.viewer = None
 

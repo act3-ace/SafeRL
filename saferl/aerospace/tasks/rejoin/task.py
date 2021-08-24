@@ -1,5 +1,5 @@
 from saferl.environment.tasks.env import BaseEnv
-from saferl.aerospace.tasks.rejoin.render import RejoinRender
+from saferl.aerospace.tasks.rejoin.render import RejoinRenderer
 
 
 class DubinsRejoin(BaseEnv):
@@ -13,7 +13,7 @@ class DubinsRejoin(BaseEnv):
             if hasattr(proc, "safety_margin"):
                 safety_margin = proc.safety_margin['aircraft']
 
-        self.renderer = RejoinRender(**render_config, safety_margin=safety_margin)
+        self.renderer = RejoinRenderer(**render_config, safety_margin=safety_margin)
 
     def reset(self):
         return super().reset()
