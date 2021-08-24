@@ -32,7 +32,7 @@ CHECKPOINT_FREQUENCY = 25
 EVALUATION_INTERVAL = 50
 EVALUATION_NUM_EPISODES = 10
 EVALUATION_NUM_WORKERS = 1
-EVALUATION_SEED = 1
+EVALUATION_SEED = 0
 DEBUG = False
 COMPLETE = False
 ROLLOUT_FRAGMENT_LENGTH = 200
@@ -84,15 +84,15 @@ def get_args():
     parser.add_argument('--rollout_fragment_length', type=int, default=None,
                         help="size of batches collected by each worker if truncated episodes")
 
-    parser.add_argument('--evaluation_during_training', action="store_true",
+    parser.add_argument('--eval', action="store_true",
                         help="True if intermittent evaluation of agent policy during training desired, False if not")
-    parser.add_argument('--evaluation_interval', type=int, default=EVALUATION_INTERVAL,
+    parser.add_argument('--evaluation_interval', type=int, default=None,
                         help="number of episodes to run in between policy evaluations")
-    parser.add_argument('--evaluation_num_episodes', type=int, default=EVALUATION_NUM_EPISODES,
+    parser.add_argument('--evaluation_num_episodes', type=int, default=None,
                         help="number of evaluation episodes to run")
-    parser.add_argument('--evaluation_num_workers', type=int, default=EVALUATION_NUM_WORKERS,
+    parser.add_argument('--evaluation_num_workers', type=int, default=None,
                         help="number of workers used to run evaluation episodes")
-    parser.add_argument('--evaluation_seed', type=int, default=EVALUATION_SEED,
+    parser.add_argument('--evaluation_seed', type=int, default=None,
                         help="set random seed for evaluation episodes")
     parser.add_argument('--evaluation_exploration', action="store_true",
                         help="set exploration behavior for evaluation episodes")
@@ -141,21 +141,25 @@ def experiment_setup(args):
                                                                   contents=CONTENTS),
                                                   StatusCustomMetricsCallback()])
 
-    if args.evaluation_during_training:
+    if args.eval:
         # set evaluation parameters
-        config["evaluation_interval"] = args.evaluation_interval
-        config["evaluation_num_episodes"] = args.evaluation_num_episodes
-        config["evaluation_num_workers"] = args.evaluation_num_workers
-        config["evaluation_config"] = {
-            # override config for logging, tensorboard, etc
-            "explore": args.evaluation_exploration,
-            "seed": args.evaluation_seed,
-            "callbacks": build_callbacks_caller([EpisodeOutcomeCallback(),
-                                                 FailureCodeCallback(),
-                                                 RewardComponentsCallback(),
-                                                 LoggingCallback(num_logging_workers=args.evaluation_num_workers,
-                                                                 contents=CONTENTS)])
-        }
+        config_fill_with_arg(config, 'evaluation_interval', args.evaluation_interval, EVALUATION_INTERVAL)
+        config_fill_with_arg(config, 'evaluation_num_episodes', args.evaluation_num_episodes, EVALUATION_NUM_EPISODES)
+        config_fill_with_arg(config, 'evaluation_num_workers', args.evaluation_num_workers, EVALUATION_NUM_WORKERS)
+
+        if "evaluation_config" not in config:
+            config["evaluation_config"] = {}
+        config_fill_with_arg(config["evaluation_config"], 'seed', args.evaluation_seed, EVALUATION_SEED)
+
+        if args.evaluation_exploration:
+            config["evaluation_config"]['explore'] = True
+
+        config["evaluation_config"]['callbacks'] = \
+            build_callbacks_caller([EpisodeOutcomeCallback(),
+                                    FailureCodeCallback(),
+                                    RewardComponentsCallback(),
+                                    LoggingCallback(num_logging_workers=args.evaluation_num_workers,
+                                                    contents=CONTENTS)])
 
     # Merge custom and default configs
     config = dict_merge(default_config, config, recursive=True)
