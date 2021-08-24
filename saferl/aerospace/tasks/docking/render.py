@@ -61,6 +61,7 @@ class DockingRenderer(BaseRenderer):
         self.sky = None
         self.chief = None
         self.deputy = None
+        self.docking_region = None
         self.particle_system = None
         self.velocity_arrow = None
         self.force_arrow = None
@@ -91,6 +92,14 @@ class DockingRenderer(BaseRenderer):
         panel.set_color(.2, .2, .5)  # sets color of panel
 
         return body, body_trans, panel, panel_trans
+
+    def make_region(self, radius, parent_trans, color):
+        region = rendering.make_circle(radius=radius, filled=False)
+        region_trans = rendering.Transform()
+        region.add_attr(region_trans)
+        region.add_attr(parent_trans)
+        region.set_color(color[0], color[1], color[2])
+        return region, region_trans
 
     def make_arrow(self, parent_trans, color, start, end):
         arrow = rendering.Line(start, end)
@@ -133,7 +142,7 @@ class DockingRenderer(BaseRenderer):
             dots.append(self.make_dot(size=dot_size, color=color, position=(x, y)))
         return dots
 
-    def initial_view(self):
+    def initial_view(self, state):
         # screen_width, screen_height = int(self.x_thresh * 2), int(self.y_thresh * 2)
 
         # create dimensions of satellites
@@ -157,6 +166,14 @@ class DockingRenderer(BaseRenderer):
             bodydim=bodydim,
             panel_width=panelwid,
             panel_height=panelhei
+        )
+
+        # DOCKING REGION #
+        docking_radius = state.env_objs["docking_region"].radius * self.scale_factor
+        self.docking_region = self.make_region(
+            radius=docking_radius,
+            parent_trans=self.chief[1],
+            color=(.9, 0, 0)
         )
 
         # STARS #
@@ -191,6 +208,8 @@ class DockingRenderer(BaseRenderer):
 
         self.viewer.add_geom(self.chief[2])  # adds chief solar panel to viewer
         self.viewer.add_geom(self.chief[0])  # adds chief body to viewer
+
+        self.viewer.add_geom(self.docking_region[0])  # adds docking region to viewer
 
         # THRUST BLOCKS #
         if self.thrust_vis == 'Block':
@@ -238,7 +257,7 @@ class DockingRenderer(BaseRenderer):
 
     def render(self, state, mode='human'):
         if self.viewer is None:
-            self.initial_view()
+            self.initial_view(state=state)
 
         # Get current state
         deputy_state = state.env_objs["deputy"]
