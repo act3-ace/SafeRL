@@ -10,7 +10,7 @@ class BaseRenderer(abc.ABC):
         self.viewer = None
 
     @abc.abstractmethod
-    def renderSim(self, state, mode='human'):
+    def render(self, state, mode='human'):
         raise NotImplementedError
 
     def close(self):  # if a viewer exists, close and kill it
