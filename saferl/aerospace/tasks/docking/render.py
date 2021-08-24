@@ -21,9 +21,10 @@ close:
 import math
 import random
 from gym.envs.classic_control import rendering
+from saferl.environment.tasks.render import BaseRenderer
 
 
-class DockingRender:
+class DockingRenderer(BaseRenderer):
 
     def __init__(self, scale_factor=.25, velocity_arrow=False,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
@@ -63,9 +64,6 @@ class DockingRender:
         self.particle_system = None
         self.velocity_arrow = None
         self.force_arrow = None
-
-    def reset(self):
-        self.close()
 
     def make_sky(self, color):
         # SKY #
@@ -284,11 +282,6 @@ class DockingRender:
             self.force_arrow[1].set_rotation(tf)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
-
-    def close(self):  # if a viewer exists, close and kill it
-        if self.viewer is not None:
-            self.viewer.close()
-            self.viewer = None
 
 
 class ParticleSystem:
