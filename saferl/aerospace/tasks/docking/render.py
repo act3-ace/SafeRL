@@ -26,13 +26,13 @@ from saferl.environment.tasks.render import BaseRenderer
 
 class DockingRenderer(BaseRenderer):
 
-    def __init__(self, scale_factor=.25, velocity_arrow=False,
+    def __init__(self, max_distance=1500, padding=50, velocity_arrow=False, dot_size=1,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
                  ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5):
         super().__init__()
-        self.scale_factor = scale_factor
         self.screen_width = 750
         self.screen_height = 750
+        self.scale_factor = ((self.screen_width - padding) // 2) / max_distance
         self.x_thresh = self.screen_width // 2
         self.y_thresh = self.screen_height // 2
 
@@ -54,7 +54,7 @@ class DockingRenderer(BaseRenderer):
 
         # Trace params
         self.trace = trace  # (steps) spacing between trace dots
-        self.dot_size = 3 * self.scale_factor
+        self.dot_size = dot_size
         self.tracectr = self.trace
 
         # Dynamic Objects
