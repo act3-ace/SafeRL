@@ -25,13 +25,15 @@ from gym.envs.classic_control import rendering
 
 class DockingRender:
 
-    def __init__(self, x_threshold=1500, y_threshold=1500, scale_factor=.25, velocity_arrow=False,
+    def __init__(self, scale_factor=.25, velocity_arrow=False,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
                  ellipse_a2=40, ellipse_b1=100, ellipse_b2=20, ellipse_quality=150, trace=5, trace_min=True):
         self.scale_factor = scale_factor  # TODO: find out these magic numbers
-        self.x_thresh = x_threshold * self.scale_factor  # 1.5 * deputy position (scaled)
-        self.y_thresh = y_threshold * self.scale_factor  # 1.5 * deputy position (scaled)
         self.viewer = None
+        self.screen_width = 750
+        self.screen_height = 750
+        self.x_thresh = self.screen_width // 2
+        self.y_thresh = self.screen_height // 2
 
         self.bg_color = (0, 0, .15)  # r,g,b
 
@@ -51,7 +53,7 @@ class DockingRender:
 
         # Trace params
         self.trace = trace  # (steps) spacing between trace dots
-        self.trace_size = 1 if trace_min else int((30 * self.scale_factor) / 8) + 1
+        self.dot_size = 3 * self.scale_factor
         self.tracectr = self.trace
 
         # Dynamic Objects
@@ -118,34 +120,30 @@ class DockingRender:
             stars.append(self.make_dot(size=dim, color=color, position=(x, y)))
         return stars
 
-    def make_ellipse(self, a, b, color):
+    def make_ellipse(self, a, b, dot_size, color):
         theta_list = []
         i = 0
         while i <= math.pi * 2:
             theta_list.append(i)
-            i += (1 / 100) * math.pi
-
-        dotsize = int(self.scale_factor) + 1
-        if dotsize < 0:
-            dotsize += 1
+            i += (1 / 500) * math.pi
 
         dots = []
         for i in range(0, len(theta_list)):  # ellipse 1
             x, y = b * math.cos(theta_list[i]), a * math.sin(theta_list[i])
             x = (x * self.scale_factor) + self.x_thresh
             y = (y * self.scale_factor) + self.y_thresh
-            dots.append(self.make_dot(size=dotsize, color=color, position=(x, y)))
+            dots.append(self.make_dot(size=dot_size, color=color, position=(x, y)))
         return dots
 
     def initial_view(self):
-        screen_width, screen_height = int(self.x_thresh * 2), int(self.y_thresh * 2)
+        # screen_width, screen_height = int(self.x_thresh * 2), int(self.y_thresh * 2)
 
         # create dimensions of satellites
-        bodydim = 30 * self.scale_factor
-        panelwid = 50 * self.scale_factor
-        panelhei = 20 * self.scale_factor
+        bodydim = 8
+        panelwid = 14
+        panelhei = 6
 
-        self.viewer = rendering.Viewer(screen_width, screen_height)  # create render viewer object
+        self.viewer = rendering.Viewer(self.screen_width, self.screen_height)  # create render viewer object
 
         # SKY #
         self.sky = self.make_sky(color=self.bg_color)
@@ -167,7 +165,7 @@ class DockingRender:
         if self.stars > 0:
             stars = self.make_stars(
                 num_stars=self.stars,
-                dim=bodydim / 10,
+                dim=self.dot_size,
                 color=(.9, .9, .9)
             )
             for star, star_trans in stars:
@@ -178,7 +176,8 @@ class DockingRender:
             ellipse_1 = self.make_ellipse(
                 a=self.ellipse_a1,
                 b=self.ellipse_b1,
-                color=(.1, .9, .1)
+                color=(.1, .9, .1),
+                dot_size=self.dot_size
             )
             for dot, dot_trans in ellipse_1:
                 self.viewer.add_geom(dot)
@@ -186,7 +185,8 @@ class DockingRender:
             ellipse_2 = self.make_ellipse(
                 a=self.ellipse_a2,
                 b=self.ellipse_b2,
-                color=(.8, .9, .1)
+                color=(.8, .9, .1),
+                dot_size=self.dot_size
             )
             for dot, dot_trans in ellipse_2:
                 self.viewer.add_geom(dot)
@@ -200,6 +200,8 @@ class DockingRender:
                 viewer=self.viewer,
                 parent_trans=self.deputy[1],
                 scale_factor=self.scale_factor,
+                bodydim=bodydim,
+                panelwid=panelwid,
                 x_thresh=self.x_thresh,
                 y_thresh=self.y_thresh
             )
@@ -260,7 +262,7 @@ class DockingRender:
 
         # Add trace
         if self.tracectr % self.trace == 0:  # if time to draw a trace, draw, else increment counter
-            trace, trace_trans = self.make_dot(size=self.trace_size, color=(.9, .1, .9), position=(tx, ty))
+            trace, trace_trans = self.make_dot(size=self.dot_size, color=(.9, .1, .9), position=(tx, ty))
             self.viewer.add_geom(trace)  # adds trace into render
         self.tracectr += 1
 
@@ -301,11 +303,11 @@ class ParticleSystem:
 
 
 class ThrustBlocks(ParticleSystem):
-    def __init__(self, viewer, parent_trans, scale_factor, x_thresh, y_thresh):
+    def __init__(self, viewer, parent_trans, bodydim, panelwid, scale_factor, x_thresh, y_thresh):
         super().__init__(viewer=viewer, x_thresh=x_thresh, y_thresh=y_thresh, scale_factor=scale_factor)
         self.scale_factor = scale_factor
-        bodydim = 30 * self.scale_factor
-        panelwid = 50 * self.scale_factor
+        self.bodydim = bodydim
+        self.panelwid = panelwid
         self.l_thrust = self.make_thrust_block(
             coords=[-bodydim / 2, bodydim / 2, -panelwid, panelwid],
             parent_trans=parent_trans,
@@ -333,21 +335,25 @@ class ThrustBlocks(ParticleSystem):
 
     def update(self, state):
         deputy_state = state.env_objs["deputy"]
-        x_dot, y_dot = deputy_state.x_dot, deputy_state.y_dot
-        inc_l, inc_r, inc_b, inc_t = -25, 25, -5, 5  # create block dimensions
+        x_force, y_force = deputy_state.current_control
+        lr_size = (-self.bodydim / 2, self.bodydim / 2, -self.panelwid, self.panelwid)
+        tb_size = (-self.bodydim / 2, self.bodydim / 2, -self.bodydim / 2, self.bodydim / 2)
+        inc_l, inc_r, inc_b, inc_t = 0, 0, 0, 0  # create block dimensions
         # calculate block translations
-        if x_dot > 0:
-            inc_l = -65 * self.scale_factor
-            inc_r = 25 * self.scale_factor
-        elif x_dot < 0:
-            inc_r = 65 * self.scale_factor
-            inc_l = -25 * self.scale_factor
-        if y_dot > 0:
-            inc_b = -35 * self.scale_factor
-            inc_t = 5 * self.scale_factor
-        elif y_dot < 0:
-            inc_t = 35 * self.scale_factor
-            inc_b = -5 * self.scale_factor
+        if x_force > 0:
+            # Hide right, show left
+            inc_l = lr_size[2] * 2
+            inc_r = lr_size[2] * 2
+        elif x_force < 0:
+            inc_l = lr_size[3] * 2
+            inc_r = lr_size[3] * 2
+        if y_force > 0:
+            # Hide top, show bottom
+            inc_b = tb_size[0] * 2
+            inc_t = tb_size[0] * 2
+        elif y_force < 0:
+            inc_b = tb_size[1] * 2
+            inc_t = tb_size[1] * 2
 
         # translate blocks
         self.l_thrust[1].set_translation(inc_l, 0)
