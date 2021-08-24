@@ -49,6 +49,9 @@ def get_args():
     parser.add_argument('--render', default=False, action="store_true", help="attempt to render evaluation episodes")
     parser.add_argument('--render_config', type=str, default=None,
                         help="The full path to a custom rendering config file")
+    parser.add_argument('--alt_env_config', type=str, default="",
+                        help="Provide the full path to an alternative environment config file,"
+                             " in which the loaded policy will be evaluated.")
 
     return parser.parse_args()
 
@@ -99,8 +102,6 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
 
                 # write state to file
                 writer.write(state)
-                if render:
-                    env.render()
 
                 if render:
                     # attempt to render environment state
@@ -221,13 +222,15 @@ def main():
             render_config = yaml.load(f)
 
     ray.init()
+
     # load policy and env
-    env_config = ray_config['env_config']
+    env_config = args.alt_env_config if args.alt_env_config else ray_config['env_config']
     if render_config is not None:
         env_config[RENDER] = render_config
     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
     agent.restore(ckpt_path)
     env = ray_config['env'](env_config)
+
     # set seed and explore
     seed = args.seed if args.seed is not None else ray_config['seed']
     env.seed(seed)
