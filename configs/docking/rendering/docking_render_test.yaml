@@ -1,1 +1,1 @@
-class: saferl.aerospace.tasks.docking.render.DockingRender
+class: saferl.aerospace.tasks.docking.render.DockingRenderer
