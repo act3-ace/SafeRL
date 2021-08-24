@@ -8,8 +8,8 @@ class DockingEnv(BaseEnv):
         super().__init__(env_config)
         if self.renderer is None:
             self.renderer = DockingRenderer(**self.render_config)
-        docking_distance = self.sim_state.status["docking_distance"]
-        self.renderer.scale_factor = ((self.renderer.screen_width - 50) // 2) / docking_distance
+        # docking_distance = self.sim_state.status["docking_distance"]
+        # self.renderer.scale_factor = ((self.renderer.screen_width - 50) // 2) / docking_distance
 
     def reset(self):
         return super().reset()
