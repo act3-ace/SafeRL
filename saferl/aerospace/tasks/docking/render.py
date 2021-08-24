@@ -21,10 +21,10 @@ close:
 import math
 import random
 from gym.envs.classic_control import rendering
-from saferl.environment.tasks.render import BaseRender
+from saferl.environment.tasks.render import BaseRenderer
 
 
-class DockingRender(BaseRender):
+class DockingRenderer(BaseRenderer):
 
     def __init__(self, x_threshold=1500, y_threshold=1500, scale_factor=.25, velocity_arrow=False,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
