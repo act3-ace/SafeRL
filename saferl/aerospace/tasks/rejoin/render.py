@@ -21,9 +21,10 @@ close:
 
 import time
 from gym.envs.classic_control import rendering
+from saferl.environment.tasks.render import BaseRender
 
 
-class RejoinRender:
+class RejoinRender(BaseRender):
 
     def __init__(self,
                  x_threshold=10000,
@@ -39,6 +40,8 @@ class RejoinRender:
                  trace=1,
                  render_speed=0.03):
 
+        super().__init__()
+
         self.x_threshold = x_threshold      # ft (To the left)
         self.y_threshold = y_threshold      # ft (Up or down)
         self.r_aircraft = r_aircraft        # ft - radius of the aircraft
@@ -46,7 +49,6 @@ class RejoinRender:
         self.scale_factor = scale_factor
         self.render_speed = render_speed
         self.safety_margin = safety_margin
-        self.viewer = None
 
         # Toggle shown items
         self.show_safety_ring = show_safety_ring          # add ring around aircraft for visual aid
@@ -189,11 +191,3 @@ class RejoinRender:
         time.sleep(self.render_speed)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
-
-    def close(self):  # if a viewer exists, close and kill it
-        if self.viewer is not None:
-            self.viewer.close()
-            self.viewer = None
-
-    def reset(self):
-        self.close()
