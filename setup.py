@@ -26,6 +26,7 @@ setuptools.setup(
         "jsonlines==2.0.0",
         "matplotlib==3.3.4",
         "pytest==6.2.4",
-        "flatten_json==0.1.13"
+        "flatten_json==0.1.13",
+        "aioredis==1.3.1",
     ]
 )
