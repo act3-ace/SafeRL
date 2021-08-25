@@ -8,6 +8,10 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
+    @abc.abstractmethod
+    def __init__(self, name):
+        self.name = name
+
     @property
     @abc.abstractmethod
     def x(self):
@@ -130,7 +134,7 @@ class AgentController(BaseController):
                 # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
                     actuator.bounds = actuator_config['bounds']
-                
+
                 bounds_min = actuator.bounds[0]
                 bounds_max = actuator.bounds[1]
 
@@ -259,13 +263,14 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, state, controller):
+    def __init__(self, name, dynamics, actuator_set, state, controller, rta=None):
 
         if controller is None:
             controller = PassThroughController()
         elif type(controller) == dict:
             controller = controller["class"](actuator_set, config=controller)
 
+        super().__init__(name)
         self.action_space = controller.action_space
 
         self.dependent_objs = []
@@ -274,35 +279,60 @@ class BasePlatform(BaseEnvObj):
         self.actuator_set = actuator_set
         self.controller = controller
         self.state = state
+        self.next_state = self.state
+
+        # setup rta module with reference to self
+        self.rta = rta
+        if type(self.rta) == dict:
+            if 'config' in self.rta:
+                rta_kwargs = self.rta['config']
+            else:
+                rta_kwargs = {}
+            self.rta = self.rta['class'](**rta_kwargs)
+        if self.rta is not None:
+            self.rta.setup(self)
 
         self.reset()
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
+        self.next_state = self.state
 
-        self.actuation_cur = None
-        self.control_cur = None
+        self.current_actuation = {}
+        self.current_control = self.actuator_set.gen_control()
 
         for obj in self.dependent_objs:
             obj.reset(**kwargs)
 
-    def step(self, step_size, action=None):
-        actuation = self.controller.gen_actuation(self.state, action)
+    def step(self, sim_state, step_size, action=None):
+        self.step_compute(sim_state, step_size, action=action)
+        self.step_apply()
 
+    def step_compute(self, sim_state, step_size, action=None):
+
+        actuation = self.controller.gen_actuation(self.state, action)
         control = self.actuator_set.gen_control(actuation)
 
+        if self.rta is not None:
+            control = self.rta.filter_control(sim_state, step_size, control)
+
         # save current actuation and control
-        self.actuation_cur = copy.deepcopy(actuation)
-        self.control_cur = copy.deepcopy(control)
+        self.current_actuation = copy.deepcopy(actuation)
+        self.current_control = copy.deepcopy(control)
 
         # compute new state if dynamics were applied
-        new_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
-
-        # overwrite platform state with new state from dynamics
-        self.state = new_state
+        self.next_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
 
         for obj in self.dependent_objs:
-            obj.step(step_size)
+            obj.step_compute(sim_state, action=action)
+
+    def step_apply(self):
+
+        # overwrite platform state with new state from dynamics
+        self.state = self.next_state
+
+        for obj in self.dependent_objs:
+            obj.step_apply()
 
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
@@ -313,10 +343,13 @@ class BasePlatform(BaseEnvObj):
             'y': self.y,
             'z': self.z,
             'controller': {
-                'actuation': self.actuation_cur,
-                'control': self.control_cur,
+                'actuation': self.current_actuation,
+                'control': self.current_control,
             }
         }
+
+        if self.rta is not None:
+            info['rta'] = self.rta.generate_info()
 
         return info
 

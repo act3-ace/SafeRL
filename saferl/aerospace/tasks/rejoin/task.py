@@ -10,8 +10,12 @@ class DubinsRejoin(BaseEnv):
         return super().reset()
 
     def _step_sim(self, action):
-        self.sim_state.env_objs['lead'].step(self.step_size)
-        self.sim_state.env_objs['wingman'].step(self.step_size, action)
+
+        self.sim_state.env_objs['lead'].step_compute(self.sim_state, self.step_size)
+        self.sim_state.env_objs['wingman'].step_compute(self.sim_state, self.step_size, action)
+
+        self.sim_state.env_objs['lead'].step_apply()
+        self.sim_state.env_objs['wingman'].step_apply()
 
     def generate_info(self):
         info = {
@@ -22,7 +26,7 @@ class DubinsRejoin(BaseEnv):
             'success': self.status['success'],
             'status': self.status,
             'reward': self.reward_manager.generate_info(),
-            'timestep_size': self.step_size
+            'timestep_size': self.step_size,
         }
 
         return info

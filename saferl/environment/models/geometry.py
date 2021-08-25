@@ -46,7 +46,8 @@ class BaseGeometry(BaseEnvObj):
 
 class Point(BaseGeometry):
 
-    def __init__(self, x=0, y=0, z=0):
+    def __init__(self, name, x=0, y=0, z=0):
+        super().__init__(name)
         self._center = np.array([x, y, z], dtype=np.float64)
 
     def reset(self, **kwargs):
@@ -101,10 +102,9 @@ class Point(BaseGeometry):
 
 class Circle(Point):
 
-    def __init__(self, x=0, y=0, z=0, radius=1):
+    def __init__(self, name, x=0, y=0, z=0, radius=1):
+        super().__init__(name, x=x, y=y, z=z)
         self.radius = radius
-
-        super().__init__(x=x, y=y, z=z)
 
     def contains(self, other):
         radial_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
@@ -128,10 +128,9 @@ class Sphere(Circle):
 
 class Cylinder(Circle):
 
-    def __init__(self, x=0, y=0, z=0, radius=1, height=1):
+    def __init__(self, name, x=0, y=0, z=0, radius=1, height=1):
         self.height = height
-
-        super().__init__(x=x, y=y, z=z, radius=radius)
+        super().__init__(name, x=x, y=y, z=z, radius=radius)
 
     def contains(self, other):
         radial_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
@@ -265,6 +264,13 @@ class RelativeGeometry(BaseEnvObj):
             self.shape.orientation = self.ref.orientation
 
     def step(self, *args, **kwargs):
+        self.step_compute()
+        self.step_apply()
+
+    def step_compute(self, *args, **kwargs):
+        pass
+
+    def step_apply(self, *args, **kwargs):
         self.update()
 
     def reset(self, **kwargs):
@@ -433,3 +439,14 @@ class RelativeCylinder(RelativeGeometry):
 
 def distance(a, b):
     return np.linalg.norm(a.position - b.position)
+
+
+def angle_wrap(angle, mode='pi'):
+    assert mode == 'pi' or mode == '2pi', "invalid mode, must be on of ('pi', '2pi')"
+
+    if mode == 'pi':
+        offset = math.pi
+    else:
+        offset = 0
+
+    return ((angle + offset) % (2 * math.pi)) - offset
