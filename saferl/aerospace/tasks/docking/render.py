@@ -1,23 +1,3 @@
-'''
-Rendering for 2D Spacecraft Docking Simulation
-
-Created by Kai Delsing
-Mentor: Kerianne Hobbs
-
-Description:
-    A class for rendering the SpacecraftDocking environment.
-
-renderSim:
-    Create, run, and update the rendering
-create_particle:
-    Instantiate and initialize a particle object in the necessary lists
-clean_particles:
-    Delete particles past their ttl or all at once
-close:
-    Close the viewer and rendering
-'''
-
-
 import math
 import random
 from gym.envs.classic_control import rendering
@@ -25,6 +5,21 @@ from saferl.environment.tasks.render import BaseRenderer
 
 
 class DockingRenderer(BaseRenderer):
+    """
+    Rendering for 2D Spacecraft Docking Simulation
+
+    Created by Kai Delsing
+
+    Description:
+        A class for rendering the 2D Docking environment.
+
+    render:
+        Create, run, and update the rendering
+    reset:
+        Set the rendering and viewer to an initial state
+    close:
+        Close the viewer and rendering
+    """
 
     def __init__(self, max_distance=1500, padding=50, velocity_arrow=False, dot_size=1,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
