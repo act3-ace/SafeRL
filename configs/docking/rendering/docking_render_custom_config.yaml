@@ -1,6 +1,6 @@
 class: saferl.aerospace.tasks.docking.render.DockingRenderer
 config:
-  max_distance: 1500
+  max_distance: 150
   padding: 50
   velocity_arrow: False
   force_arrow: False
