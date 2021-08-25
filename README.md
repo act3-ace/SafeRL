@@ -14,8 +14,13 @@ pip install -e .
 
 ## Usage
 
+### Config Files
+The SafeRL library works via config files. These config files define the task environment, the simulation objects within the environment, and the rewards/observations passed to the agent. This allows environments and experiments to be shared, recreated, and reconfigured. New RL experiments may be implemented and executed simply through manipulation of config files. More custom behavior (such as a custom reward) can be implemented via small pieces of python code and integrated with an existing environment via the config file.
+
+Config files may also contain learning parameters for the RL algorithm. In the case of `train.py` learning parameters for Ray RLlib are automatically passed, however should you choose to use an alternative RL framework, simply extract the parameters from the dictionary returned by the config parser.
+
 ### Training
-SafeRL is built around using config files to define environments. The included training script `scripts/train.py` can be used to construct an environment and train an agent directly from a yaml config file.
+The included training script `scripts/train.py` can be used to construct an environment and train an agent directly from a yaml config file. This training script uses Ray RLlib and Ray Tune, however our environments can be integrated into any OpenAI Gym compatible RL framework/implementation.
 
 The following commands will train an rllib agent on one of our baseline environments
 ```shell
@@ -23,7 +28,7 @@ The following commands will train an rllib agent on one of our baseline environm
 python scripts/train.py --config configs/rejoin/rejoin_default.yaml
 
 # Clohessy-Wiltshire spacecraft Docking baseline
-python scripts/train.py --config configs/docking/docking_default.yaml
+python scripts/train.py --config configs/docking/docking_default.yaml --stop_iteration 2000 --complete_episodes
 ```
 
 See ```python scripts/train.py --help``` for more training options.
@@ -32,7 +37,7 @@ See ```python scripts/train.py --help``` for more training options.
 There are two options for evaluating the performance of an agent's policy: during training or after training.
 To periodically evaluate policy during training, use the 'evaluation_during_training' boolean flag while running the training script:
 ```shell
-python scripts/train.py --config configs/rejoin/rejoin_default.yaml --evaluation_during_training=True
+python scripts/train.py --config configs/rejoin/rejoin_default.yaml --eval
 ```
 For more control over evaluation rollouts during training, try setting some of the following arguments: evaluation_during_training, evaluation_interval, evaluation_num_episodes, evaluation_num_workers, evaluation_seed, and evaluation_exploration.
 
@@ -50,6 +55,34 @@ A lot of the same options for evaluation during training are available for evalu
 See ```python scripts/eval.py --help``` for the full list.
 
 
+
+
+
+## Environments
+
+### Rejoin
+Aircraft formation flight rejoin where a wingman aircraft controlled by the agent must join a formation relative to a lead aircraft. The formation is defined by a rejoin region relative to the lead's position and orientation which the wingman must enter and remain within. Comes in the following flavors:
+
+-  **Rejoin 2D**  
+Config file: `configs/docking/rejoin_default.yaml`  
+Throttle and heading control.
+
+-  **Rejoin 3D**
+Config file: `configs/docking/rejoin_3d_default.yaml`  
+Throttle, heading, flight angle, roll control.
+
+### Docking
+Spacecraft docking scenario where an agent controlled deputy spacecraft must dock with a stationary chief spacecraft while both orbit a central body. This is accomplished by approaching the chief to within a predefined docking distance while maintaining a safe relative velocity within that distance. The motion of the deputy spacecraft is governed by the Clohessy-Wiltshire linearlized dynamics model. Comes in the following flavors:
+
+-  **Docking 2D**  
+Config file: `configs/docking/docking_default.yaml`  
+Static 1N thrusters in $`\pm x`$ and  $`\pm y`$.  
+
+-  **Docking 3D**
+Config file: `configs/docking/docking_3d_default.yaml`  
+Static 1N thrusters in $`\pm x, \pm y, \pm z`$.  
+Does not currently train to successful completion.  
+
 ## Documentation
 
 General code documentation guidelines:
@@ -60,9 +93,13 @@ General code documentation guidelines:
 
 Instructions on setting the NumPy docstring format as your default in PyCharm can be found [here](https://www.jetbrains.com/help/pycharm/settings-tools-python-integrated-tools.html).
 
+## Public Release
+Approved for public release: distribution unlimited. Case Numbers: AFRL-2021-0064 and AFRL-2021-0065
+
 ## Team
 Jamie Cunningham,
 John McCarroll,
-Nate Hamilton,
+Kyle Dunlap,
 Kerianne Hobbs,
 Umberto Ravaioli,
+Vardaan Gangal
