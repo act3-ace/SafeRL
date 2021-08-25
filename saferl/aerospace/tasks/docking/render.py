@@ -21,7 +21,7 @@ class DockingRenderer(BaseRenderer):
         Close the viewer and rendering
     """
 
-    def __init__(self, max_distance=1500, padding=50, velocity_arrow=False, dot_size=1,
+    def __init__(self, max_distance=150, padding=50, velocity_arrow=False, dot_size=1,
                  force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
                  ellipse_b1=100, draw_ellipse=True, trace=5):
         super().__init__()
