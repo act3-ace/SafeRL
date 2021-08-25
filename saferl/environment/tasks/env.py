@@ -7,6 +7,7 @@ from saferl.environment.tasks.processor.status import TimeoutStatusProcessor, Ne
 from saferl.environment.utils import setup_env_objs_from_config
 from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE
 from saferl.environment.tasks.initializers import RandBoundsInitializer
+from saferl.environment.models.platforms import BasePlatform
 
 
 class BaseEnv(gym.Env):
@@ -62,7 +63,17 @@ class BaseEnv(gym.Env):
         return [seed]
 
     def step(self, action):
-        self._step_sim(action)
+
+        agent_name = self.sim_state.agent.name
+        for obj_name,obj in self.sim_state.env_objs.items():
+            if isinstance(obj,BasePlatform):
+                if obj_name == agent_name:
+                    self.sim_state.env_objs[obj_name].step(self.step_size,action)
+                else:
+                    self.sim_state.env_objs[obj_name].step(self.step_size)
+
+
+        #self._step_sim(action)
 
         self.sim_state.status = self._generate_status()
 
@@ -139,7 +150,11 @@ class BaseEnv(gym.Env):
             'success': self.status['success'],
             'status': self.status,
             'reward': self.reward_manager.generate_info(),
+            'timestep_size': self.step_size
         }
+
+        for obj_name in self.env_objs:
+            info[obj_name] = self.env_objs[obj_name].generate_info()
 
         return info
 
