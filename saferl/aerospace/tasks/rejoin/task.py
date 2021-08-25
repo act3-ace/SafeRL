@@ -41,4 +41,4 @@ class DubinsRejoin(BaseEnv):
         return info
 
     def render(self, mode='human'):
-        self.renderer.renderSim(state=self.sim_state)
+        self.renderer.render(state=self.sim_state)
