@@ -72,9 +72,6 @@ class BaseEnv(gym.Env):
                 else:
                     self.sim_state.env_objs[obj_name].step(self.step_size)
 
-
-        #self._step_sim(action)
-
         self.sim_state.status = self._generate_status()
 
         reward = self._generate_reward()
