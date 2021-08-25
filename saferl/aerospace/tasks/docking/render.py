@@ -22,8 +22,8 @@ class DockingRenderer(BaseRenderer):
     """
 
     def __init__(self, max_distance=150, padding=50, velocity_arrow=False, dot_size=1,
-                 force_arrow=False, thrust_vis="Block", stars=500, termination_condition=False, ellipse_a1=200,
-                 ellipse_b1=100, draw_ellipse=True, trace=5):
+                 force_arrow=False, thrust_vis="Block", stars=500, ellipse_a=200,
+                 ellipse_b=100, draw_ellipse=True, trace=5):
         super().__init__()
         self.screen_width = 750
         self.screen_height = 750
@@ -38,11 +38,10 @@ class DockingRenderer(BaseRenderer):
         self.show_force_arrow = force_arrow
         self.thrust_vis = thrust_vis
         self.stars = stars
-        self.termination_condition = termination_condition  # Set to true to print termination condition
 
         # Ellipse params
-        self.ellipse_a1 = ellipse_a1  # m
-        self.ellipse_b1 = ellipse_b1  # m
+        self.ellipse_a = ellipse_a  # m
+        self.ellipse_b = ellipse_b  # m
         self.draw_ellipse = draw_ellipse  # 1/x * pi
 
         # Trace params
@@ -182,8 +181,8 @@ class DockingRenderer(BaseRenderer):
         # ELLIPSES #
         if self.draw_ellipse:
             ellipse_1 = self.make_ellipse(
-                a=self.ellipse_a1,
-                b=self.ellipse_b1,
+                a=self.ellipse_a,
+                b=self.ellipse_b,
                 color=(.1, .9, .1),
                 dot_size=self.dot_size
             )

@@ -1,0 +1,15 @@
+class: saferl.aerospace.tasks.docking.render.DockingRenderer
+config:
+  max_distance: 1500
+  padding: 50
+  velocity_arrow: False
+  force_arrow: False
+  dot_size: 1
+  thrust_vis: Block
+  stars: 500
+  ellipse_a: 200
+  ellipse_b: 100
+  draw_ellipse: True
+  trace: 5
+
+
