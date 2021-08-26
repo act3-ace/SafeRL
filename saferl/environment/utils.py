@@ -132,10 +132,7 @@ class YAMLParser:
     def parse_env(self):
         with open(self.yaml_path, 'r') as f:
             config = yaml.load(f)
-        assert "env" in config.keys(), "environment config missing required field: env"
-        assert "env_config" in config.keys(), "environment config missing required field: env_config"
-        config["env"] = self.lookup[config["env"]]
-        config["env_config"] = self.process_yaml_items(config["env_config"])
+        config = self.process_yaml_items(config)
         return config
 
     def process_yaml_items(self, target):
