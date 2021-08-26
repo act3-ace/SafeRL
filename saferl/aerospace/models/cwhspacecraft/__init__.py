@@ -1,6 +1,1 @@
-import inspect
-from saferl.aerospace.models.cwhspacecraft import platforms
-
-mems = inspect.getmembers(platforms, inspect.isclass)
-
-lookup = {__name__ + ".platforms." + k: v for k, v in mems if "saferl" in str(v)}
+from saferl.aerospace.models.cwhspacecraft import platforms  # noqa: F401

@@ -5,12 +5,9 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.policy import Policy
+from saferl.environment.utils import jsonify, is_jsonable, log_to_jsonlines
 
-import os
 import time
-import numpy as np
-import json
-import jsonlines
 from enum import Enum
 
 
@@ -72,29 +69,38 @@ class RewardComponentsCallback:
             episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val
 
 
-"""
-Simple Enum class for log contents options
-"""
+class StatusCustomMetricsCallback:
+    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
+                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
+                       env_index: int, **kwargs):
+        status = episode.last_info_for()['status']
+        custom_metric_keys = [k for k in status.keys() if 'custom_metrics.' in k]
+        for k in custom_metric_keys:
+            metric_name = k.split('.', 1)[1]
+            metric_val = status[k]
+            episode.custom_metrics[metric_name] = metric_val
 
 
 class LogContents(Enum):
+    """
+    Simple Enum class for log contents options
+    """
+
     INFO = "info"
     ACTIONS = "actions"
     OBS = "obs"
     VERBOSE = "verbose"
 
 
-"""
-A callback class to handle the storage of episode states by episode
-"""
-
-
 class LoggingCallback:
+    """
+    A callback class to handle the storage of episode states by episode
+    """
+
     def __init__(self, num_logging_workers: int = 999999, episode_log_interval: int = 1,
                  contents: tuple = (LogContents.VERBOSE,)):
         self.num_logging_workers = num_logging_workers
         self.episode_log_interval = episode_log_interval
-        # self.episodes = set()
 
         self.worker_episode_numbers = dict()
         self.episode_count = 0
@@ -126,28 +132,33 @@ class LoggingCallback:
         # get environment instance and set up log path
         episode_id = episode.episode_id
         worker_index = worker.worker_index
-        output_dir = worker._original_kwargs["log_dir"] + "../training_logs/"
+
+        # determine output location
+        if worker.policy_config["in_evaluation"]:
+            output_dir = worker._original_kwargs["log_dir"] + "../evaluation_logs/"
+        else:
+            output_dir = worker._original_kwargs["log_dir"] + "../training_logs/"
+
         worker_file = "worker_" + str(worker_index) + ".log"
         step_num = episode.length
 
         # handle logging options
-        # self.episodes.add(episode_id)
-        if worker_index <= self.num_logging_workers and self.worker_episode_numbers[
-                episode_id] % self.episode_log_interval == 0 and step_num:
+        if worker_index <= self.num_logging_workers \
+                and self.worker_episode_numbers[episode_id] % self.episode_log_interval == 0 \
+                and step_num:
             state = {}
             if self.log_actions:
-                state["actions"] = episode.last_action_for(
-                    'agent0').tolist()  # TODO: 'agent0' should not be hardcoded...*
+                state["actions"] = episode.last_action_for('agent0').tolist()  # TODO: 'agent0' should not be hardcoded
             if self.log_obs:
                 state["obs"] = episode.last_raw_obs_for('agent0').tolist()
             if self.log_info:
                 # check if jsonable and convert if necessary
                 info = episode.last_info_for('agent0')
 
-                if self.is_jsonable(info) is True:
+                if is_jsonable(info) is True:
                     state["info"] = info
                 else:
-                    state["info"] = self.jsonify(info)
+                    state["info"] = jsonify(info)
 
             state["episode_ID"] = episode_id
             state["step_number"] = step_num
@@ -155,51 +166,4 @@ class LoggingCallback:
             state["time"] = time.time()
 
             # save environment state to file
-            self.log_to_file(state, output_dir, worker_file)
-
-    # Helper function to handle writing to file
-    def log_to_file(self, state, output_dir, jsonline_filename):
-        os.makedirs(output_dir, exist_ok=True)
-        with jsonlines.open(output_dir + jsonline_filename, mode='a') as writer:
-            writer.write(state)
-
-    # Method to convert non-JSON serializable objects (numpy arrays) to JSON friendly data types inside a dictionary
-    def jsonify(self, map):
-        # iterate through dictionary, converting objects as needed
-        for key in map.keys():
-            suspicious_object = map[key]
-            is_json_ready = self.is_jsonable(suspicious_object)
-
-            if is_json_ready is True:
-                # move along sir
-                continue
-            elif is_json_ready == TypeError:
-                # recurse if we find sub-dictionaries
-                if type(suspicious_object) is dict:
-                    map[key] = self.jsonify(suspicious_object)
-
-                # only known case is numpy array at the moment
-                if type(suspicious_object) is np.ndarray:
-                    map[key] = suspicious_object.tolist()
-                elif type(suspicious_object) is np.bool_:
-                    map[key] = bool(suspicious_object)
-
-            elif is_json_ready == OverflowError:
-                raise OverflowError
-            elif is_json_ready == ValueError:
-                raise ValueError
-
-        return map
-
-    # Method to determine whether or not an object is JSON serializable
-    # If not, returns the error
-    def is_jsonable(self, object):
-        try:
-            json.dumps(object)
-            return True
-        except TypeError:
-            return TypeError
-        except OverflowError:
-            return OverflowError
-        except ValueError:
-            return ValueError
+            log_to_jsonlines(state, output_dir, worker_file)

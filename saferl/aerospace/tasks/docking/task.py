@@ -1,18 +1,23 @@
 from saferl.environment.tasks.env import BaseEnv
+from saferl.aerospace.tasks.docking.render import DockingRenderer
 
 
 class DockingEnv(BaseEnv):
 
-    def __init__(self, config):
-        super().__init__(config)
-        self.step_size = 1
+    def __init__(self, env_config):
+        super().__init__(env_config)
+        if self.renderer is None:
+            self.renderer = DockingRenderer(**self.render_config)
 
     def reset(self):
         return super().reset()
 
     def _step_sim(self, action):
-        self.sim_state.env_objs['chief'].step(self.step_size)
-        self.sim_state.env_objs['deputy'].step(self.step_size, action)
+        self.sim_state.env_objs['chief'].step_compute(self.sim_state, self.step_size)
+        self.sim_state.env_objs['deputy'].step_compute(self.sim_state, self.step_size, action)
+
+        self.sim_state.env_objs['chief'].step_apply()
+        self.sim_state.env_objs['deputy'].step_apply()
 
     def generate_info(self):
         info = {

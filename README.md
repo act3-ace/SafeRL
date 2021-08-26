@@ -1,60 +1,89 @@
-# Custom Environments
-Members:
-Tyler "Kode" Brown, 
-Kerianne Hobbs, 
-Nate Hamilton, 
-Umberto Ravaioli, 
+# Intro
+The SafeRL library provides the components and tools to build modular, OpenAI Gym compatible Reinforcement Learning environments with Run Time Assurance (RTA). SafeRL is designed to work best with ray/rllib.
 
 ## Installation
-To install the custom environments, clone with SSH. If you need an SSH key, follow the following steps:  
-1. Install xclip:  
-`sudo apt install xclip`  
-2. In GitLab, in the top right go to your settings.  Then on the left, select SSH Keys.  Follow the tutorial to generate an SSH key.  
-3. In your terminal, enter the command:  
-`xclip -sel clip < ~/.ssh/id_ed25519.pub`  
-This copies your SSH key into your clipboard.  
-4. Paste your SSH key into GitLab (from step 2)  
-5. In your terminal, enter the command:  
-`ssh -T git@git.act3-ace.ai`  
+Inside of the repo's root directory, simply install using the `setup.py` with:
+```shell
+pip install .
+```
 
-Once you have an SSH key, install the environment:  
-1. Install Anaconda (Recommended):  
-Follow the installation instructions for Anaconda 3 [here](https://docs.continuum.io/anaconda/install/).  
-2. Create a conda Python 3.6 environment, which will help organize the packages used:  
-`conda create -n <env_name> python=3.6`  
-3. To use Python in this environment, activate it by running:  
-`conda activate <env_name>`  
-4. Install OpenMPI (Ubuntu/Debian):  
-`sudo apt-get update && sudo apt-get install libopenmpi-dev`  
-5. In the directory you want to save the environment, run the command:  
-`git clone git@git.act3-ace.com:rta/have-deepsky.git`
-6. Then run the commands:  
-`cd have-deepsky`  
-`pip install -e .`
+For a local development version, please install using the `-e, --editable` option:
+```shell
+pip install -e .
+```
 
-## Pulling an update from Gitlab
-If someone else has updated their files, and you want to pull the most recent changes without erasing your progress:  
-1. Navigate to the have-deepsky folder `cd have-deepsky`  
-2. `git fetch`  
-3. `git merge`  
+## Usage
 
-If you want to pull the latest changes and overwrite any changes you made:  
-1. Navigate to the have-deepsky folder `cd have-deepsky`  
-2. `git stash`  
-3. `git pull`  
+### Config Files
+The SafeRL library works via config files. These config files define the task environment, the simulation objects within the environment, and the rewards/observations passed to the agent. This allows environments and experiments to be shared, recreated, and reconfigured. New RL experiments may be implemented and executed simply through manipulation of config files. More custom behavior (such as a custom reward) can be implemented via small pieces of python code and integrated with an existing environment via the config file.
 
-## Running from the Command Line
-These files assume that you have Anaconda or equivalent and standard Python packages installed.
-1. To run from the command line, open a terminal
-2. Activate your conda environment that you setup during the Installation step with `conda activate <env_name>`. This should make (<env_name>) show up before you username.
-3. Ensure the saferl package is in your environment's PATH (if you ran `pip install -e .` during installation you can ignore this step).
-4. Decide what algorithm you'd like to run, e.g. train the PPO RL algorithm `python scripts/train.py`
+Config files may also contain learning parameters for the RL algorithm. In the case of `train.py` learning parameters for Ray RLlib are automatically passed, however should you choose to use an alternative RL framework, simply extract the parameters from the dictionary returned by the config parser.
 
-## Uploading to GitLab
-If you want to add your files to the GitLab, navigate to the have-deepsky folder in your terminal and run the following commands (Update with your COMMENTS):  
-`git add .`  
-`git commit -m 'COMMENTS'`  
-`git push -u origin master`
+### Training
+The included training script `scripts/train.py` can be used to construct an environment and train an agent directly from a yaml config file. This training script uses Ray RLlib and Ray Tune, however our environments can be integrated into any OpenAI Gym compatible RL framework/implementation.
+
+The following commands will train an rllib agent on one of our baseline environments
+```shell
+# Dubins aircraft rejoin baseline
+python scripts/train.py --config configs/rejoin/rejoin_default.yaml
+
+# Clohessy-Wiltshire spacecraft Docking baseline
+python scripts/train.py --config configs/docking/docking_default.yaml --stop_iteration 2000 --complete_episodes
+```
+
+See ```python scripts/train.py --help``` for more training options.
+
+### Evaluation
+There are two options for evaluating the performance of an agent's policy: during training or after training.
+To periodically evaluate policy during training, use the 'evaluation_during_training' boolean flag while running the training script:
+```shell
+python scripts/train.py --config configs/rejoin/rejoin_default.yaml --eval
+```
+For more control over evaluation rollouts during training, try setting some of the following arguments: evaluation_during_training, evaluation_interval, evaluation_num_episodes, evaluation_num_workers, evaluation_seed, and evaluation_exploration.
+
+If you would like to evaluate a policy from a training run that has already completed, use the `scripts/eval.py` script.
+Only the 'dir' flag is required, which defines the full path to where your experiment directory is located:
+```shell
+python scripts/eval.py --dir full/path/to/experiment_dir
+```
+You may wish to evaluate the policy of a specific saved checkpoint, in which case simply use the `ckpt_num` flag to pass the number of the checkpoint you wish to evaluate
+```shell
+python scripts/eval.py --dir full/path/to/experiment_dir --ckpt_num=200
+```
+
+A lot of the same options for evaluation during training are available for evaluation after training via command line arguments for `scripts/eval.py`.
+See ```python scripts/eval.py --help``` for the full list.
+
+
+
+
+
+## Environments
+
+### Rejoin
+Aircraft formation flight rejoin where a wingman aircraft controlled by the agent must join a formation relative to a lead aircraft. The formation is defined by a rejoin region relative to the lead's position and orientation which the wingman must enter and remain within. Comes in the following flavors:
+
+-  **Rejoin 2D**  
+Throttle and heading control.  
+Config file: `configs/docking/rejoin_default.yaml`  
+
+-  **Rejoin 3D**  
+Throttle, heading, flight angle, roll control.  
+Config files: 
+    - `configs/docking/rejoin_3d_default_continuous.yaml`  
+    - `configs/docking/rejoin_3d_default_discrete.yaml`
+
+### Docking
+Spacecraft docking scenario where an agent controlled deputy spacecraft must dock with a stationary chief spacecraft while both orbit a central body. This is accomplished by approaching the chief to within a predefined docking distance while maintaining a safe relative velocity within that distance. The motion of the deputy spacecraft is governed by the Clohessy-Wiltshire linearlized dynamics model. Comes in the following flavors:
+
+-  **Docking 2D**  
+Static 1N thrusters in $`\pm x`$ and  $`\pm y`$.  
+Config file: `configs/docking/docking_default.yaml`  
+
+-  **Docking 3D**
+Static 1N thrusters in $`\pm x, \pm y, \pm z`$. 
+Does not currently train to successful completion.  
+Config file: `configs/docking/docking_3d_default.yaml`  
 
 ## Documentation
 
@@ -65,3 +94,14 @@ General code documentation guidelines:
 4. Avoid using the same variable name for different purposes within the same scope.
 
 Instructions on setting the NumPy docstring format as your default in PyCharm can be found [here](https://www.jetbrains.com/help/pycharm/settings-tools-python-integrated-tools.html).
+
+## Public Release
+Approved for public release: distribution unlimited. Case Numbers: AFRL-2021-0064 and AFRL-2021-0065
+
+## Team
+Jamie Cunningham,
+John McCarroll,
+Kyle Dunlap,
+Kerianne Hobbs,
+Umberto Ravaioli,
+Vardaan Gangal

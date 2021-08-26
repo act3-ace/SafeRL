@@ -8,12 +8,6 @@ from saferl.environment.models.platforms import BaseEnvObj
 POINT_CONTAINS_DISTANCE = 1e-10
 
 
-def geo_from_config(cls, config):
-    assert issubclass(cls, BaseGeometry) or issubclass(cls, RelativeGeometry)
-    obj = cls(**config)
-    return obj
-
-
 class BaseGeometry(BaseEnvObj):
 
     @property
@@ -52,8 +46,12 @@ class BaseGeometry(BaseEnvObj):
 
 class Point(BaseGeometry):
 
-    def __init__(self, x=0, y=0, z=0):
+    def __init__(self, name, x=0, y=0, z=0):
+        super().__init__(name)
         self._center = np.array([x, y, z], dtype=np.float64)
+
+    def reset(self, **kwargs):
+        pass
 
     @property
     def x(self):
@@ -104,10 +102,9 @@ class Point(BaseGeometry):
 
 class Circle(Point):
 
-    def __init__(self, x=0, y=0, z=0, radius=1):
+    def __init__(self, name, x=0, y=0, z=0, radius=1):
+        super().__init__(name, x=x, y=y, z=z)
         self.radius = radius
-
-        super().__init__(x=x, y=y, z=z)
 
     def contains(self, other):
         radial_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
@@ -129,12 +126,11 @@ class Sphere(Circle):
         return is_contained
 
 
-class Cyclinder(Circle):
+class Cylinder(Circle):
 
-    def __init__(self, x=0, y=0, z=0, radius=1, height=1):
+    def __init__(self, name, x=0, y=0, z=0, radius=1, height=1):
         self.height = height
-
-        super().__init__(x=x, y=y, z=z, radius=radius)
+        super().__init__(name, x=x, y=y, z=z, radius=radius)
 
     def contains(self, other):
         radial_distance = np.linalg.norm(self.position[0:2] - other.position[0:2])
@@ -165,6 +161,45 @@ class RelativeGeometry(BaseEnvObj):
                  euler_decomp_axis=None,
                  init=None,
                  **kwargs):
+        """
+
+        Constructs RelativeGeometry Object
+        Must specify either a Cartesian offset or Polar offset from the ref object
+
+        Parameters
+        ----------
+        ref
+            Reference EnvObj that positions and orientations are relative to
+        shape
+            Underlying Geometry object
+        track_orientation
+            Whether rotate around its ref object as the ref's orientation rotates
+            If True, behaves as if attached to ref with a rigid rod (rotates around ref).
+            If False, behaves as if attached to ref with a gimble.
+        x_offset
+            Cartesian offset component.
+        y_offset
+            Cartesian offset component.
+        z_offset
+            Cartesian offset component. Can mix with Polar offset to add a Z offset
+        r_offset
+            Polar offset component. Distance from ref.
+        theta_offset
+            Polar offset component. Radians. Azimuth angle offset of relative vector.
+        aspect_angle
+            Polar offset component. Degrees. Can use instead of theta_offset
+        euler_decomp_axis
+            Euler decomposition of rotation tracking into a subset of the Euler angles
+            Allows tracking of planar rotations only (such as xy plane rotations only)
+            NotImplemented
+        init
+            Initialization Dictionary
+
+        Returns
+        -------
+        None
+
+        """
 
         # check that both x_offset and y_offset are used at the same time if used
         assert (x_offset is None) == (y_offset is None), \
@@ -181,7 +216,8 @@ class RelativeGeometry(BaseEnvObj):
 
         # convert aspect angle to theta
         if aspect_angle is not None:
-            theta_offset = (math.pi - aspect_angle)
+            aspect_angle_rad = np.deg2rad(aspect_angle)
+            theta_offset = (math.pi + aspect_angle_rad)
 
         # convert polar to x,y offset
         if (x_offset is None) and (y_offset is None):
@@ -210,7 +246,7 @@ class RelativeGeometry(BaseEnvObj):
             self.init_dict = init
 
         self.ref.register_dependent_obj(self)
-        self.update()
+        # self.update()
 
     def update(self):
         ref_orientation = self.ref.orientation
@@ -228,9 +264,16 @@ class RelativeGeometry(BaseEnvObj):
             self.shape.orientation = self.ref.orientation
 
     def step(self, *args, **kwargs):
+        self.step_compute()
+        self.step_apply()
+
+    def step_compute(self, *args, **kwargs):
+        pass
+
+    def step_apply(self, *args, **kwargs):
         self.update()
 
-    def reset(self):
+    def reset(self, **kwargs):
         self.update()
 
     def generate_info(self):
@@ -370,7 +413,7 @@ class RelativeCylinder(RelativeGeometry):
                  aspect_angle=None,
                  init=None,
                  **kwargs):
-        shape = Cyclinder(**kwargs)
+        shape = Cylinder(**kwargs)
 
         super().__init__(
             ref,
@@ -396,3 +439,14 @@ class RelativeCylinder(RelativeGeometry):
 
 def distance(a, b):
     return np.linalg.norm(a.position - b.position)
+
+
+def angle_wrap(angle, mode='pi'):
+    assert mode == 'pi' or mode == '2pi', "invalid mode, must be on of ('pi', '2pi')"
+
+    if mode == 'pi':
+        offset = math.pi
+    else:
+        offset = 0
+
+    return ((angle + offset) % (2 * math.pi)) - offset
