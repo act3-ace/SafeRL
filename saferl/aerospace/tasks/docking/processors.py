@@ -16,6 +16,7 @@ class DockingObservationProcessor(ObservationProcessor):
         self.mode = mode
         self.deputy = deputy
 
+    def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
@@ -26,7 +27,7 @@ class DockingObservationProcessor(ObservationProcessor):
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
             self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector
@@ -43,6 +44,7 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         self.mode = mode
         self.deputy = deputy
 
+    def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
@@ -54,7 +56,7 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         elif self.mode == '3d':
             raise NotImplementedError
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
 
     def _process(self, sim_state):
         obs = sim_state.env_objs['deputy'].state.vector

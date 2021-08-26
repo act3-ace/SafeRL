@@ -32,6 +32,11 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
+        if not self.has_clipping:
+            # if no custom clipping defined
+            self._add_clipping([-1, 1])
+
+    def define_observation_space(self) -> gym.spaces.Box:
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
             if not self.has_normalization:
@@ -42,10 +47,8 @@ class DubinsObservationProcessor(ObservationProcessor):
             if not self.has_normalization:
                 # if no custom normalization defined
                 self._add_normalization([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1])
-
-        if not self.has_clipping:
-            # if no custom clipping defined
-            self._add_clipping([-1, 1])
+        else:
+            raise ValueError("Invalid observation mode {}. Should be 'rect' or 'magnorm'.".format(self.mode))
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -114,6 +117,11 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
+        if not self.has_clipping:
+            # if no custom clipping defined
+            self._add_clipping([-1, 1])
+
+    def define_observation_space(self) -> gym.spaces.Box:
         if self.mode == 'rect':
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
             if not self.has_normalization:
@@ -125,10 +133,8 @@ class Dubins3dObservationProcessor(ObservationProcessor):
             if not self.has_normalization:
                 # if no custom normalization defined
                 self._add_normalization([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi])
-
-        if not self.has_clipping:
-            # if no custom clipping defined
-            self._add_clipping([-1, 1])
+        else:
+            raise ValueError("Invalid observation mode {}. Should be 'rect' or 'magnorm'.".format(self.mode))
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
