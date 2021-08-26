@@ -42,8 +42,8 @@ checkpoint will be loaded and evaluated. If not specified, the latest checkpoint
 Use this option to specify the seed used for evaluation episodes. If not specified, the eval script will use the
 same seed used in training.
 
-####--explore : bool
-Set this option to true to enable off-policy evaluation. By default, all evaluation episodes are on-policy.
+####--explore
+Use this flag on the command line to enable off-policy evaluation. By default, all evaluation episodes are on-policy.
 
 ####--output_dir : str
 Supply the full path to the desired custom location for output logs for evaluation episodes. By default, output logs
@@ -64,15 +64,15 @@ These two options pertain to visualization of the evaluation episodes. See the n
 ## Animation
 For visual intuition, our 2D base environments come with builtin animations.
 
-To use our default renderers, for 2D Rejoin and 2D Docking tasks, simply add the `--render`
-flag to the evaluation script launch from above:
+To use our default renderers, for the 2D Rejoin and 2D Docking tasks, simply add the `--render`
+flag to the evaluation script launch command from above:
 
 `$ python eval.py --dir <full path to experiment dir> --render`
 
 If you wish to customize some aspects of the visualization (like the size of the render window, scale of objects, 
-padding, etc) pass the full path to a render config file to the --render_config option on the command line. The 
+padding, etc) pass the full path to a render config file to the `--render_config` option on the command line. The 
 render config file needs to be a yaml file which specifies a dictionary for kwargs passed to the constructor of either 
-2D environment's Renderer class (DockingRenderer or RejoinRenderer). The values excepted by each of these classes vary
+2D environment's Renderer class (DockingRenderer or RejoinRenderer). The kwargs accepted by each of these classes vary
 greatly, so please reference the [docking](../../saferl/aerospace/tasks/docking/render.py) and 
 [rejoin](../../saferl/aerospace/tasks/rejoin/render.py) renderer classes to see the full list of available options. Some
 notable mentions include the inclusion of safety margins, adjustment of animation speed, inclusion of rejoin region, and 
