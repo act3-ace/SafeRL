@@ -1,10 +1,1 @@
-from saferl.aerospace.tasks.docking import processors, task
-
-import inspect
-
-processors_members = inspect.getmembers(processors, inspect.isclass)
-task_members = inspect.getmembers(task, inspect.isclass)
-
-mems = processors_members + task_members
-
-lookup = {v.__module__ + "." + k: v for k, v in mems if "saferl" in str(v)}
+from saferl.aerospace.tasks.docking import processors, task, initializers  # noqa: F401

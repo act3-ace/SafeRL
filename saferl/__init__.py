@@ -1,3 +1,1 @@
-from saferl import environment, aerospace
-
-lookup = {**aerospace.lookup, **environment.lookup}
+from saferl import environment, aerospace  # noqa: F401

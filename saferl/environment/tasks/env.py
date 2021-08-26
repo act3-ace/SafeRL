@@ -1,37 +1,73 @@
 import random
-
 import numpy as np
-
 import gym
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
-from saferl.environment.tasks.utils import draw_from_rand_bounds_dict
+from saferl.environment.tasks.processor.status import TimeoutStatusProcessor, NeverSuccessStatusProcessor
 from saferl.environment.utils import setup_env_objs_from_config
+from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, RENDER
+from saferl.environment.tasks.initializers import RandBoundsInitializer
 
 
 class BaseEnv(gym.Env):
 
-    def __init__(self, config):
-        # save config
-        self.config = config
+    def __init__(self, env_config):
+
+        # Set time step size
+        if 'step_size' in env_config:
+            self.step_size = env_config['step_size']
+        else:
+            self.step_size = 1
+
+        # Initialize simulation state
         self.sim_state = SimulationState()
 
-        if 'verbose' in config:
-            self.verbose = config['verbose']
+        # Set verbosity level
+        if VERBOSE in env_config.keys():
+            self.verbose = env_config[VERBOSE]
         else:
             self.verbose = False
 
-        self.observation_manager = ObservationManager(self.config["observation"])
-        self.reward_manager = RewardManager(config=self.config["reward"])
-        self.status_manager = StatusManager(config=self.config["status"])
+        # Create managers
+        self.observation_manager = ObservationManager(env_config[OBSERVATION])
+        self.reward_manager = RewardManager(env_config[REWARD])
+        self.status_manager = StatusManager(env_config[STATUS])
 
-        self.sim_state.agent, self.sim_state.env_objs = self._setup_env_objs()
+        # Create renderer
+        if RENDER in env_config.keys():
+            render_class = env_config[RENDER]["class"] if "class" in env_config[RENDER].keys() else None
+            self.render_config = env_config[RENDER]["config"] if "config" in env_config[RENDER].keys() else {}
+            if render_class is not None:
+                self.renderer = render_class(**self.render_config)
+        else:
+            self.render_config = {}
+            self.renderer = None
 
+        # Create default success/failure processors
+        has_failure_processor = False
+        has_success_processor = False
+
+        for processor in self.status_manager.processors:
+            if processor.name == 'failure':
+                has_failure_processor = True
+            elif processor.name == 'success':
+                has_success_processor = True
+
+        if not has_failure_processor:
+            self.status_manager.processors.append(TimeoutStatusProcessor())
+        if not has_success_processor:
+            self.status_manager.processors.append(NeverSuccessStatusProcessor())
+
+        # Get environment objects and initializers
+        self.sim_state.agent, self.sim_state.env_objs, self.initializers = setup_env_objs_from_config(
+            config=env_config,
+            default_initializer=RandBoundsInitializer)
+
+        # Setup action and observation space
         self._setup_action_space()
         self._setup_obs_space()
 
-        self.step_size = 1  # TODO
-
+        # Reset environment
         self.reset()
 
     def seed(self, seed=None):
@@ -63,12 +99,8 @@ class BaseEnv(gym.Env):
         raise NotImplementedError
 
     def reset(self):
-        # apply random initialization to environment objects
-
-        for _, obj in self.sim_state.env_objs.items():
-            init_dict = obj.init_dict
-            init_dict_draw = draw_from_rand_bounds_dict(init_dict)
-            obj.reset(**init_dict_draw)
+        # Reinitialize env_objs
+        self._initialize()
 
         # reset processor objects and status
         self.sim_state.status = self.status_manager.reset(self.sim_state)
@@ -78,14 +110,23 @@ class BaseEnv(gym.Env):
         # generate reset state observations
         obs = self._generate_obs()
 
+        # Reset render viewer
+        if self.renderer is not None:
+            self.renderer.reset()
+
         if self.verbose:
             print("env reset with params {}".format(self.generate_info()))
 
         return obs
 
-    def _setup_env_objs(self):
-        agent, env_objs = setup_env_objs_from_config(self.config)
-        return agent, env_objs
+    def render(self, mode='human'):
+        if self.renderer is not None:
+            self.renderer.render(state=self.sim_state)
+
+    def _initialize(self):
+        # Reinitialize env_objs
+        for initializer in self.initializers:
+            initializer.initialize()
 
     def _setup_obs_space(self):
         self.observation_space = self.observation_manager.observation_space

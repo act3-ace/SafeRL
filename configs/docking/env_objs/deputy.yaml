@@ -2,6 +2,7 @@ name: deputy
 class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
 config:
   controller:
+    class: saferl.environment.models.platforms.AgentController
     actuators:
       - name: thrust_x
         space: discrete
@@ -12,6 +13,7 @@ config:
         points: 11
         bounds: [-10, 10]
   init:
+    initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
     x: [-2000, 2000]
     x_dot: 0
     y: [-2000, 2000]

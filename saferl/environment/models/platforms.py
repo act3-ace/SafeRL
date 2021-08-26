@@ -8,6 +8,10 @@ import numpy as np
 
 class BaseEnvObj(abc.ABC):
 
+    @abc.abstractmethod
+    def __init__(self, name):
+        self.name = name
+
     @property
     @abc.abstractmethod
     def x(self):
@@ -78,7 +82,11 @@ class ContinuousActuator(BaseActuator):
 
     @property
     def bounds(self) -> list:
-        return copy.deepcopy(self._bounds)
+        return self._bounds.copy()
+
+    @bounds.setter
+    def bounds(self, val):
+        self._bounds = val.copy()
 
     @property
     def default(self):
@@ -86,15 +94,14 @@ class ContinuousActuator(BaseActuator):
 
 
 class BaseController(abc.ABC):
-    def __init__(self, config=None):
-        self.config = config
-
     @abc.abstractmethod
     def gen_actuation(self, state, action=None):
         raise NotImplementedError
 
 
 class PassThroughController(BaseController):
+    def __init__(self):
+        self.action_space = None
 
     def gen_actuation(self, state, action=None):
         return action
@@ -103,14 +110,13 @@ class PassThroughController(BaseController):
 class AgentController(BaseController):
 
     def __init__(self, actuator_set, config):
-        self.config = config
         self.actuator_set = actuator_set
-        self.actuator_config_list = self.config['actuators']
+        self.actuator_config_list = config['actuators']
 
-        self.setup_action_space()
+        self.action_preprocessors, self.action_space = self.setup_action_space()
 
     def setup_action_space(self):
-        self.action_preprocessors = []
+        action_preprocessors = []
         action_space_tup = ()
 
         # loop over actuators in controller config and setup preprocessors
@@ -127,16 +133,18 @@ class AgentController(BaseController):
                 # determine upper and lower bounds of actuator range.
                 # Should be the intersection of the actuator object bounds and the actuator config bounds
                 if 'bounds' in actuator_config:
-                    bounds_min = max(actuator.bounds[0], actuator_config['bounds'][0])
-                    bounds_max = min(actuator.bounds[1], actuator_config['bounds'][1])
-                else:
-                    bounds_min = actuator.bounds[0]
-                    bounds_max = actuator.bounds[1]
+                    actuator.bounds = actuator_config['bounds']
+
+                bounds_min = actuator.bounds[0]
+                bounds_max = actuator.bounds[1]
 
                 if ('space' not in actuator_config) or (actuator_config['space'] == 'continuous'):
-                    # if both actuator and config are continuous, simply pass through value to control
-                    preprocessor = ActionPreprocessorPassThrough(actuator_name)
-                    actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
+                    if ('rescale' not in actuator_config) or (actuator_config['rescale']):
+                        preprocessor = ActionPreprocessorContinuousRescale(actuator_name, [bounds_min, bounds_max])
+                        actuator_action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
+                    else:
+                        preprocessor = ActionPreprocessorPassThrough(actuator_name)
+                        actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
                 elif actuator_config['space'] == 'discrete':
                     # if actuator in continuous but config is discrete, discretize actuator bounds
                     vals = np.linspace(bounds_min, bounds_max, actuator_config['points'])
@@ -160,9 +168,11 @@ class AgentController(BaseController):
 
             # append actuator action space and preprocessor
             action_space_tup += (actuator_action_space,)
-            self.action_preprocessors.append(preprocessor)
+            action_preprocessors.append(preprocessor)
 
-        self.action_space = gym.spaces.Tuple(action_space_tup)
+        action_space = gym.spaces.Tuple(action_space_tup)
+
+        return action_preprocessors, action_space
 
     def gen_actuation(self, state, action=None):
         actuation = {}
@@ -196,6 +206,20 @@ class ActionPreprocessorPassThrough(ActionPreprocessor):
 
     def preprocess(self, action):
         return action
+
+
+class ActionPreprocessorContinuousRescale(ActionPreprocessor):
+    def __init__(self, name, bounds):
+        self.bounds = bounds
+        super().__init__(name)
+
+    def preprocess(self, action):
+        low = self.bounds[0]
+        high = self.bounds[1]
+
+        scaled_action = low + (action + 1.0) * (high - low) / 2.0
+
+        return scaled_action
 
 
 class ActionPreprocessorDiscreteMap(ActionPreprocessor):
@@ -239,18 +263,15 @@ class BaseActuatorSet:
 
 class BasePlatform(BaseEnvObj):
 
-    def __init__(self, dynamics, actuator_set, controller, state, config=None, **kwargs):
+    def __init__(self, name, dynamics, actuator_set, state, controller, rta=None):
 
-        if config is None or 'controller' not in config:
-            controller_config = None
-        else:
-            controller_config = config['controller']
-
-        if controller_config is None:
+        if controller is None:
             controller = PassThroughController()
-        else:
-            controller = AgentController(actuator_set, config=controller_config)
-            self.action_space = controller.action_space
+        elif type(controller) == dict:
+            controller = controller["class"](actuator_set, config=controller)
+
+        super().__init__(name)
+        self.action_space = controller.action_space
 
         self.dependent_objs = []
 
@@ -258,46 +279,79 @@ class BasePlatform(BaseEnvObj):
         self.actuator_set = actuator_set
         self.controller = controller
         self.state = state
+        self.next_state = self.state
 
-        if config is None:
-            self.init_dict = None
-        else:
-            if "init" in config.keys():
-                self.init_dict = config["init"]
+        # setup rta module with reference to self
+        self.rta = rta
+        if type(self.rta) == dict:
+            if 'config' in self.rta:
+                rta_kwargs = self.rta['config']
             else:
-                self.init_dict = {}
+                rta_kwargs = {}
+            self.rta = self.rta['class'](**rta_kwargs)
+        if self.rta is not None:
+            self.rta.setup(self)
 
-        self.reset(**kwargs)
+        self.reset()
 
     def reset(self, **kwargs):
         self.state.reset(**kwargs)
+        self.next_state = self.state
 
-        self.actuation_cur = None
-        self.control_cur = None
+        self.current_actuation = {}
+        self.current_control = self.actuator_set.gen_control()
 
         for obj in self.dependent_objs:
-            obj.reset()
+            obj.reset(**kwargs)
 
-    def step(self, step_size, action=None):
+    def step(self, sim_state, step_size, action=None):
+        self.step_compute(sim_state, step_size, action=action)
+        self.step_apply()
+
+    def step_compute(self, sim_state, step_size, action=None):
+
         actuation = self.controller.gen_actuation(self.state, action)
-
         control = self.actuator_set.gen_control(actuation)
 
+        if self.rta is not None:
+            control = self.rta.filter_control(sim_state, step_size, control)
+
         # save current actuation and control
-        self.actuation_cur = copy.deepcopy(actuation)
-        self.control_cur = copy.deepcopy(control)
+        self.current_actuation = copy.deepcopy(actuation)
+        self.current_control = copy.deepcopy(control)
 
         # compute new state if dynamics were applied
-        new_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
-
-        # overwrite platform state with new state from dynamics
-        self.state = new_state
+        self.next_state = self.dynamics.step(step_size, copy.deepcopy(self.state), control)
 
         for obj in self.dependent_objs:
-            obj.step(step_size)
+            obj.step_compute(sim_state, action=action)
+
+    def step_apply(self):
+
+        # overwrite platform state with new state from dynamics
+        self.state = self.next_state
+
+        for obj in self.dependent_objs:
+            obj.step_apply()
 
     def register_dependent_obj(self, obj):
         self.dependent_objs.append(obj)
+
+    def generate_info(self):
+        info = {
+            'x': self.x,
+            'y': self.y,
+            'z': self.z,
+            'controller': {
+                'actuation': self.current_actuation,
+                'control': self.current_control,
+            }
+        }
+
+        if self.rta is not None:
+            info['rta'] = self.rta.generate_info()
+
+        return info
 
     @property
     def x(self):
@@ -330,7 +384,7 @@ class BasePlatformState(BaseEnvObj):
         self.reset(**kwargs)
 
     @abc.abstractmethod
-    def reset(self):
+    def reset(self, **kwargs):
         raise NotImplementedError
 
 
@@ -343,7 +397,7 @@ class BasePlatformStateVectorized(BasePlatformState):
             assert isinstance(vector, np.ndarray)
             assert vector.shape == self.vector_shape
             if vector_deep_copy:
-                self.vector = copy.deepcopy(vector)
+                self._vector = copy.deepcopy(vector)
             else:
                 self._vector = vector
 
@@ -373,7 +427,7 @@ class BaseDynamics(abc.ABC):
 
 class BaseODESolverDynamics(BaseDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.integration_method = integration_method
         super().__init__()
 
@@ -398,7 +452,7 @@ class BaseODESolverDynamics(BaseDynamics):
 
 class BaseLinearODESolverDynamics(BaseODESolverDynamics):
 
-    def __init__(self, integration_method='RK45'):
+    def __init__(self, integration_method='Euler'):
         self.A, self.B = self.gen_dynamics_matrices()
         super().__init__(integration_method=integration_method)
 
