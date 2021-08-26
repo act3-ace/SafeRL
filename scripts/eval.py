@@ -1,6 +1,6 @@
 import os
 import argparse
-import pickle
+import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
@@ -8,7 +8,8 @@ from glob import glob
 import ray
 import ray.rllib.agents.ppo as ppo
 
-from saferl.environment.utils import jsonify, is_jsonable
+from saferl.environment.utils import jsonify, is_jsonable, YAMLParser, build_lookup
+from saferl.environment.constants import RENDER
 
 """
 This script loads an agent's policy from a saved checkpoint in the specified experiment directory. It randomly
@@ -43,11 +44,17 @@ def get_args():
                         help="The full path to the directory to write evaluation logs in")
     parser.add_argument('--num_rollouts', type=int, default=10,
                         help="Number of randomly initialized episodes to evaluate")
+    parser.add_argument('--render', default=False, action="store_true", help="attempt to render evaluation episodes")
+    parser.add_argument('--render_config', type=str, default=None,
+                        help="The full path to a custom rendering config file")
+    parser.add_argument('--alt_env_config', type=str, default="",
+                        help="Provide the full path to an alternative environment config file,"
+                             " in which the loaded policy will be evaluated.")
 
     return parser.parse_args()
 
 
-def run_rollouts(agent, env, log_dir, num_rollouts=1):
+def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
     """
     A function to coordinate policy evaluation via RLLib API.
 
@@ -61,6 +68,8 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
         The path to the output directory in which evaluation logs will be run.
     num_rollouts : int
         The number of randomly initialized episodes conducted to evaluate the agent on.
+    render : bool
+        Flag to render the environment in a separate window during rollouts.
     """
     for i in tqdm.tqdm(range(num_rollouts)):
         # run until episode ends
@@ -91,6 +100,10 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1):
 
                 # write state to file
                 writer.write(state)
+
+                if render:
+                    # attempt to render environment state
+                    env.render()
 
 
 def verify_experiment_dir(expr_dir_path):
@@ -200,12 +213,22 @@ def main():
     with open(ray_config_path, 'rb') as ray_config_f:
         ray_config = pickle.load(ray_config_f)
 
+    # Load render config
+    render_config = None
+    if args.render_config is not None:
+        parser = YAMLParser(yaml_file=args.render_config, lookup=build_lookup())
+        render_config = parser.parse_env()
+
     ray.init()
+
     # load policy and env
-    env_config = ray_config['env_config']
+    env_config = args.alt_env_config if args.alt_env_config else ray_config['env_config']
+    if render_config is not None:
+        env_config[RENDER] = render_config
     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
     agent.restore(ckpt_path)
-    env = ray_config['env'](config=env_config)
+    env = ray_config['env'](env_config)
+
     # set seed and explore
     seed = args.seed if args.seed is not None else ray_config['seed']
     env.seed(seed)
@@ -213,7 +236,7 @@ def main():
     agent.get_policy().config['explore'] = args.explore
 
     # run inference episodes and log results
-    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts)
+    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts, render=args.render)
 
 
 if __name__ == "__main__":

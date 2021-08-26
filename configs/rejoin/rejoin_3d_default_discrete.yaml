@@ -3,50 +3,54 @@ env_config:
   agent: wingman
   step_size: 1
   env_objs:
+  - name: lead
+    class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
+    config:
+      v_min: 200
+      v_max: 400
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        heading: [0, 6.283185307179586]
+        v: [250, 300]
+        x: [5000, 10000]
+        y: [5000, 10000]
+        z: [12000, 14000]
   - name: wingman
     class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
     config:
-      v_min: 10
-      v_max: 100
+      v_min: 200
+      v_max: 400
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
         - name: ailerons
           space: discrete
           points: 5
+          bounds: [-0.17, 0.17]
         - name: elevator
           space: discrete
           points: 5
+          bounds: [-0.09, 0.09]
         - name: throttle
           space: discrete
+          bounds: [-96.5, 96.5]
           points: 5
       init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        heading: [-0.785398163, 0.785398163]
-        v: [10, 100]
-        x: [-4000, 0]
-        y: [-2000, 2000]
-        z: [-2000, 2000]
-  - name: lead
-    class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
-    config:
-      v_min: 10
-      v_max: 100
-      init:
-        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        heading: [0, 0]
-        v: [40, 60]
-        x: [0000, 4000]
-        y: [-2000, 2000]
-        z: [-2000, 2000]
+        initializer: saferl.aerospace.tasks.rejoin.initializers.WingmanPolarInitializer
+        ref: lead
+        heading: [0, 6.283185307179586]
+        v: [200, 400]
+        radius: [5000, 10000]
+        angle: [0, 6.283185307179586]
+        z: [10000, 16000]
   - name: rejoin_region
     class: saferl.environment.models.geometry.RelativeCylinder
     config:
       ref: lead
       aspect_angle: 60
       r_offset: 500
-      radius: 150
-      height: 300
+      radius: 100
+      height: 100
       track_orientation: true
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -121,7 +125,7 @@ env_config:
     class: saferl.aerospace.tasks.rejoin.processors.DubinsFailureStatus
     config:
       lead_distance: lead_distance
-      max_goal_distance: 40000
+      max_goal_distance: 100000
       safety_margin:
         aircraft: 100
       time_elapsed: time_elapsed
