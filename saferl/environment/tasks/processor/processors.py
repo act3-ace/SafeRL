@@ -95,7 +95,7 @@ class ObservationProcessor(Processor):
 
         Checking the 'has_normalization' flag ensures that no other normalization PostProcessors have been created yet
         and using the '_add_normalization' method handles the creation and insertion of a normalization
-        PostProcessor and subsequent setting of  the 'has_normalization' flag. The same applies for the 'has_clipping'
+        PostProcessor and subsequent setting of the 'has_normalization' flag. The same applies for the 'has_clipping'
         flag and '_add_clipping' method.
 
 
@@ -161,7 +161,6 @@ class ObservationProcessor(Processor):
         # apply postprocessors to Box observation space definition
         for post_processor in self.post_processors:
             self.observation_space = post_processor.modify_observation_space(self.observation_space)
-            1+1
 
         # add norm + clipping postprocessors
         if self.normalization is not None and not self.has_normalization:
