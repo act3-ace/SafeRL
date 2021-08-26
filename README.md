@@ -64,24 +64,26 @@ See ```python scripts/eval.py --help``` for the full list.
 Aircraft formation flight rejoin where a wingman aircraft controlled by the agent must join a formation relative to a lead aircraft. The formation is defined by a rejoin region relative to the lead's position and orientation which the wingman must enter and remain within. Comes in the following flavors:
 
 -  **Rejoin 2D**  
+Throttle and heading control.  
 Config file: `configs/docking/rejoin_default.yaml`  
-Throttle and heading control.
 
--  **Rejoin 3D**
-Config file: `configs/docking/rejoin_3d_default.yaml`  
-Throttle, heading, flight angle, roll control.
+-  **Rejoin 3D**  
+Throttle, heading, flight angle, roll control.  
+Config files: 
+    - `configs/docking/rejoin_3d_default_continuous.yaml`  
+    - `configs/docking/rejoin_3d_default_discrete.yaml`
 
 ### Docking
 Spacecraft docking scenario where an agent controlled deputy spacecraft must dock with a stationary chief spacecraft while both orbit a central body. This is accomplished by approaching the chief to within a predefined docking distance while maintaining a safe relative velocity within that distance. The motion of the deputy spacecraft is governed by the Clohessy-Wiltshire linearlized dynamics model. Comes in the following flavors:
 
 -  **Docking 2D**  
-Config file: `configs/docking/docking_default.yaml`  
 Static 1N thrusters in $`\pm x`$ and  $`\pm y`$.  
+Config file: `configs/docking/docking_default.yaml`  
 
 -  **Docking 3D**
-Config file: `configs/docking/docking_3d_default.yaml`  
-Static 1N thrusters in $`\pm x, \pm y, \pm z`$.  
+Static 1N thrusters in $`\pm x, \pm y, \pm z`$. 
 Does not currently train to successful completion.  
+Config file: `configs/docking/docking_3d_default.yaml`  
 
 ## Documentation
 
