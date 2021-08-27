@@ -62,8 +62,8 @@ class BaseEnv(gym.Env):
 
         return [seed]
 
-    def step(self, action):
 
+    def _step_sim(self, action):
         agent_name = self.sim_state.agent.name
         for obj_name,obj in self.sim_state.env_objs.items():
             if isinstance(obj,BasePlatform):
@@ -71,6 +71,11 @@ class BaseEnv(gym.Env):
                     self.sim_state.env_objs[obj_name].step(self.step_size,action)
                 else:
                     self.sim_state.env_objs[obj_name].step(self.step_size)
+
+
+    def step(self, action):
+
+        self._step_sim(action)
 
         self.sim_state.status = self._generate_status()
 
@@ -86,8 +91,6 @@ class BaseEnv(gym.Env):
 
         return obs, reward, done, info
 
-    def _step_sim(self, action):
-        raise NotImplementedError
 
     def reset(self):
         # Reinitialize env_objs
