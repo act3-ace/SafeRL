@@ -126,7 +126,9 @@ class Rotate(PostProcessor):
         self.reference = reference
 
     def __call__(self, input_array, sim_state):
-        # assumes the entire input_array is positional info*
+        """
+        NOTE: assumes the entire input_array is positional info
+        """
 
         # ensure reference in environment
         assert self.reference in sim_state.env_objs, \

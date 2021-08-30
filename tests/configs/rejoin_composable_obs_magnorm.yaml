@@ -55,6 +55,7 @@ env_config:
       reference: wingman
       target: lead
       is_2d: True
+#      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
@@ -70,6 +71,7 @@ env_config:
       reference: wingman
       target: rejoin_region
       is_2d: True
+#      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
@@ -83,6 +85,7 @@ env_config:
       clip: [ -1, 1 ]
       env_object_name: wingman
       is_2d: True
+#      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
@@ -96,6 +99,7 @@ env_config:
       clip: [ -1, 1 ]
       env_object_name: lead
       is_2d: True
+#      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:

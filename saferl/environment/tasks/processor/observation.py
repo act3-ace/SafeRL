@@ -20,11 +20,16 @@ class SpatialObservationProcessor(ObservationProcessor):
     def __init__(self, name=None,
                  normalization=None,
                  clip=None,
+                 rotation_reference=None,
                  post_processors=None,
                  is_2d=False):
         assert type(is_2d) == bool, "Expected bool for 'is_2d' parameter, but found {}".format(type(is_2d))
         self.is_2d = is_2d
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+        super().__init__(name=name,
+                         normalization=normalization,
+                         clip=clip,
+                         rotation_reference=rotation_reference,
+                         post_processors=post_processors)
 
     def define_observation_space(self) -> gym.spaces.Box:
         """
@@ -55,6 +60,7 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
     def __init__(self, name=None,
                  normalization=None,
                  clip=None,
+                 rotation_reference=None,
                  post_processors=None,
                  reference=None,
                  target=None,
@@ -63,6 +69,7 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
         super().__init__(name=name,
                          normalization=normalization,
                          clip=clip,
+                         rotation_reference=rotation_reference,
                          post_processors=post_processors,
                          is_2d=is_2d)
         self.reference = reference
@@ -85,12 +92,6 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
 
         positional_diff = target.position - reference.position
 
-        # # apply rotation
-        # relative_rotation = reference.orientation.inv()
-        # relative_position = relative_rotation.apply(absolute_position)
-        # relative_position = np.array(relative_position)
-        # return relative_position
-
         # apply dimensionality
         if self.is_2d:
             positional_diff = positional_diff[0:2]
@@ -107,6 +108,7 @@ class VelocityObservationProcessor(SpatialObservationProcessor):
                  name=None,
                  normalization=None,
                  clip=None,
+                 rotation_reference=None,
                  post_processors=None,
                  env_object_name=None,
                  is_2d=False):
@@ -114,6 +116,7 @@ class VelocityObservationProcessor(SpatialObservationProcessor):
         super().__init__(name=name,
                          normalization=normalization,
                          clip=clip,
+                         rotation_reference=rotation_reference,
                          post_processors=post_processors,
                          is_2d=is_2d)
         self.env_object_name = env_object_name

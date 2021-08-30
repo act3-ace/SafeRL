@@ -70,7 +70,7 @@ class ObservationProcessor(Processor):
                  name=None,
                  normalization=None,
                  clip=None,
-                 # rotation_reference=None,
+                 rotation_reference=None,
                  post_processors=None,
                  observation_space_shape=None):
         """
@@ -79,15 +79,20 @@ class ObservationProcessor(Processor):
         using the values in the given list as constants.
         If the 'clip' kwarg is assigned a two element list, a default clipping PostProcessor is created, using the first
         element of the given list as the lower bound and the second element as the upper bound.
+        If the 'rotation_reference' kwarg is assigned the name of an object within the environment, a default Rotate
+        PostProcessor is created and added to the front of the list of postprocessors.
         If the 'post_processors' kwarg is assigned a list of dict configs, they are instantiated and maintained in
         order.
+        If the 'observation_space_shape' kwarg is assigned, the length of the observation space will be defined based on
+        the received value.
 
-        NOTE: To avoid redundant applications of PostProcessors, two flags are maintained - has_normalization and
-        has_clipping. If a PostProcessor that extends Normalize or Clip is defined in the list of PostProcessor configs,
-        the respective flag is mutated. This is to ensure that normalization or clipping defined in the post_processors
-        list takes priority over normalization or clipping defined via the 'normalization' or 'clip' kwarg shortcuts.
-        While extended this class, if default normalization or clipping are desired, it is recommended that you use the
-        proper flags and private factory methods. Here's an example:
+        NOTE: To avoid redundant applications of PostProcessors, three flags are maintained - has_rotation,
+        has_normalization, and has_clipping. If a PostProcessor that extends Rotate, Normalize, or Clip is defined in
+        the list of PostProcessor configs, their respective flag is mutated. This is to ensure that rotations,
+        normalization, or clipping defined in the post_processors list takes priority over rotations, normalization, or
+        clipping defined via the 'normalization' or 'clip' kwarg shortcuts. While extended this class, if default
+        rotation, normalization, or clipping are desired, it is recommended that you use the proper flags and private
+        factory methods. Here's an example:
 
         if not self.has_normalization:
             # if no custom normalization defined
@@ -109,8 +114,12 @@ class ObservationProcessor(Processor):
         clip : list
             A two element list containing a minimum value boundary and a maximum value boundary (in that order) applied
             to all values in generated observation arrays.
+        rotation_reference : str
+            The name of a platform within the environment about which observation input should be rotated.
         post_processors : list
             A list of dicts, each with PostProcessor class and a config dict KVPs.
+        observation_space_shape : int
+            The length of the observation space array
         """
 
         super().__init__(name=name)
@@ -118,13 +127,14 @@ class ObservationProcessor(Processor):
 
         # define post_processor flags
         self.observation_space = None
+        self.has_rotation = False
         self.has_normalization = False
         self.has_clipping = False
 
         # define Box observation space
         if observation_space_shape:
             # observation space defined in config
-            assert type(observation_space_shape) in [int, float]
+            assert type(observation_space_shape) is int
             self.observation_space = gym.spaces.Box(shape=(observation_space_shape,), low=-math.inf, high=math.inf)
         else:
             # observation space NOT defined in config: delegate to subclass method
@@ -132,7 +142,7 @@ class ObservationProcessor(Processor):
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == min clip bound, clip[1] == max clip bound
-        # self.rotation_reference = rotation_reference
+        self.rotation_reference = rotation_reference
         self.post_processors = []                   # list of PostProcessors
 
         # create and store post processors
@@ -143,16 +153,12 @@ class ObservationProcessor(Processor):
                 assert "config" in post_processor, \
                     "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
 
-                # # check if PostProcessor is form of rotation
-                # if self.rotation_reference is not None and issubclass(post_processor_class, Rotate):
-                #     raise TypeError(
-                #         "Rotation defined in {} config and PostProcessor list. \
-                #         Please use PostProcessors to combine multiple rotations".format(self.__name__))
-
                 post_processor_class = post_processor["class"]
                 self.post_processors.append(post_processor_class(**post_processor["config"]))
 
-                # check if PostProcessor was normalization or clipping
+                # check if PostProcessor was rotation or normalization or clipping
+                if issubclass(post_processor_class, Rotate):
+                    self.has_rotation = True
                 if issubclass(post_processor_class, Normalize):
                     self.has_normalization = True
                 if issubclass(post_processor_class, Clip):
@@ -162,11 +168,13 @@ class ObservationProcessor(Processor):
         for post_processor in self.post_processors:
             self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
-        # add norm + clipping postprocessors
+        # add rotation, normalization, and clipping postprocessors
         if self.normalization is not None and not self.has_normalization:
             self._add_normalization(self.normalization)
         if self.clip is not None and not self.has_clipping:
             self._add_clipping(self.clip)
+        if self.rotation_reference is not None and not self.has_rotation:
+            self._add_rotation(self.rotation_reference)
 
     @abc.abstractmethod
     def define_observation_space(self) -> gym.spaces.Box:
@@ -188,6 +196,15 @@ class ObservationProcessor(Processor):
             "observation": self.obs
         }
         return info
+
+    def _add_rotation(self, rotation_reference):
+        # create rotation PostProcessor and add it to list
+        rotation_post_proc = Rotate(reference=rotation_reference)
+        new_post_processors = [rotation_post_proc]
+        # place rotation post proc in front of post proc list
+        new_post_processors.extend(self.post_processors)
+        self.post_processors = new_post_processors
+        self.has_rotation = True
 
     def _add_normalization(self, normalization_vector):
         # create normalization PostProcessor and add it to list
