@@ -230,8 +230,15 @@ config: # Platform dependent configuration
     angle: [0, 6.283185307179586]
 ```
 
-EnvObj entries in a custom YAML configuration file consist of three
-primary keys:
+All simulations in `saferl` are made up of environment objects.
+Environment objects represent physical and logical objects in the
+simulation which may act as agents, goals, points of interest, 
+or obstacles. All environment objects are instantiated in the
+order given by the configuration file at the beginning of the
+simulation.
+
+Environment object entries in a custom YAML configuration file
+consist of three primary keys:
 
 - `name`
 - `class`
@@ -277,6 +284,13 @@ config: # Processor-dependent configuration
     deputy: deputy
     mode: 2d
 ```
+Observation processors define how observations are handled within
+a simulation. Many tasks require that an agent have only a partial
+knowledge of the full simulation state. Observation processors
+transform the full simulation state into an appropriate observation
+for the agent. All observation processors execute in the
+order given by the configuration file at each time step of the
+simulation.
 
 Observation processor entries in a custom YAML configuration file consist of three
 primary keys:
@@ -319,6 +333,12 @@ class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor # Processor
 config: # Processor-dependent configuration
     reward: -0.001
 ```
+Reward processors define how rewards are computed during agent
+training. Each reward processor uses information in the simulation
+state and/or the simulation status (see below) to compute a reward
+for an agent. All reward processors execute in the
+order given by the configuration file at each time step of the
+simulation.
 
 Reward processor entries in a custom YAML configuration file consist of three
 primary keys:
@@ -360,6 +380,12 @@ config: # Processor-dependent configuration
     deputy: deputy
     docking_region: docking_region
 ```
+Status processors are used to compute specific status information
+of interest to the task from the raw simulation state (e.g. distance
+between two environment objects). These statuses can inform other
+status or reward processors. All status processors execute in the
+order given by the configuration file at each time step of the
+simulation.
 
 Status processor entries in a custom YAML configuration file consist of three
 primary keys:
