@@ -15,7 +15,7 @@ pip install -e .
 ## Usage
 
 ### Config Files
-The SafeRL library works via config files. These config files define the task environment, the simulation objects within the environment, and the rewards/observations passed to the agent. This allows environments and experiments to be shared, recreated, and reconfigured. New RL experiments may be implemented and executed simply through manipulation of config files. More custom behavior (such as a custom reward) can be implemented via small pieces of python code and integrated with an existing environment via the config file.
+The SafeRL library works via [config files](docs/config_docs.md). These config files define the task environment, the simulation objects within the environment, and the rewards/observations passed to the agent. This allows environments and experiments to be shared, recreated, and reconfigured. New RL experiments may be implemented and executed simply through manipulation of config files. More custom behavior (such as a custom reward) can be implemented via small pieces of python code and integrated with an existing environment via the config file.
 
 Config files may also contain learning parameters for the RL algorithm. In the case of `train.py` learning parameters for Ray RLlib are automatically passed, however should you choose to use an alternative RL framework, simply extract the parameters from the dictionary returned by the config parser.
 
@@ -35,25 +35,30 @@ See ```python scripts/train.py --help``` for more training options.
 
 ### Evaluation
 There are two options for evaluating the performance of an agent's policy: during training or after training.
-To periodically evaluate policy during training, use the 'evaluation_during_training' boolean flag while running the training script:
+To periodically evaluate policy during training, use the 'evaluation_during_training' boolean flag while running the 
+training script:
 ```shell
 python scripts/train.py --config configs/rejoin/rejoin_default.yaml --eval
 ```
-For more control over evaluation rollouts during training, try setting some of the following arguments: evaluation_during_training, evaluation_interval, evaluation_num_episodes, evaluation_num_workers, evaluation_seed, and evaluation_exploration.
+For more control over evaluation rollouts during training, try setting some of the following arguments: 
+evaluation_during_training, evaluation_interval, evaluation_num_episodes, evaluation_num_workers, evaluation_seed, and 
+evaluation_exploration.
 
 If you would like to evaluate a policy from a training run that has already completed, use the `scripts/eval.py` script.
 Only the 'dir' flag is required, which defines the full path to where your experiment directory is located:
 ```shell
 python scripts/eval.py --dir full/path/to/experiment_dir
 ```
-You may wish to evaluate the policy of a specific saved checkpoint, in which case simply use the `ckpt_num` flag to pass the number of the checkpoint you wish to evaluate
+You may wish to evaluate the policy of a specific saved checkpoint, in which case simply use the `ckpt_num` flag to pass 
+the number of the checkpoint you wish to evaluate
 ```shell
 python scripts/eval.py --dir full/path/to/experiment_dir --ckpt_num=200
 ```
 
-A lot of the same options for evaluation during training are available for evaluation after training via command line arguments for `scripts/eval.py`.
-See ```python scripts/eval.py --help``` for the full list.
-
+A lot of the same options for evaluation during training are available for evaluation after training via command line 
+arguments for `scripts/eval.py`. The evaluation script even offers some additional functionality, including rendering
+animations for evaluation episodes. See ```python scripts/eval.py --help``` for the full list of options or read our 
+documentation on evaluation and animation [here](docs/animation/evaluation_and_animation.md) for more details.
 
 
 
