@@ -1,7 +1,6 @@
 import gym.spaces
 import math
 import numpy as np
-
 from scipy.spatial.transform import Rotation
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
@@ -56,6 +55,7 @@ class DubinsObservationProcessor(ObservationProcessor):
         return mag_norm_vec
 
     def _process(self, sim_state):
+
         wingman_lead_r = sim_state.env_objs[self.lead].position - sim_state.env_objs[self.wingman].position
         wingman_rejoin_r = sim_state.env_objs[self.rejoin_region].position - sim_state.env_objs[self.wingman].position
 
@@ -63,8 +63,8 @@ class DubinsObservationProcessor(ObservationProcessor):
         lead_vel = sim_state.env_objs[self.lead].velocity
 
         reference_rotation = Rotation.from_quat([0, 0, 0, 1])
-        if self.reference == 'wingman':
-            reference_rotation = sim_state.env_objs[self.wingman].orientation.inv()
+
+        reference_rotation = sim_state.env_objs[self.reference].orientation.inv()
 
         wingman_lead_r = reference_rotation.apply(wingman_lead_r)
         wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
@@ -149,8 +149,8 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         lead_vel = sim_state.env_objs[self.lead].velocity
 
         reference_rotation = Rotation.from_quat([0, 0, 0, 1])
-        if self.reference == 'wingman':
-            reference_rotation = sim_state.env_objs[self.wingman].orientation.inv()
+
+        reference_rotation = sim_state.env_objs[self.reference].orientation.inv()
 
         wingman_lead_r = reference_rotation.apply(wingman_lead_r)
         wingman_rejoin_r = reference_rotation.apply(wingman_rejoin_r)
@@ -166,8 +166,8 @@ class Dubins3dObservationProcessor(ObservationProcessor):
             lead_vel = self.vec2magnorm(lead_vel)
 
         # gamma and roll for 3d orientation info
-        roll = np.array([sim_state.env_objs["wingman"].roll], dtype=np.float64)
-        gamma = np.array([sim_state.env_objs["wingman"].gamma], dtype=np.float64)
+        roll = np.array([sim_state.env_objs[self.wingman].roll], dtype=np.float64)
+        gamma = np.array([sim_state.env_objs[self.wingman].gamma], dtype=np.float64)
 
         obs = np.concatenate([
             wingman_lead_r,
