@@ -56,7 +56,7 @@ class RejoinRenderer(BaseRenderer):
 
         screen_width = x_thresh * 2
         screen_height = y_thresh * 2
-        screen_width, screen_height = int(screen_width), int(screen_height)  # convert the screen width and height to integers
+        screen_width, screen_height = int(screen_width), int(screen_height)
 
         wingwidth = 15 * self.r_aircraft * self.plane_scale / self.scale_factor
         bodywidth = 5 * self.r_aircraft * self.plane_scale / self.scale_factor
