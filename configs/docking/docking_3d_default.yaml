@@ -4,7 +4,7 @@ env_config:
   step_size: 1
   env_objs:
   - name: chief
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
     config:
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -12,8 +12,10 @@ env_config:
         x_dot: 0
         y: 0
         y_dot: 0
+        z: 0
+        z_dot: 0
   - name: deputy
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
     config:
       controller:
         class: saferl.environment.models.platforms.AgentController
@@ -26,17 +28,24 @@ env_config:
           space: discrete
           points: 11
           bounds: [-1, 1]
+        - name: thrust_z
+          space: discrete
+          points: 11
+          bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
+        mode: 3d
         ref: chief
         radius: [100, 150]
         angle: [0, 6.283185307179586]
+        polar_angle: [0, 3.141592653589793]
   - name: docking_region
-    class: saferl.environment.models.geometry.RelativeCircle
+    class: saferl.environment.models.geometry.RelativeSphere
     config:
       ref: chief
       x_offset: 0
       y_offset: 0
+      z_offset: 0
       radius: 0.5
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -97,7 +106,7 @@ env_config:
       class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
       config:
         deputy: deputy
-        mode: 2d
+        mode: 3d
   reward:
     - name: time_reward
       class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
@@ -112,7 +121,7 @@ env_config:
     - name: delta_v
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: 0
+        scale: 0   # change me
         bias: 0
         proportion_status: delta_v
     - name: max_vel_constraint
