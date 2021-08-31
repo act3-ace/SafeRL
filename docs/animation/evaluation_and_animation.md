@@ -34,31 +34,31 @@ may be found at `path/to/experiment_directory/eval/ckpt_[checkpoint number]`.
 There exist a number of command line options that can be used to tailor the eval script's function.
 The following is a brief description of each:
 
-####--ckpt_num : int
+### `--ckpt_num : int`
 Given the number of a checkpoint directory within the experiment directory, the policy saved at the corresponding
 checkpoint will be loaded and evaluated. If not specified, the latest checkpoint's policy is used.
 
-####--seed : int
+### `--seed : int`
 Use this option to specify the seed used for evaluation episodes. If not specified, the eval script will use the
 same seed used in training.
 
-####--explore
+### `--explore`
 Use this flag on the command line to enable off-policy evaluation. By default, all evaluation episodes are on-policy.
 
-####--output_dir : str
+### `--output_dir : str`
 Supply the full path to the desired custom location for output logs for evaluation episodes. By default, output logs
 are saved to `eval/ckpt_[checkpoint number]` inside the experiment directory.
 
-####--num_rollouts : int
+### `--num_rollouts : int`
 Use this option to configure the number of evaluation rollout episodes to execute. If not specified, 10 evaluation
 rollouts will be run.
 
-####--alt_env_config : str
+### `--alt_env_config : str`
 Supply the full path to an alternative config file for the environment the policy was trained on, to evaluate the policy
 in an alternative environment. This is good for testing the generalizability of your policy. By default, the same 
 configuration as used in training will be used to initialize the environments for evaluation.
 
-####--render and --render_config
+### `--render and --render_config`
 These two options pertain to visualization of the evaluation episodes. See the next section for details.
 
 ## Animation
