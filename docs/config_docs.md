@@ -244,21 +244,21 @@ consist of three primary keys:
 - `class`
 - `config`
 
-#### Name
+#### *Name*
 
 The name key points to a string value denoting the name of the
 environment object in the simulation. The environment object can
 be easily referenced by its name throughout the rest of the
 configuration file.
 
-#### Class
+#### *Class*
 
 The class key points to a string value containing the python
 import path of the class definition that will be used to instantiate
 the environment object in the simulation. This class must inherit
 from the `saferl.environment.models.platforms.BaseEnvObj` class.
 
-#### Config
+#### *Config*
 
 The config key points to a (potentially empty) dictionary of key-value
 pairs. The contents of this configuration dictionary include an `init`
@@ -299,21 +299,21 @@ primary keys:
 - `class`
 - `config`
 
-#### Name
+#### *Name*
 
 The name key points to a string value denoting the name of the
 observation processor in the simulation. The processor can
 be easily referenced by its name throughout the rest of the
 configuration file.
 
-#### Class
+#### *Class*
 
 The class key points to a string value containing the python
 import path of the class definition that will be used to instantiate
 the observation processor in the simulation. This class must inherit
 from the `saferl.environment.tasks.processor.processors.ObservationProcessor` class.
 
-#### Config
+#### *Config*
 
 The config key points to a (potentially empty) dictionary of key-value
 pairs. The contents of this configuration dictionary include a configuration which is dependent
@@ -347,21 +347,21 @@ primary keys:
 - `class`
 - `config`
 
-#### Name
+#### *Name*
 
 The name key points to a string value denoting the name of the
 reward processor in the simulation. The processor can
 be easily referenced by its name throughout the rest of the
 configuration file.
 
-#### Class
+#### *Class*
 
 The class key points to a string value containing the python
 import path of the class definition used to instantiate
 the reward processor in the simulation. This class must inherit
 from the `saferl.environment.tasks.processor.processors.RewardProcessor` class.
 
-#### Config
+#### *Config*
 
 The config key points to a (potentially empty) dictionary of key-value
 pairs. The contents of this configuration dictionary include a configuration which is dependent
@@ -394,21 +394,21 @@ primary keys:
 - `class`
 - `config`
 
-#### Name
+#### *Name*
 
 The name key points to a string value denoting the name of the
 status processor in the simulation. The processor can
 be easily referenced by its name throughout the rest of the
 configuration file.
 
-#### Class
+#### *Class*
 
 The class key points to a string value containing the python
 import path of the class definition used to instantiate
 the status processor in the simulation. This class must inherit
 from the `saferl.environment.tasks.processor.processors.StatusProcessor` class.
 
-#### Config
+#### *Config*
 
 The config key points to a (potentially empty) dictionary of key-value
 pairs. The contents of this configuration dictionary include a configuration which is dependent
