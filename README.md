@@ -15,7 +15,7 @@ pip install -e .
 ## Usage
 
 ### Config Files
-The SafeRL library works via config files. These config files define the task environment, the simulation objects within the environment, and the rewards/observations passed to the agent. This allows environments and experiments to be shared, recreated, and reconfigured. New RL experiments may be implemented and executed simply through manipulation of config files. More custom behavior (such as a custom reward) can be implemented via small pieces of python code and integrated with an existing environment via the config file.
+The SafeRL library works via [config files](docs/config_docs.md). These config files define the task environment, the simulation objects within the environment, and the rewards/observations passed to the agent. This allows environments and experiments to be shared, recreated, and reconfigured. New RL experiments may be implemented and executed simply through manipulation of config files. More custom behavior (such as a custom reward) can be implemented via small pieces of python code and integrated with an existing environment via the config file.
 
 Config files may also contain learning parameters for the RL algorithm. In the case of `train.py` learning parameters for Ray RLlib are automatically passed, however should you choose to use an alternative RL framework, simply extract the parameters from the dictionary returned by the config parser.
 
