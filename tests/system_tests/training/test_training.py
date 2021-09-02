@@ -5,7 +5,7 @@ Author: John McCarroll
 """
 
 import pytest
-from constants import DEFAULT_SUCCESS_THRESHOLD, DEFAULT_SEED, DEFAULT_MAX_ITERATIONS
+from tests.system_tests.training.constants import DEFAULT_SUCCESS_THRESHOLD, DEFAULT_SEED, DEFAULT_MAX_ITERATIONS
 
 
 """
@@ -23,13 +23,17 @@ max_iterations is the maximum allowed training iterations before test terminatio
 # trainings under test.
 REJOIN_DEFAULT_PATH = "../configs/rejoin/rejoin_default.yaml"
 DOCKING_DEFAULT_PATH = "../configs/docking/docking_default.yaml"
-REJOIN_3D_PATH = "../configs/rejoin/rejoin_3d_default.yaml"
+REJOIN_3D_DISCRETE_PATH = "../configs/rejoin/rejoin_3d_default_discrete.yaml"
+REJOIN_3D_CONTINUOUS_PATH = "../configs/rejoin/rejoin_3d_default_continuous.yaml"
 DOCKING_ORIENTED_2D_PATH = "../configs/docking/docking_oriented_2d_default.yaml"
 
-test_configs = [(REJOIN_DEFAULT_PATH, DEFAULT_SUCCESS_THRESHOLD, 200, DEFAULT_SEED),
-                (DOCKING_DEFAULT_PATH,  DEFAULT_SUCCESS_THRESHOLD, 200, DEFAULT_SEED),
-                (REJOIN_3D_PATH,  DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, DEFAULT_SEED),
-                (DOCKING_ORIENTED_2D_PATH,  DEFAULT_SUCCESS_THRESHOLD, 500, DEFAULT_SEED)]
+test_configs = [
+                    (REJOIN_DEFAULT_PATH, DEFAULT_SUCCESS_THRESHOLD, 200, DEFAULT_SEED),
+                    (DOCKING_DEFAULT_PATH,  DEFAULT_SUCCESS_THRESHOLD, 2000, DEFAULT_SEED),
+                    (REJOIN_3D_DISCRETE_PATH,  DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, DEFAULT_SEED),
+                    (REJOIN_3D_CONTINUOUS_PATH,  DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, DEFAULT_SEED),
+                    (DOCKING_ORIENTED_2D_PATH,  DEFAULT_SUCCESS_THRESHOLD, 500, DEFAULT_SEED)
+               ]
 
 
 @pytest.mark.system_test
