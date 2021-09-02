@@ -21,9 +21,6 @@ class DubinsObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None):
 
-        # Invoke parent's constructor
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -31,23 +28,30 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        # Add default normalization + clipping
+        if not self.has_normalization:
+            # if no custom normalization defined
+            if self.mode == 'rect':
+                self._add_normalization([10000, 10000, 10000, 10000, 100, 100, 100, 100])
+            elif self.mode == 'magnorm':
+                self._add_normalization([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1])
+
         if not self.has_clipping:
             # if no custom clipping defined
             self._add_clipping([-1, 1])
 
     def define_observation_space(self) -> gym.spaces.Box:
         if self.mode == 'rect':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([10000, 10000, 10000, 10000, 100, 100, 100, 100])
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
         elif self.mode == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1])
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
         else:
             raise ValueError("Invalid observation mode {}. Should be 'rect' or 'magnorm'.".format(self.mode))
+
+        return observation_space
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
@@ -107,9 +111,6 @@ class Dubins3dObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None):
 
-        # Invoke parent's constructor
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -117,24 +118,31 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        # Add default normalization + clipping
+        if not self.has_normalization:
+            # if no custom normalization defined
+            if self.mode == 'rect':
+                self._add_normalization(
+                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi])
+            elif self.mode == 'magnorm':
+                self._add_normalization([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi])
+
         if not self.has_clipping:
             # if no custom clipping defined
             self._add_clipping([-1, 1])
 
     def define_observation_space(self) -> gym.spaces.Box:
         if self.mode == 'rect':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization(
-                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi])
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
         elif self.mode == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi])
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
         else:
             raise ValueError("Invalid observation mode {}. Should be 'rect' or 'magnorm'.".format(self.mode))
+
+        return observation_space
 
     def vec2magnorm(self, vec):
         norm = np.linalg.norm(vec)
