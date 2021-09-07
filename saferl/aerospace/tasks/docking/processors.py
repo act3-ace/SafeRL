@@ -104,7 +104,9 @@ class DistanceChangeRewardProcessor(RewardProcessor):
 
     def _process(self, sim_state):
         dist_change = self.cur_distance - self.prev_distance
-        step_reward = dist_change * self.reward
+        #print("dist_change=",dist_change)
+        #print("self.reward=",float(self.reward))
+        step_reward = dist_change * float(self.reward)
         return step_reward
 
 
