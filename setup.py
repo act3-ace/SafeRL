@@ -21,7 +21,7 @@ setuptools.setup(
     python_requires='>=3.6, <3.9',
     install_requires=[
         "tensorflow==2.4",
-        "ray[rllib]==1.6",
+        "ray[rllib]==1.5.2",
         "tqdm==4.59.0",
         "jsonlines==2.0.0",
         "matplotlib==3.3.4",
