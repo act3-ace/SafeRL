@@ -8,7 +8,7 @@ import yaml
 import jsonlines
 import numpy as np
 import json
-
+from ray import tune
 import saferl
 
 
@@ -48,7 +48,7 @@ def get_ref_objs(env_objs, config):
             config[k] = get_ref_objs(env_objs, v)
     return config
 
-
+# maybe create a separate minisection for tune config -- or a separate method
 def setup_env_objs_from_config(config, default_initializer):
     safe_config = copy.deepcopy(config)
     env_objs = {}
@@ -123,7 +123,8 @@ class YAMLParser:
 
     def __init__(self, yaml_file, lookup):
         self.commands = {
-            "file": self.file_command
+            "file": self.file_command,
+            "tune": self.tune_command,
         }
         self.yaml_path = os.path.abspath(yaml_file)
         self.working_dir = os.path.dirname(self.yaml_path)
@@ -167,6 +168,37 @@ class YAMLParser:
         target = self.process_yaml_items(contents)
         self.working_dir = old_working_dir
         return target
+
+    def tune_command(self,value):
+        # this is for search spaces
+        method_value_arg = value.split('.',1)[1]
+        left_paren = method_value_arg.find('(')
+        right_paren = method_value_arg.find(')')
+        method = method_value_arg[0:left_paren]
+        argument_str = method_value_arg[left_paren+1:right_paren]
+        # if list - follow procedure for list
+        if argument_str[0] == '[':
+            parsed_args_list = []
+            # remove brackets from string
+            left_bracket = method_value_arg.find('[')
+            right_bracket = method_value_arg.find(']')
+            # perform substring
+            argument_str = method_value_arg[left_bracket + 1:right_bracket]
+            for x in argument_str.split(","):
+                # what about handling strings ??
+                parsed_args_list.append(float(x))
+
+            return getattr(tune,method)(parsed_args_list)
+
+        else:
+            # procedure for numbers
+            parsed_args_list = argument_str.split(",")
+            parsed_args_list = [float(x) for x in parsed_args_list]
+            if len(parsed_args_list) == 2:
+                return getattr(tune,method)(parsed_args_list[0],parsed_args_list[1])
+            elif len(parsed_args_list) == 3:
+                return getattr(tune,method)(parsed_args_list[0],parsed_args_list[1],parsed_args_list[2])
+
 
 
 def log_to_jsonlines(contents, output_dir, jsonline_filename):
