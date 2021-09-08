@@ -7,7 +7,7 @@ and creating figures for our public paper.
 # import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-import json
+import jsonlines
 import os
 import os.path as osp
 import numpy as np
@@ -22,6 +22,7 @@ from scripts.eval import run_rollouts, find_checkpoint_dir, verify_experiment_di
 DEFAULT_NUM_CKPTS = 5
 DEFAULT_SEED = 33
 DEFAULT_OUTPUT = "/figures/data"
+DEFAULT_TASK = "docking"
 
 
 def get_args():
@@ -39,9 +40,37 @@ def get_args():
     parser.add_argument('--num_ckpts', type=int, default=DEFAULT_NUM_CKPTS, help="Number of checkpoints to plot")
     parser.add_argument('--seed', type=int, default=DEFAULT_SEED,
                         help="The seed used to initialize the evaluation environment")
-    # add output dir
+    parser.add_argument('--output', type=str, default=DEFAULT_OUTPUT,
+                        help="The location of logs from evaluation episodes")
+    parser.add_argument('--task', type=str, default=DEFAULT_TASK,
+                        help="The task on which the policy was trained and will be evaluated")
+    # TODO: 2d vs 3d flag?
 
     return parser.parse_args()
+
+
+def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs: list):
+    trajectories = {}
+
+    # iterate through eval logs from data dir
+    for i in range(1, num_ckpts + 1):
+        # populate trajectories map with empty lists
+        for obj in environment_objs:
+            trajectories[obj + str(i)] = []
+
+        # open eval log file
+        with jsonlines.open(data_dir_path + "/eval{}.log".format(i), 'r') as log:
+            # iterate over json dict states
+            for state in log:
+                # collect traj for each environment object of interest
+                for obj in environment_objs:
+                    x = state["info"][obj]["x"]
+                    y = state["info"][obj]["y"]
+
+                    # store coords
+                    trajectories[obj + str(i)].append((x, y))
+
+    return trajectories
 
 
 def main():
@@ -54,6 +83,18 @@ def main():
     expr_dir_path = verify_experiment_dir(expr_dir_path)
     ckpt_dirs = glob(expr_dir_path + "/checkpoint_*")
 
+    # create output dir
+    output_path = expr_dir_path + args.output
+    os.makedirs(output_path, exist_ok=True)
+
+    # create env obj list
+    # TODO: remove hardcoding (cmd line opt and/or read from env)
+    environment_objs = None
+    if args.task == "docking":
+        environment_objs = ["chief", "deputy"]
+    elif args.task == "rejoin":
+        environment_objs = ["lead", "wingman"]
+
     ckpts_processed = 0
     for ckpt_dir_name in ckpt_dirs:
         # iterate through checkpoints
@@ -61,7 +102,7 @@ def main():
 
         # load policy and env
         ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
-        ckpt_num = ckpt_dir_name.split("_")[-1]
+        ckpt_num = ckpt_dir_name.split("_")[-1].lstrip('0')           # remove trailing ckpt number from file and clean
         ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
         ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
 
@@ -69,7 +110,7 @@ def main():
         with open(ray_config_path, 'rb') as ray_config_f:
             ray_config = pickle.load(ray_config_f)
 
-        ray.init()
+        ray.init(ignore_reinit_error=True)
 
         # load policy and env
         env_config = ray_config['env_config']
@@ -77,16 +118,16 @@ def main():
         agent.restore(ckpt_path)
         env = ray_config['env'](env_config)
 
-        # set seed and explore
+        # set seed
         seed = args.seed if args.seed is not None else ray_config['seed']
         env.seed(seed)
 
-        agent.get_policy().config['explore'] = args.explore
+        # run rollout episode + store logs
+        run_rollouts(agent, env, output_path + "/eval{}.log".format(num_ckpts - ckpts_processed))
 
-        # # run rollout episode + store logs
-        run_rollouts(agent, env, DEFAULT_OUTPUT + "/eval.log")
-
-        # store trajectory data
+        # parse logs for trajectory data
+        trajectories = parse_log_trajectories(output_path, num_ckpts, environment_objs)
+        print(trajectories)
 
         # exit loop after desired number of trajectories collected
         ckpts_processed += 1
