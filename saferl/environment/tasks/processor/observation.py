@@ -10,7 +10,10 @@ import abc
 import numpy as np
 import gym
 import math
+from collections.abc import Iterable
+
 from saferl.environment.tasks.processor import ObservationProcessor
+from saferl.environment.tasks.processor.post_processors import Rotate
 
 
 class SpatialObservationProcessor(ObservationProcessor):
@@ -22,18 +25,32 @@ class SpatialObservationProcessor(ObservationProcessor):
                  clip=None,
                  rotation_reference=None,
                  post_processors=None,
-                 is_2d=False):
-        assert type(is_2d) == bool, "Expected bool for 'is_2d' parameter, but found {}".format(type(is_2d))
-        self.is_2d = is_2d
+                 two_d=False):
+
+        assert type(two_d) == bool, "Expected bool for 'two_d' parameter, but found {}".format(type(two_d))
+        self.two_d = two_d
+
         super().__init__(name=name,
                          normalization=normalization,
                          clip=clip,
-                         rotation_reference=rotation_reference,
                          post_processors=post_processors)
+
+        self.rotation_reference = rotation_reference
+        self.has_rotation = False
+
+        # looping over subclasses
+        if isinstance(post_processors, Iterable):
+            for post_processor in post_processors:
+                post_processor_class = post_processor["class"]
+                if issubclass(post_processor_class, Rotate):
+                    self.has_rotation = True
+
+        if self.rotation_reference is not None and not self.has_rotation:
+            self._add_rotation(self.rotation_reference)
 
     def define_observation_space(self) -> gym.spaces.Box:
         """
-        Spatial observation spaces will be 3D by default. An 'is_2d' flag enables the return of a 2D positional
+        Spatial observation spaces will be 3D by default. An 'two_d' flag enables the return of a 2D positional
         observation space. Observation space bounds are left as negative to positive infinity to allow users maximum
         flexibility.
 
@@ -44,9 +61,18 @@ class SpatialObservationProcessor(ObservationProcessor):
             objects.
         """
 
-        shape = (2,) if self.is_2d else (3,)
+        shape = (2,) if self.two_d else (3,)
         observation_space = gym.spaces.Box(shape=shape, low=-math.inf, high=math.inf)
         return observation_space
+
+    def _add_rotation(self, rotation_reference):
+        # create rotation PostProcessor and add it to list
+        rotation_post_proc = Rotate(reference=rotation_reference)
+        new_post_processors = [rotation_post_proc]
+        # place rotation post proc in front of post proc list
+        new_post_processors.extend(self.post_processors)
+        self.post_processors = new_post_processors
+        self.has_rotation = True
 
     @abc.abstractmethod
     def _process(self, sim_state) -> np.ndarray:
@@ -64,14 +90,14 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
                  post_processors=None,
                  reference=None,
                  target=None,
-                 is_2d=False):
+                 two_d=False):
 
         super().__init__(name=name,
                          normalization=normalization,
                          clip=clip,
                          rotation_reference=rotation_reference,
                          post_processors=post_processors,
-                         is_2d=is_2d)
+                         two_d=two_d)
         self.reference = reference
         self.target = target
 
@@ -93,7 +119,7 @@ class RelativePositionObservationProcessor(SpatialObservationProcessor):
         positional_diff = target.position - reference.position
 
         # apply dimensionality
-        if self.is_2d:
+        if self.two_d:
             positional_diff = positional_diff[0:2]
 
         return positional_diff
@@ -111,14 +137,14 @@ class VelocityObservationProcessor(SpatialObservationProcessor):
                  rotation_reference=None,
                  post_processors=None,
                  env_object_name=None,
-                 is_2d=False):
+                 two_d=False):
 
         super().__init__(name=name,
                          normalization=normalization,
                          clip=clip,
                          rotation_reference=rotation_reference,
                          post_processors=post_processors,
-                         is_2d=is_2d)
+                         two_d=two_d)
         self.env_object_name = env_object_name
         self.attribute = "velocity"
 
@@ -137,7 +163,7 @@ class VelocityObservationProcessor(SpatialObservationProcessor):
         value = getattr(env_object, self.attribute)
 
         # apply dimensionality
-        if self.is_2d and len(value) > 2:
+        if self.two_d and len(value) > 2:
             value = value[0:2]
 
         return value
