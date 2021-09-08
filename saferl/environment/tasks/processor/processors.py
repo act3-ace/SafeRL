@@ -5,7 +5,7 @@ import numpy as np
 import math
 from collections.abc import Iterable
 
-from saferl.environment.tasks.processor.post_processors import Normalize, Clip, Rotate
+from saferl.environment.tasks.processor.post_processors import Normalize, Clip
 
 
 class Processor(abc.ABC):
@@ -70,7 +70,6 @@ class ObservationProcessor(Processor):
                  name=None,
                  normalization=None,
                  clip=None,
-                 rotation_reference=None,
                  post_processors=None,
                  observation_space_shape=None):
         """
@@ -127,7 +126,6 @@ class ObservationProcessor(Processor):
 
         # define post_processor flags
         self.observation_space = None
-        self.has_rotation = False
         self.has_normalization = False
         self.has_clipping = False
 
@@ -142,7 +140,6 @@ class ObservationProcessor(Processor):
 
         self.normalization = np.array(normalization, dtype=np.float64) if type(normalization) is list else normalization
         self.clip = clip                            # clip[0] == min clip bound, clip[1] == max clip bound
-        self.rotation_reference = rotation_reference
         self.post_processors = []                   # list of PostProcessors
 
         # create and store post processors
@@ -150,15 +147,11 @@ class ObservationProcessor(Processor):
             for post_processor in post_processors:
                 assert "class" in post_processor, \
                     "No 'class' key found in {} for construction of PostProcessor.".format(post_processor)
-                assert "config" in post_processor, \
-                    "No 'config' key found in {} for construction of PostProcessor.".format(post_processor)
 
                 post_processor_class = post_processor["class"]
-                self.post_processors.append(post_processor_class(**post_processor["config"]))
+                self.post_processors.append(post_processor_class(**post_processor.get("config", {})))
 
-                # check if PostProcessor was rotation or normalization or clipping
-                if issubclass(post_processor_class, Rotate):
-                    self.has_rotation = True
+                # check if PostProcessor was normalization or clipping
                 if issubclass(post_processor_class, Normalize):
                     self.has_normalization = True
                 if issubclass(post_processor_class, Clip):
@@ -168,13 +161,11 @@ class ObservationProcessor(Processor):
         for post_processor in self.post_processors:
             self.observation_space = post_processor.modify_observation_space(self.observation_space)
 
-        # add rotation, normalization, and clipping postprocessors
+        # add normalization, and clipping postprocessors
         if self.normalization is not None and not self.has_normalization:
             self._add_normalization(self.normalization)
         if self.clip is not None and not self.has_clipping:
             self._add_clipping(self.clip)
-        if self.rotation_reference is not None and not self.has_rotation:
-            self._add_rotation(self.rotation_reference)
 
     @abc.abstractmethod
     def define_observation_space(self) -> gym.spaces.Box:
@@ -196,15 +187,6 @@ class ObservationProcessor(Processor):
             "observation": self.obs
         }
         return info
-
-    def _add_rotation(self, rotation_reference):
-        # create rotation PostProcessor and add it to list
-        rotation_post_proc = Rotate(reference=rotation_reference)
-        new_post_processors = [rotation_post_proc]
-        # place rotation post proc in front of post proc list
-        new_post_processors.extend(self.post_processors)
-        self.post_processors = new_post_processors
-        self.has_rotation = True
 
     def _add_normalization(self, normalization_vector):
         # create normalization PostProcessor and add it to list

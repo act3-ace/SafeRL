@@ -54,15 +54,13 @@ env_config:
       clip: [-1, 1]
       reference: wingman
       target: lead
-      is_2d: True
+      two_d: True
 #      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
             reference: wingman
         - class: saferl.environment.tasks.processor.post_processors.MagNorm
-        # need config?
-          config: {}
   - name: wingman_rejoin_r
     class: saferl.environment.tasks.processor.observation.RelativePositionObservationProcessor
     config:
@@ -70,42 +68,39 @@ env_config:
       clip: [ -1, 1 ]
       reference: wingman
       target: rejoin_region
-      is_2d: True
+      two_d: True
 #      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
             reference: wingman
         - class: saferl.environment.tasks.processor.post_processors.MagNorm
-          config: {}
   - name: wingman_vel
     class: saferl.environment.tasks.processor.observation.VelocityObservationProcessor
     config:
       normalization: [ 100, 1, 1 ]
       clip: [ -1, 1 ]
       env_object_name: wingman
-      is_2d: True
+      two_d: True
 #      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
             reference: wingman
         - class: saferl.environment.tasks.processor.post_processors.MagNorm
-          config: {}
   - name: lead_vel
     class: saferl.environment.tasks.processor.observation.VelocityObservationProcessor
     config:
       normalization: [ 100, 1, 1 ]
       clip: [ -1, 1 ]
       env_object_name: lead
-      is_2d: True
+      two_d: True
 #      rotation_reference: wingman
       post_processors:
         - class: saferl.environment.tasks.processor.post_processors.Rotate
           config:
             reference: wingman
         - class: saferl.environment.tasks.processor.post_processors.MagNorm
-          config: {}
   reward:
   - name: rejoin_reward
     class: saferl.aerospace.tasks.rejoin.processors.RejoinRewardProcessor
