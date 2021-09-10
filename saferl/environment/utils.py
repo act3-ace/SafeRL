@@ -186,18 +186,27 @@ class YAMLParser:
             argument_str = method_value_arg[left_bracket + 1:right_bracket]
             for x in argument_str.split(","):
                 # what about handling strings ??
-                parsed_args_list.append(float(x))
+                parsed_args_list.append(parse_number(x))
 
             return getattr(tune,method)(parsed_args_list)
 
         else:
             # procedure for numbers
             parsed_args_list = argument_str.split(",")
-            parsed_args_list = [float(x) for x in parsed_args_list]
+            parsed_args_list = [parse_number(x) for x in parsed_args_list]
             if len(parsed_args_list) == 2:
                 return getattr(tune,method)(parsed_args_list[0],parsed_args_list[1])
             elif len(parsed_args_list) == 3:
                 return getattr(tune,method)(parsed_args_list[0],parsed_args_list[1],parsed_args_list[2])
+
+
+def parse_number(x):
+    assert isinstance(x, str), "input must be a numeric string"
+
+    if '.' in x:
+        return float(x)
+    else:
+        return int(x)
 
 
 
