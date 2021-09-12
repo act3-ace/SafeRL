@@ -9,9 +9,9 @@ import os
 import shutil
 import ray.rllib.agents.ppo as ppo
 from ray import tune
-from constants import DEFAULT_OUTPUT, CUSTOM_METRICS, SUCCESS_MEAN
+from tests.system_tests.training.constants import DEFAULT_OUTPUT, CUSTOM_METRICS, SUCCESS_MEAN
 
-from success_criteria import SuccessCriteria
+from tests.system_tests.training.success_criteria import SuccessCriteria
 
 
 @pytest.fixture()
