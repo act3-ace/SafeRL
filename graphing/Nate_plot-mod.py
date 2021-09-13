@@ -71,6 +71,7 @@ def plot_data(data, xaxis='Epoch', value="AverageEpRet", condition="Condition1",
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
     plt.tight_layout(pad=0.5)
+    
 
 
 def get_datasets(logdir, condition=None):
@@ -79,12 +80,14 @@ def get_datasets(logdir, condition=None):
     spinup.logx.Logger. 
 
     Assumes that any file "progress.txt" is a valid hit. 
+    
+    ** Change, look for progress.csv not .txt 
     """
     global exp_idx
     global units
     datasets = []
     for root, _, files in os.walk(logdir):
-        if 'progress.txt' in files:
+        if 'progress.csv' in files:
             exp_name = None
             try:
                 config_path = open(os.path.join(root, 'config.json'))
@@ -102,15 +105,17 @@ def get_datasets(logdir, condition=None):
             units[condition1] += 1
 
             try:
-                exp_data = pd.read_table(os.path.join(root, 'progress.txt'))
+                exp_data = pd.read_csv(os.path.join(root, 'progress.csv'))
             except:
-                print('Could not read from %s' % os.path.join(root, 'progress.txt'))
+                print('Could not read from %s' % os.path.join(root, 'progress.csv'))
                 continue
             performance = 'AverageTestEpRet' if 'AverageTestEpRet' in exp_data else 'AverageEpRet'
             exp_data.insert(len(exp_data.columns), 'Unit', unit)
+            # cond 1 = experiment name 
+            # cond 2 - experiment + seed number 
             exp_data.insert(len(exp_data.columns), 'Condition1', condition1)
             exp_data.insert(len(exp_data.columns), 'Condition2', condition2)
-            exp_data.insert(len(exp_data.columns), 'Performance', exp_data[performance])
+            #exp_data.insert(len(exp_data.columns), 'Performance', exp_data[performance])
             datasets.append(exp_data)
     return datasets
 
@@ -168,15 +173,16 @@ def get_all_datasets(all_logdirs, legend=None, select=None, exclude=None):
 
 def make_plots(all_logdirs, legend=None, xaxis=None, values=None, xmax=None, ylim=None, count=False,
                font_scale=1.5, smooth=1, select=None, exclude=None, estimator='mean'):
-    print(all_logdirs)
-    data = get_all_datasets(all_logdirs[1], legend, select, exclude)
+    #print(all_logdirs)
+    data = get_all_datasets(all_logdirs, legend, select, exclude)
     values = values if isinstance(values, list) else [values]
     condition = 'Condition2' if count else 'Condition1'
     estimator = getattr(np, estimator)  # choose what to show on main curve: mean? max? min?
     for value in values:
         plt.figure()
         plot_data(data, xaxis=xaxis, value=value, condition=condition, smooth=smooth, estimator=estimator, xmax=xmax, ylim=ylim)
-    plt.show()
+        plt.show()
+        plt.savefig('episode_len_mean_test.png')
 
 
 def main():
