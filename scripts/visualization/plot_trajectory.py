@@ -48,6 +48,8 @@ def get_args():
                         help="The location of logs from evaluation episodes")
     parser.add_argument('--task', type=str, default=DEFAULT_TASK,
                         help="The task on which the policy was trained and will be evaluated")
+    parser.add_argument('--only_plot', action="store_true",
+                        help="If evaluation data already generated and user needs quick plot generation.")
     # TODO: 2d vs 3d flag?
 
     return parser.parse_args()
@@ -55,20 +57,13 @@ def get_args():
 
 def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs: list):
     trajectories = {
-        "vehicle_ckpt": [],
+        "vehicle": [],
         "x": [],
         "y": []
     }
 
     # iterate through eval logs from data dir
     for i in range(1, num_ckpts + 1):
-        # # populate trajectories map with empty lists
-        # for obj in environment_objs:
-        #     trajectories[obj + str(i)] = {
-        #         "x": [],
-        #         "y": []
-        #     }
-
         # open eval log file
         with jsonlines.open(data_dir_path + "/eval{}.log".format(i), 'r') as log:       # TODO: get correct ckpts
             # iterate over json dict states
@@ -79,7 +74,7 @@ def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs:
                     y = state["info"][obj]["y"]
 
                     # store coords
-                    trajectories["vehicle_ckpt"].append(obj + str(i))
+                    trajectories["vehicle"].append(obj + str(i))
                     trajectories["x"].append(x)
                     trajectories["y"].append(y)
 
@@ -87,59 +82,20 @@ def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs:
 
 
 # Nate's plotting method
-def plot_data(data,
-              xaxis='Epoch',
-              value="AverageEpRet",         #TODO: change x and y defaults
-              condition="Condition1",
-              smooth=1,
-              xmax=None,
-              ylim=None,
-              **kwargs):
+def plot_data(data, xaxis='x', value='y', condition="vehicle", output_filename="figure1", xmax=None, ylim=None, **kwargs):
 
-    # if smooth > 1:
-    #     """
-    #     smooth data with moving window average.
-    #     that is,
-    #         smoothed_y[t] = average(y[t-k], y[t-k+1], ..., y[t+k-1], y[t+k])
-    #     where the "smooth" param is width of that window (2k+1)
-    #     """
-    #     y = np.ones(smooth)
-    #     for datum in data:
-    #         x = np.asarray(datum[value])
-    #         z = np.ones(len(x))
-    #         smoothed_x = np.convolve(x, y, 'same') / np.convolve(z, y, 'same')
-    #         datum[value] = smoothed_x
-
-    if isinstance(data, list):
-        data = pd.concat(data, ignore_index=True)
     sns.set(style="darkgrid", font_scale=1.5)
-    # sns.tsplot(data=data, time=xaxis, value=value, unit="Unit", condition=condition, ci='sd', **kwargs)
-    sns.relplot(data=data, x=xaxis, y=value, hue=condition, kind="line") #ci='sd', **kwargs)
-    """
-    If you upgrade to any version of Seaborn greater than 0.8.1, switch from 
-    tsplot to lineplot replacing L29 with:
-
-        sns.lineplot(data=data, x=xaxis, y=value, hue=condition, ci='sd', **kwargs)
-
-    Changes the colorscheme and the default legend style, though.
-    """
-    plt.legend(loc='best').set_draggable(True)
+    sns.lineplot(data=data, x=xaxis, y=value, hue=condition, sort=False)    # ci='sd'
+    plt.legend(loc='best', prop={'size': 10}).set_draggable(True)
     # plt.legend(loc='upper center', ncol=3, handlelength=1,
     #           borderaxespad=0., prop={'size': 13})
 
-    """
-    For the version of the legend used in the Spinning Up benchmarking page, 
-    swap L38 with:
-
-    plt.legend(loc='upper center', ncol=6, handlelength=1,
-               mode="expand", borderaxespad=0., prop={'size': 13})
-    """
-    if xaxis is 'TotalEnvInteracts':
-        plt.xlabel('Timesteps')
-    if value is 'AverageTestEpRet' or value is 'AverageAltTestEpRet':
-        plt.ylabel('Average Return')
-    if value is 'TestEpLen' or value is 'AltTestEpLen':
-        plt.ylabel('Average Episode Length')
+    # if xaxis is 'TotalEnvInteracts':
+    #     plt.xlabel('Timesteps')
+    # if value is 'AverageTestEpRet' or value is 'AverageAltTestEpRet':
+    #     plt.ylabel('Average Return')
+    # if value is 'TestEpLen' or value is 'AltTestEpLen':
+    #     plt.ylabel('Average Episode Length')
 
     if xmax is None:
         xmax = np.max(np.asarray(data[xaxis]))
@@ -154,6 +110,11 @@ def plot_data(data,
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
     plt.tight_layout(pad=0.5)
+
+    fig = plt.gcf()
+    fig.savefig(output_filename)
+
+    plt.show()
 
 
 def main():
@@ -179,49 +140,52 @@ def main():
         environment_objs = ["lead", "wingman"]
 
     ckpts_processed = 0
-    # for ckpt_dir_name in ckpt_dirs:
-    #     # iterate through checkpoints
-    #     # assuming ckpt_dirs ordered from latest to earliest
-    #
-    #     # load policy and env
-    #     ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
-    #     ckpt_num = ckpt_dir_name.split("_")[-1].lstrip('0')           # remove trailing ckpt number from file and clean
-    #     ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
-    #     ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
-    #
-    #     # load checkpoint
-    #     with open(ray_config_path, 'rb') as ray_config_f:
-    #         ray_config = pickle.load(ray_config_f)
-    #
-    #     ray.init(ignore_reinit_error=True)
-    #
-    #     # load policy and env
-    #     env_config = ray_config['env_config']
-    #     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
-    #     agent.restore(ckpt_path)
-    #     env = ray_config['env'](env_config)
-    #
-    #     # set seed
-    #     seed = args.seed if args.seed is not None else ray_config['seed']
-    #     env.seed(seed)
-    #
-    #     # run rollout episode + store logs
-    #     run_rollouts(agent, env, output_path + "/eval{}.log".format(num_ckpts - ckpts_processed))
-    #
-    #     # exit loop after desired number of trajectories collected
-    #     ckpts_processed += 1
-    #     if ckpts_processed == num_ckpts:
-    #         break
+    if not args.only_plot:
+        for ckpt_dir_name in ckpt_dirs:
+            # iterate through checkpoints
+            # assuming ckpt_dirs ordered from latest to earliest
+
+            # load policy and env
+            ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
+            ckpt_num = ckpt_dir_name.split("_")[-1].lstrip('0')           # remove trailing ckpt number from file and clean
+            ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
+            ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
+
+            # load checkpoint
+            with open(ray_config_path, 'rb') as ray_config_f:
+                ray_config = pickle.load(ray_config_f)
+
+            ray.init(ignore_reinit_error=True)
+
+            # load policy and env
+            env_config = ray_config['env_config']
+            agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
+            agent.restore(ckpt_path)
+            env = ray_config['env'](env_config)
+
+            # set seed
+            seed = args.seed if args.seed is not None else ray_config['seed']
+            env.seed(seed)
+
+            # delete any previous logs
+            log_dir = output_path + "/eval{}.log".format(num_ckpts - ckpts_processed)
+            if os.path.isfile(log_dir):
+                os.remove(log_dir)
+
+            # run rollout episode + store logs
+            run_rollouts(agent, env, log_dir)
+
+            # exit loop after desired number of trajectories collected
+            ckpts_processed += 1
+            if ckpts_processed == num_ckpts:
+                break
 
     # parse logs for trajectory data
     trajectories = parse_log_trajectories(output_path, num_ckpts, environment_objs)
 
     # create plot
-    # for i in range(1, num_ckpts + 1):
-    plt.figure()
-    plot_data(trajectories, xaxis="x", value="y", condition="vehicle_ckpt")
-
-    plt.show()
+    output_filename = output_path + "/../figure1"
+    plot_data(trajectories, xaxis="x", value="y", condition="vehicle", output_filename=output_filename)
 
 
 if __name__ == "__main__":
