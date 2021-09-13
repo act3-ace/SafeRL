@@ -6,6 +6,7 @@ from datetime import datetime
 
 import ray
 from ray import tune
+from ray.tune.logger import TBXLoggerCallback
 
 import ray.rllib.agents.ppo as ppo
 
@@ -133,13 +134,16 @@ def experiment_setup(args):
     if args.complete_episodes:
         config['batch_mode'] = "complete_episodes"
 
-    config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
-                                                  FailureCodeCallback(),
-                                                  RewardComponentsCallback(),
-                                                  LoggingCallback(num_logging_workers=args.logging_workers,
-                                                                  episode_log_interval=args.log_interval,
-                                                                  contents=CONTENTS),
-                                                  StatusCustomMetricsCallback()])
+    config['callbacks'] = build_callbacks_caller([
+        EpisodeOutcomeCallback(),
+        FailureCodeCallback(),
+        RewardComponentsCallback(),
+        LoggingCallback(num_logging_workers=args.logging_workers,
+                      episode_log_interval=args.log_interval,
+                      contents=CONTENTS),
+        StatusCustomMetricsCallback(),
+        TBXLoggerCallback(),
+    ])
 
     if args.eval:
         # set evaluation parameters
@@ -155,11 +159,14 @@ def experiment_setup(args):
             config["evaluation_config"]['explore'] = True
 
         config["evaluation_config"]['callbacks'] = \
-            build_callbacks_caller([EpisodeOutcomeCallback(),
-                                    FailureCodeCallback(),
-                                    RewardComponentsCallback(),
-                                    LoggingCallback(num_logging_workers=args.evaluation_num_workers,
-                                                    contents=CONTENTS)])
+            build_callbacks_caller([
+                EpisodeOutcomeCallback(),
+                FailureCodeCallback(),
+                RewardComponentsCallback(),
+                LoggingCallback(num_logging_workers=args.evaluation_num_workers,
+                                contents=CONTENTS),
+                TBXLoggerCallback(),
+            ])
 
     # Merge custom and default configs
     config = dict_merge(default_config, config, recursive=True)
