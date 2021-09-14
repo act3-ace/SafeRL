@@ -55,21 +55,31 @@ def get_args():
     return parser.parse_args()
 
 
-def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs: list):
+def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs: list, task='docking'):
     trajectories = {
         "vehicle": [],
         "x": [],
         "y": []
     }
 
+    # track first episode
+    is_first_episode_done = False
+
     # iterate through eval logs from data dir
     for i in range(1, num_ckpts + 1):
+
         # open eval log file
         with jsonlines.open(data_dir_path + "/eval{}.log".format(i), 'r') as log:       # TODO: get correct ckpts
+
             # iterate over json dict states
             for state in log:
                 # collect traj for each environment object of interest
+                # but only one episode of target obj
                 for obj in environment_objs:
+                    if is_first_episode_done and (obj == 'lead' or obj == 'chief'):
+                        # skip data collection if already got lead / chief data
+                        continue
+
                     x = state["info"][obj]["x"]
                     y = state["info"][obj]["y"]
 
@@ -78,42 +88,73 @@ def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs:
                     trajectories["x"].append(x)
                     trajectories["y"].append(y)
 
+                # track first episode
+                if state["info"]["success"] is True or state["info"]["failure"] is not False:
+                    is_first_episode_done = True
+
     return trajectories
 
 
 # Nate's plotting method
-def plot_data(data, xaxis='x', value='y', condition="vehicle", output_filename="figure1", xmax=None, ylim=None, **kwargs):
+def plot_data(data,
+              xaxis='x',
+              value='y',
+              condition="vehicle",
+              output_filename=None,
+              title="Trajectories",
+              task='docking',
+              xmax=None,
+              ylim=None,
+              **kwargs):
 
     sns.set(style="darkgrid", font_scale=1.5)
-    sns.lineplot(data=data, x=xaxis, y=value, hue=condition, sort=False)    # ci='sd'
-    plt.legend(loc='best', prop={'size': 10}).set_draggable(True)
-    # plt.legend(loc='upper center', ncol=3, handlelength=1,
-    #           borderaxespad=0., prop={'size': 13})
+    sns.lineplot(data=data, x=xaxis, y=value, hue=condition, sort=False, markers="^", style=[])    # ci='sd'
+    plt.legend(loc='best', prop={'size': 8}).set_draggable(True)
 
-    # if xaxis is 'TotalEnvInteracts':
-    #     plt.xlabel('Timesteps')
-    # if value is 'AverageTestEpRet' or value is 'AverageAltTestEpRet':
-    #     plt.ylabel('Average Return')
-    # if value is 'TestEpLen' or value is 'AltTestEpLen':
-    #     plt.ylabel('Average Episode Length')
+    # if xmax is None:
+    #     xmax = np.max(np.asarray(data[xaxis]))
+    # plt.xlim(right=xmax)
+    #
+    # if ylim is not None:
+    #     plt.ylim(ylim)
 
-    if xmax is None:
-        xmax = np.max(np.asarray(data[xaxis]))
-    plt.xlim(right=xmax)
+    # xscale = xmax > 5e3
+    # if xscale:
+    #     # Just some formatting niceness: x-axis scale in scientific notation if max x is large
+    #     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
-    if ylim is not None:
-        plt.ylim(ylim)
+    # titles
+    axes_font_dict = {
+        'fontstyle': 'italic',
+        'fontsize': 10
+    }
+    title_font_dict = {
+        'fontweight': 'bold',
+        'fontsize': 15
+    }
 
-    xscale = xmax > 5e3
-    if xscale:
-        # Just some formatting niceness: x-axis scale in scientific notation if max x is large
-        plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    plt.xlabel("X", fontdict=axes_font_dict)
+    plt.ylabel("Y", fontdict=axes_font_dict)
+    plt.title(title, fontdict=title_font_dict)
 
     plt.tight_layout(pad=0.5)
 
-    fig = plt.gcf()
-    fig.savefig(output_filename)
+    # axes scales
+    ax = plt.gca()
+    ax.set_aspect('equal', adjustable='box')
 
+    # task specific goal representation
+    if task == 'docking':
+        pass
+    elif task == 'rejoin':
+        pass
+
+    # save figure
+    if not output_filename:
+        fig = plt.gcf()
+        fig.savefig(output_filename)
+
+    # show figure
     plt.show()
 
 
@@ -135,8 +176,11 @@ def main():
     # TODO: remove hardcoding (cmd line opt and/or read from env)
     environment_objs = None
     if args.task == "docking":
+        title = "Docking Trajectories Training Progress"
         environment_objs = ["chief", "deputy"]
+
     elif args.task == "rejoin":
+        title = "Rejoin Trajectories Training Progress"
         environment_objs = ["lead", "wingman"]
 
     ckpts_processed = 0
@@ -185,7 +229,13 @@ def main():
 
     # create plot
     output_filename = output_path + "/../figure1"
-    plot_data(trajectories, xaxis="x", value="y", condition="vehicle", output_filename=output_filename)
+    plot_data(trajectories,
+              xaxis="x",
+              value="y",
+              condition="vehicle",
+              output_filename=output_filename,
+              title=title,
+              task=args.task)
 
 
 if __name__ == "__main__":
@@ -193,6 +243,12 @@ if __name__ == "__main__":
 
 
 # TODO:
-#   get data in correct pandas dataframe format
-#   create seaborn plot from data
-#   make pretty
+# could have target + agent keys in env obj dict to flexibly determine which vehicle traj should only be recorded once?
+# could hardcode into parse_log logic?
+
+# ultimately we need differences in rendering docking vs. rejoin plots
+# plotting rejoin region vs docking region
+# and plotting target / target trajectories
+# maybe these should be handled by same encapsulated func (mini strat pattern?)
+
+# then color / direction are universal
