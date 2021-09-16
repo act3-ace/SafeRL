@@ -6,12 +6,12 @@ and creating figures for our public paper.
 Author: John McCarroll
 """
 
+import math
+import csv
 import seaborn as sns
-import pandas as pd
 import matplotlib.pyplot as plt
 import jsonlines
 import os
-import os.path as osp
 import numpy as np
 import argparse
 from glob import glob
@@ -27,6 +27,12 @@ DEFAULT_NUM_CKPTS = 5
 DEFAULT_SEED = 33
 DEFAULT_OUTPUT = "/figures/data"
 DEFAULT_TASK = "docking"
+# rejoin
+DEFAULT_MARKER_FREQ = 50
+DEFAULT_CKPTS = [0, 3, 5, 6, 7]
+# dockingg
+DEFAULT_MARKER_FREQ = 150
+DEFAULT_CKPTS = [0, 1, 4, 6, 7]
 
 
 def get_args():
@@ -55,114 +61,217 @@ def get_args():
     return parser.parse_args()
 
 
-def parse_log_trajectories(data_dir_path: str, num_ckpts: int, environment_objs: list, task='docking'):
-    trajectories = {
-        "vehicle": [],
-        "x": [],
-        "y": []
-    }
-
-    # track first episode
-    is_first_episode_done = False
+def parse_log_trajectories(data_dir_path: str, environment_objs: list, iters: dict):
+    trajectories = {}
 
     # iterate through eval logs from data dir
-    for i in range(1, num_ckpts + 1):
+    for ckpt_num, iter_num in iters.items():
+        trajectories[iter_num] = {}
 
-        # open eval log file
-        with jsonlines.open(data_dir_path + "/eval{}.log".format(i), 'r') as log:       # TODO: get correct ckpts
+        # collect traj for each environment object of interest
+        # but only one episode of target obj
+        for obj in environment_objs:
+            trajectories[iter_num][obj] = {
+                'x': [],
+                'y': []
+            }
 
-            # iterate over json dict states
-            for state in log:
-                # collect traj for each environment object of interest
-                # but only one episode of target obj
-                for obj in environment_objs:
-                    if is_first_episode_done and (obj == 'lead' or obj == 'chief'):
-                        # skip data collection if already got lead / chief data
-                        continue
-
+            # open eval log file
+            with jsonlines.open(data_dir_path + "/eval{}.log".format(ckpt_num), 'r') as log:
+                # iterate over json dict states
+                for state in log:
                     x = state["info"][obj]["x"]
                     y = state["info"][obj]["y"]
 
                     # store coords
-                    trajectories["vehicle"].append(obj + str(i))
-                    trajectories["x"].append(x)
-                    trajectories["y"].append(y)
+                    # vehicle = obj + str(i)
+                    # if vehicle not in vehicles:
+                    #     vehicles.append(vehicle)
 
-                # track first episode
-                if state["info"]["success"] is True or state["info"]["failure"] is not False:
-                    is_first_episode_done = True
+                    # trajectories["vehicle"].append(vehicle)
+                    trajectories[iter_num][obj]['x'].append(x)
+                    trajectories[iter_num][obj]['y'].append(y)
 
     return trajectories
 
 
-# Nate's plotting method
+class Marker:
+    def __init__(self, x1, y1, x2, y2, marker_type):
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.marker_type = marker_type
+
+
+def parse_log_markers(trajectories: dict, env_objs: list):
+    # set up markers dict
+    markers = {}
+    for iter_num in trajectories.keys():
+        markers[iter_num] = {}
+        for obj in env_objs:
+            markers[iter_num][obj] = []
+
+    # collect points along trajectories
+    for iter_num in trajectories.keys():
+
+        for obj in env_objs:
+            # get traj
+            x_coords = trajectories[iter_num][obj]['x']
+            y_coords = trajectories[iter_num][obj]['y']
+
+            # add beginning and end points
+            markers[iter_num][obj].append(Marker(x_coords[0], y_coords[0], x_coords[1], y_coords[1], "start"))
+            markers[iter_num][obj].append(Marker(x_coords[-2], y_coords[-2], x_coords[-1], y_coords[-1], "end"))     # TODO: success / fail?
+
+            # add intermediate points
+            has_traj_ended = False
+            index = DEFAULT_MARKER_FREQ
+            while not has_traj_ended:
+                # create Marker and add to list
+                arrow = Marker(x_coords[index], y_coords[index], x_coords[index + 1], y_coords[index + 1], "arrow")
+                markers[iter_num][obj].append(arrow)
+
+                # update flag and index
+                index += DEFAULT_MARKER_FREQ
+                if index >= len(x_coords) - 2:
+                    has_traj_ended = True
+    return markers
+
+
 def plot_data(data,
-              xaxis='x',
-              value='y',
-              condition="vehicle",
               output_filename=None,
-              title="Trajectories",
+              legend=None,
               task='docking',
-              xmax=None,
-              ylim=None,
-              **kwargs):
+              agent=None,
+              target=None,
+              markers=None):
 
-    sns.set(style="darkgrid", font_scale=1.5)
-    sns.lineplot(data=data, x=xaxis, y=value, hue=condition, sort=False, markers="^", style=[])    # ci='sd'
-    plt.legend(loc='best', prop={'size': 8}).set_draggable(True)
+    # set seaborn theme
+    sns.set_theme()
 
-    # if xmax is None:
-    #     xmax = np.max(np.asarray(data[xaxis]))
-    # plt.xlim(right=xmax)
-    #
-    # if ylim is not None:
-    #     plt.ylim(ylim)
+    # create figure
+    fig, ax = plt.subplots()
 
-    # xscale = xmax > 5e3
-    # if xscale:
-    #     # Just some formatting niceness: x-axis scale in scientific notation if max x is large
-    #     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    # create color map + set scale
+    cmap = plt.cm.get_cmap('spring')        # cool
+    max_iter_num = 0
+    for iter_num in data:
+        if iter_num > max_iter_num:
+            max_iter_num = iter_num
+
+    # plot each trajectory onto figure
+    longest_episode = None
+    longest_episode_len = 0
+    for iter_num in sorted(list(data.keys())):
+        # get color
+        color = cmap(iter_num / max_iter_num)
+
+        # plot each agent trajectory
+        ax.plot(data[iter_num][agent]['x'], data[iter_num][agent]['y'], color=color)
+
+        # plot arrow markers
+        for marker in markers[iter_num][agent]:
+            if marker.marker_type == "arrow":
+                # calc angle
+                x1 = marker.x1
+                x2 = marker.x2
+                y1 = marker.y1
+                y2 = marker.y2
+
+                start_angle = (math.atan2(y2-y1, x2-x1) * 180 / math.pi) - 90
+
+                # place marker on plot
+                ax.scatter(x=x1, y=y1, marker=(3, 0, start_angle), color=color)
+
+        # record longest episode
+        if len(data[iter_num][target]['x']) > longest_episode_len:
+            longest_episode = iter_num
+            longest_episode_len = len(data[iter_num][target]['x'])
+
+    # plot example target
+    ax.plot(data[longest_episode][target]['x'], data[longest_episode][target]['y'], color='black', linestyle='--')
+
+    if task == "rejoin":
+        # TODO: abstract duplicate code
+        for marker in markers[longest_episode][target]:
+            if marker.marker_type == "arrow":
+                # calc angle
+                x1 = marker.x1
+                x2 = marker.x2
+                y1 = marker.y1
+                y2 = marker.y2
+
+                start_angle = (math.atan2(y2 - y1, x2 - x1) * 180 / math.pi) - 90
+
+                # place marker on plot
+                ax.scatter(x=x1, y=y1, marker=(3, 0, start_angle), color='black')
 
     # titles
     axes_font_dict = {
         'fontstyle': 'italic',
         'fontsize': 10
     }
-    title_font_dict = {
-        'fontweight': 'bold',
-        'fontsize': 15
-    }
+    # title_font_dict = {
+    #     'fontweight': 'bold',
+    #     'fontsize': 10
+    # }
 
     plt.xlabel("X", fontdict=axes_font_dict)
     plt.ylabel("Y", fontdict=axes_font_dict)
-    plt.title(title, fontdict=title_font_dict)
+    # plt.title(title, fontdict=title_font_dict)
+
+    # legend
+    legend_list = [iter_num for iter_num in sorted(list(legend.values()))]
+    legend_list.append('lead')
+    ax.legend(legend_list)
 
     plt.tight_layout(pad=0.5)
 
     # axes scales
-    ax = plt.gca()
     ax.set_aspect('equal', adjustable='box')
 
     # task specific goal representation
+    # TODO: get radius from data
     if task == 'docking':
-        pass
+        # add docking region
+        docking_region = plt.Circle((0,0), 0.5, color='r')
+        ax.add_patch(docking_region)
     elif task == 'rejoin':
         pass
 
+    # directionality markers
+    # TODO: failure markers*
+
     # save figure
     if not output_filename:
-        fig = plt.gcf()
         fig.savefig(output_filename)
 
     # show figure
     plt.show()
 
 
+def get_iters(ckpt_num, expr_dir_path):
+    progress_file = expr_dir_path + "/progress.csv"
+
+    with open(progress_file, newline='') as csvfile:
+        reader = csv.reader(csvfile)
+
+        # define indices of interest
+        agent_timesteps_total = 7
+        training_iteration = 10
+        ckpt_num = int(ckpt_num)
+
+        for row in reader:
+            if str(ckpt_num) == row[training_iteration]:
+                return int(row[agent_timesteps_total])
+
+
 def main():
     # collect experiment path
     args = get_args()
     expr_dir_path = args.dir
-    num_ckpts = args.num_ckpts
+    # num_ckpts = args.num_ckpts
 
     # locate checkpoints
     expr_dir_path = verify_experiment_dir(expr_dir_path)
@@ -173,28 +282,29 @@ def main():
     os.makedirs(output_path, exist_ok=True)
 
     # create env obj list
-    # TODO: remove hardcoding (cmd line opt and/or read from env)
     environment_objs = None
     if args.task == "docking":
         title = "Docking Trajectories Training Progress"
         environment_objs = ["chief", "deputy"]
+        agent = "deputy"
+        target = "chief"
 
     elif args.task == "rejoin":
         title = "Rejoin Trajectories Training Progress"
-        environment_objs = ["lead", "wingman"]
+        environment_objs = ["lead", "wingman", "rejoin_region"]
+        agent = "wingman"
+        target = "lead"
 
-    ckpts_processed = 0
-    if not args.only_plot:
-        for ckpt_dir_name in ckpt_dirs:
-            # iterate through checkpoints
-            # assuming ckpt_dirs ordered from latest to earliest
+    iters = {}
+    for ckpt_index in DEFAULT_CKPTS:
+        # get filename of specified ckpts
+        ckpt_dir_name = ckpt_dirs[ckpt_index]
+        ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
+        ckpt_num = ckpt_dir_name.split("_")[-1].lstrip('0')  # remove trailing ckpt number from file and clean
+        ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
+        ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
 
-            # load policy and env
-            ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
-            ckpt_num = ckpt_dir_name.split("_")[-1].lstrip('0')           # remove trailing ckpt number from file and clean
-            ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
-            ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
-
+        if not args.only_plot:
             # load checkpoint
             with open(ray_config_path, 'rb') as ray_config_f:
                 ray_config = pickle.load(ray_config_f)
@@ -212,43 +322,34 @@ def main():
             env.seed(seed)
 
             # delete any previous logs
-            log_dir = output_path + "/eval{}.log".format(num_ckpts - ckpts_processed)
+            log_dir = output_path + "/eval{}.log".format(ckpt_num)
             if os.path.isfile(log_dir):
                 os.remove(log_dir)
 
             # run rollout episode + store logs
             run_rollouts(agent, env, log_dir)
 
-            # exit loop after desired number of trajectories collected
-            ckpts_processed += 1
-            if ckpts_processed == num_ckpts:
-                break
+        # collect number of env iters coresponding to ckpt num
+        iters[ckpt_num] = get_iters(ckpt_num, expr_dir_path)
 
     # parse logs for trajectory data
-    trajectories = parse_log_trajectories(output_path, num_ckpts, environment_objs)
+    trajectories = parse_log_trajectories(output_path, environment_objs, iters)
+
+    # parse trajectories for extra info
+    markers = parse_log_markers(trajectories, environment_objs)
 
     # create plot
     output_filename = output_path + "/../figure1"
     plot_data(trajectories,
-              xaxis="x",
-              value="y",
-              condition="vehicle",
               output_filename=output_filename,
-              title=title,
-              task=args.task)
+              # title=title,
+              task=args.task,
+              agent=agent,
+              target=target,
+              legend=iters,
+              markers=markers
+              )
 
 
 if __name__ == "__main__":
     main()
-
-
-# TODO:
-# could have target + agent keys in env obj dict to flexibly determine which vehicle traj should only be recorded once?
-# could hardcode into parse_log logic?
-
-# ultimately we need differences in rendering docking vs. rejoin plots
-# plotting rejoin region vs docking region
-# and plotting target / target trajectories
-# maybe these should be handled by same encapsulated func (mini strat pattern?)
-
-# then color / direction are universal
