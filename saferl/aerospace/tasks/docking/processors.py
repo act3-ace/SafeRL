@@ -23,7 +23,7 @@ class DockingObservationProcessor(ObservationProcessor):
 
         if self.mode == '2d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
-            self.norm_const = np.array([1000, 1000, 10, 10])
+            self.norm_const = np.array([100, 100, .5, .5])
         elif self.mode == '3d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
             self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
