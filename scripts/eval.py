@@ -140,7 +140,10 @@ def verify_experiment_dir(expr_dir_path, experiment_index=None):
                     if experiment_index == int(file_name_fields[4]):
                         file_name = file_name[:len(file_name) - len(params_file)]
                         expr_dir_path += file_name
-                        break
+                        return expr_dir_path
+
+                raise ValueError("No experiment directory corresponding to index {} was found!"
+                                 .format(experiment_index))
             else:
                 # take first expr in children
                 size = len(children[0])
