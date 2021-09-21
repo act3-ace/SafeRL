@@ -12,7 +12,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import jsonlines
 import os
-import numpy as np
 import argparse
 from glob import glob
 import pickle5 as pickle
@@ -20,7 +19,7 @@ import ray
 import ray.rllib.agents.ppo as ppo
 
 from scripts.eval import run_rollouts, verify_experiment_dir
-from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
+from saferl.environment.utils import YAMLParser, build_lookup
 
 
 # Define Defaults
@@ -28,22 +27,9 @@ DEFAULT_NUM_CKPTS = 5
 DEFAULT_SEED = 33
 DEFAULT_OUTPUT = "/figures/data"
 DEFAULT_TASK = "docking"
-alt_env_config = None
-
-# rejoin
-# DEFAULT_MARKER_FREQ = 50
-# DEFAULT_CKPTS = [2, 4, 8, 16, 32]
-# alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_default.yaml"
-# docking
 DEFAULT_MARKER_FREQ = 150
-# last best
-DEFAULT_CKPTS = [2, 4, 8, 16, 32]
-# terminal
-DEFAULT_CKPTS = [0, 1, 4, 6, 7]
-# pycharm
-# DEFAULT_CKPTS = [2, 4, 8, 16, 32]
-# alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml"
-experiment_index = 6
+DEFAULT_CKPTS = [0, 4, 9, 14, 19]
+DEFAULT_EXPR_INDEX = 6
 
 
 def get_args():
@@ -67,7 +53,15 @@ def get_args():
                         help="The task on which the policy was trained and will be evaluated")
     parser.add_argument('--only_plot', action="store_true",
                         help="If evaluation data already generated and user needs quick plot generation.")
-    # TODO: 2d vs 3d flag?
+    parser.add_argument('--marker_freq', type=int, default=DEFAULT_MARKER_FREQ,
+                        help="The frequency directional markers are drawn along trajectory lines.")
+    parser.add_argument('--checkpoints', type=int, nargs="+", default=DEFAULT_CKPTS,
+                        help="A list of 5 checkpoints, by index in experiment directory, to plot.")
+    parser.add_argument('--expr_index', type=int, default=DEFAULT_EXPR_INDEX,
+                        help="The index corresponding to the desired experiment to load. "
+                             "Use when multiple experiments are run by Tune.")
+    parser.add_argument('--alt_env_config', type=str, default=None,
+                        help="The path to an alternative config from which to run all trajectory episodes.")
 
     return parser.parse_args()
 
@@ -94,11 +88,6 @@ def parse_log_trajectories(data_dir_path: str, environment_objs: list, iters: di
                     x = state["info"][obj]["x"]
                     y = state["info"][obj]["y"]
 
-                    # store coords
-                    # vehicle = obj + str(i)
-                    # if vehicle not in vehicles:
-                    #     vehicles.append(vehicle)
-
                     # trajectories["vehicle"].append(vehicle)
                     trajectories[iter_num][obj]['x'].append(x)
                     trajectories[iter_num][obj]['y'].append(y)
@@ -115,7 +104,7 @@ class Marker:
         self.marker_type = marker_type
 
 
-def parse_log_markers(trajectories: dict, env_objs: list):
+def parse_log_markers(trajectories: dict, env_objs: list, marker_freq=100):
     # set up markers dict
     markers = {}
     for iter_num in trajectories.keys():
@@ -137,16 +126,19 @@ def parse_log_markers(trajectories: dict, env_objs: list):
 
             # add intermediate points
             has_traj_ended = False
-            index = DEFAULT_MARKER_FREQ
-            while not has_traj_ended:
+            index = marker_freq
+            while True:
+                # check if index out of bounds
+                if index >= len(x_coords) - 2:
+                    break
+
                 # create Marker and add to list
                 arrow = Marker(x_coords[index], y_coords[index], x_coords[index + 1], y_coords[index + 1], "arrow")
                 markers[iter_num][obj].append(arrow)
 
-                # update flag and index
-                index += DEFAULT_MARKER_FREQ
-                if index >= len(x_coords) - 2:
-                    has_traj_ended = True
+                # update index
+                index += marker_freq
+
     return markers
 
 
@@ -257,12 +249,11 @@ def plot_data(data,
     # TODO: get radius from data
     if task == 'docking':
         # add docking region
-        docking_region = plt.Circle((0,0), 0.5, color='r')
+        docking_region = plt.Circle((0, 0), 0.5, color='r')
         ax.add_patch(docking_region)
     elif task == 'rejoin':
         pass
 
-    # directionality markers
     # TODO: failure markers*
 
     # save figure
@@ -294,10 +285,9 @@ def main():
     # collect experiment path
     args = get_args()
     expr_dir_path = args.dir
-    # num_ckpts = args.num_ckpts
 
     # locate checkpoints
-    expr_dir_path = verify_experiment_dir(expr_dir_path, experiment_index=experiment_index)
+    expr_dir_path = verify_experiment_dir(expr_dir_path, experiment_index=args.expr_index)
     ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"))
 
     # create output dir
@@ -319,7 +309,7 @@ def main():
         target = "lead"
 
     iters = {}
-    for ckpt_index in DEFAULT_CKPTS:
+    for ckpt_index in args.checkpoints:
         # get filename of specified ckpts
         ckpt_dir_name = ckpt_dirs[ckpt_index]
         ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
@@ -335,20 +325,14 @@ def main():
             ray.init(ignore_reinit_error=True)
 
             # load policy and env
-            if alt_env_config:
-                parser = YAMLParser(yaml_file=alt_env_config, lookup=build_lookup())
+            if args.alt_env_config:
+                parser = YAMLParser(yaml_file=args.alt_env_config, lookup=build_lookup())
                 config = parser.parse_env()
                 env_config = config["env_config"]
             else:
                 env_config = ray_config['env_config']
 
-            # # HACKY DOCKING FIX
-            # del ray_config["_use_trajectory_view_api"]
-            # del ray_config["memory"]
-            # del ray_config["object_store_memory"]
-            # del ray_config["memory_per_worker"]
-            # del ray_config["object_store_memory_per_worker"]
-            # del ray_config["replay_sequence_length"]
+            # HACKY DOCKING FIX
             del ray_config["callbacks"]
 
             rl_agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
@@ -374,7 +358,7 @@ def main():
     trajectories = parse_log_trajectories(output_path, environment_objs, iters)
 
     # parse trajectories for extra info
-    markers = parse_log_markers(trajectories, environment_objs)
+    markers = parse_log_markers(trajectories, environment_objs, args.marker_freq)
 
     # create plot
     output_filename = output_path + "/../figure1"
