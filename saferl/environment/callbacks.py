@@ -17,6 +17,12 @@ def build_callbacks_caller(callbacks: []):  # noqa C901
             self.callbacks = callbacks
             super().__init__(legacy_callbacks_dict)
 
+        def on_episode_start(self, *args, **kwargs):
+            for callback in self.callbacks:
+                if callable(getattr(callback, "on_episode_start", None)):
+                    callback.on_episode_start(*args, **kwargs)
+            super().on_episode_start(*args, **kwargs)
+
         def on_episode_end(self, *args, **kwargs):
             for callback in self.callbacks:
                 if callable(getattr(callback, "on_episode_end", None)):
@@ -79,6 +85,43 @@ class StatusCustomMetricsCallback:
             metric_name = k.split('.', 1)[1]
             metric_val = status[k]
             episode.custom_metrics[metric_name] = metric_val
+
+
+class ConstraintViolationMetricsCallback:
+    def __init__(self):
+        self.constraint_keys = None
+
+    def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
+                         policies: Dict[str, Policy],
+                         episode: MultiAgentEpisode, env_index: int, **kwargs):
+        self.constraint_keys = None
+        episode.user_data["constr_violation_counts"] = {}
+
+    def on_episode_step(self, *, worker: RolloutWorker, base_env: BaseEnv,
+                        episode: MultiAgentEpisode, env_index: int, **kwargs):
+        if episode.length == 0:
+            return
+        status = episode.last_info_for()['status']
+        if self.constraint_keys is None:
+            self.constraint_keys = [k for k in status.keys() if 'constraint' in k]
+
+        for k in self.constraint_keys:
+            step_violation_value = int(not status[k])
+            episode.user_data["constr_violation_counts"][k] = episode.user_data["constr_violation_counts"].get(k, 0) \
+                + step_violation_value
+
+    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
+                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
+                       env_index: int, **kwargs):
+        for k in self.constraint_keys:
+            violation_count = episode.user_data['constr_violation_counts'].get(k, 0)
+            violation_ratio = float(violation_count) / episode.length
+
+            count_name = "constraint_violation.{}.steps".format(k)
+            ratio_name = "constraint_violation.{}.ratio".format(k)
+
+            episode.custom_metrics[count_name] = violation_count
+            episode.custom_metrics[ratio_name] = violation_ratio
 
 
 class LogContents(Enum):

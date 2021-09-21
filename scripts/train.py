@@ -13,7 +13,7 @@ import ray.rllib.agents.ppo as ppo
 from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents, \
-                                        StatusCustomMetricsCallback
+                                        StatusCustomMetricsCallback, ConstraintViolationMetricsCallback
 
 
 # Training defaults
@@ -134,15 +134,14 @@ def experiment_setup(args):
     if args.complete_episodes:
         config['batch_mode'] = "complete_episodes"
 
-    config['callbacks'] = build_callbacks_caller([
-        EpisodeOutcomeCallback(),
-        FailureCodeCallback(),
-        RewardComponentsCallback(),
-        LoggingCallback(num_logging_workers=args.logging_workers,
-                      episode_log_interval=args.log_interval,
-                      contents=CONTENTS),
-        StatusCustomMetricsCallback(),
-    ])
+    config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
+                                                  FailureCodeCallback(),
+                                                  RewardComponentsCallback(),
+                                                  LoggingCallback(num_logging_workers=args.logging_workers,
+                                                                  episode_log_interval=args.log_interval,
+                                                                  contents=CONTENTS),
+                                                  StatusCustomMetricsCallback(),
+                                                  ConstraintViolationMetricsCallback()])
 
     if args.eval:
         # set evaluation parameters
@@ -158,14 +157,11 @@ def experiment_setup(args):
             config["evaluation_config"]['explore'] = True
 
         config["evaluation_config"]['callbacks'] = \
-            build_callbacks_caller([
-                EpisodeOutcomeCallback(),
-                FailureCodeCallback(),
-                RewardComponentsCallback(),
-                LoggingCallback(num_logging_workers=args.evaluation_num_workers,
-                                contents=CONTENTS),
-                TBXLoggerCallback(),
-            ])
+            build_callbacks_caller([EpisodeOutcomeCallback(),
+                                    FailureCodeCallback(),
+                                    RewardComponentsCallback(),
+                                    LoggingCallback(num_logging_workers=args.evaluation_num_workers,
+                                                    contents=CONTENTS)])
 
     # Merge custom and default configs
     config = dict_merge(default_config, config, recursive=True)
