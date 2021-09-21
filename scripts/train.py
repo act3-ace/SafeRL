@@ -12,7 +12,7 @@ import ray.rllib.agents.ppo as ppo
 from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
                                         RewardComponentsCallback, LoggingCallback, LogContents, \
-                                        StatusCustomMetricsCallback
+                                        StatusCustomMetricsCallback, ConstraintViolationMetricsCallback
 
 
 # Training defaults
@@ -139,7 +139,8 @@ def experiment_setup(args):
                                                   LoggingCallback(num_logging_workers=args.logging_workers,
                                                                   episode_log_interval=args.log_interval,
                                                                   contents=CONTENTS),
-                                                  StatusCustomMetricsCallback()])
+                                                  StatusCustomMetricsCallback(),
+                                                  ConstraintViolationMetricsCallback()])
 
     if args.eval:
         # set evaluation parameters
