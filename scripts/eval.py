@@ -106,7 +106,7 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
                     env.render()
 
 
-def verify_experiment_dir(expr_dir_path):
+def verify_experiment_dir(expr_dir_path, experiment_index=None):
     """
     A function to ensure passed path points to experiment run directory (as opposed to the parent directory).
 
@@ -131,7 +131,20 @@ def verify_experiment_dir(expr_dir_path):
         if len(children) == 0:
             raise InvalidExperimentDirStructure("No params.pkl file found!")
         elif len(children) > 1:
-            raise InvalidExperimentDirStructure("More than one params.pkl file found!")
+            # handle multiple episodes
+            if experiment_index:
+                # match expr_num to file name in children
+                for file_name in children:
+                    file_name = file_name[len(expr_dir_path):]
+                    file_name_fields = file_name.split("_")
+                    if experiment_index == int(file_name_fields[4]):
+                        file_name = file_name[:len(file_name) - len(params_file)]
+                        expr_dir_path += file_name
+                        break
+            else:
+                # take first expr in children
+                size = len(children[0])
+                expr_dir_path = children[0][:size - len(params_file)]
         else:
             # params file found in child dir
             size = len(children[0])

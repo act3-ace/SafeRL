@@ -42,7 +42,8 @@ DEFAULT_CKPTS = [2, 4, 8, 16, 32]
 DEFAULT_CKPTS = [0, 1, 4, 6, 7]
 # pycharm
 # DEFAULT_CKPTS = [2, 4, 8, 16, 32]
-alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml"
+# alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml"
+experiment_index = 6
 
 
 def get_args():
@@ -279,13 +280,14 @@ def get_iters(ckpt_num, expr_dir_path):
         reader = csv.reader(csvfile)
 
         # define indices of interest
-        agent_timesteps_total = 7
-        training_iteration = 10
+        column_headers = next(iter(reader))
+        timesteps_total_index = column_headers.index("timesteps_total")
+        training_iteration_index = column_headers.index("training_iteration")
         ckpt_num = int(ckpt_num)
 
         for row in reader:
-            if str(ckpt_num) == row[training_iteration]:
-                return int(row[agent_timesteps_total])
+            if str(ckpt_num) == row[training_iteration_index]:
+                return int(row[timesteps_total_index])
 
 
 def main():
@@ -295,7 +297,7 @@ def main():
     # num_ckpts = args.num_ckpts
 
     # locate checkpoints
-    expr_dir_path = verify_experiment_dir(expr_dir_path)
+    expr_dir_path = verify_experiment_dir(expr_dir_path, experiment_index=experiment_index)
     ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"))
 
     # create output dir
@@ -347,6 +349,7 @@ def main():
             # del ray_config["memory_per_worker"]
             # del ray_config["object_store_memory_per_worker"]
             # del ray_config["replay_sequence_length"]
+            del ray_config["callbacks"]
 
             rl_agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
             rl_agent.restore(ckpt_path)
