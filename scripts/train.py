@@ -142,7 +142,6 @@ def experiment_setup(args):
                       episode_log_interval=args.log_interval,
                       contents=CONTENTS),
         StatusCustomMetricsCallback(),
-        TBXLoggerCallback(),
     ])
 
     if args.eval:
@@ -211,7 +210,7 @@ def main(args):
 
             tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
-                     restore=args.restore)
+                     restore=args.restore, callbacks=[TBXLoggerCallback()])
     else:
         # Setup experiment
         expr_name, config = experiment_setup(args=args)
