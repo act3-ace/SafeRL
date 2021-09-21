@@ -20,6 +20,7 @@ import ray
 import ray.rllib.agents.ppo as ppo
 
 from scripts.eval import run_rollouts, verify_experiment_dir
+from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 
 
 # Define Defaults
@@ -27,12 +28,21 @@ DEFAULT_NUM_CKPTS = 5
 DEFAULT_SEED = 33
 DEFAULT_OUTPUT = "/figures/data"
 DEFAULT_TASK = "docking"
+alt_env_config = None
+
 # rejoin
-DEFAULT_MARKER_FREQ = 50
-DEFAULT_CKPTS = [0, 3, 5, 6, 7]
-# dockingg
+# DEFAULT_MARKER_FREQ = 50
+# DEFAULT_CKPTS = [2, 4, 8, 16, 32]
+# alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/rejoin/rejoin_default.yaml"
+# docking
 DEFAULT_MARKER_FREQ = 150
+# last best
+DEFAULT_CKPTS = [2, 4, 8, 16, 32]
+# terminal
 DEFAULT_CKPTS = [0, 1, 4, 6, 7]
+# pycharm
+# DEFAULT_CKPTS = [2, 4, 8, 16, 32]
+alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml"
 
 
 def get_args():
@@ -154,7 +164,7 @@ def plot_data(data,
     fig, ax = plt.subplots()
 
     # create color map + set scale
-    cmap = plt.cm.get_cmap('spring')        # cool
+    cmap = plt.cm.get_cmap('plasma')        # cool, spring
     max_iter_num = 0
     for iter_num in data:
         if iter_num > max_iter_num:
@@ -163,9 +173,12 @@ def plot_data(data,
     # plot each trajectory onto figure
     longest_episode = None
     longest_episode_len = 0
+    line_num = 0
     for iter_num in sorted(list(data.keys())):
         # get color
-        color = cmap(iter_num / max_iter_num)
+        # color = cmap(iter_num / max_iter_num)
+        line_num += 1
+        color = cmap(line_num / 5)
 
         # plot each agent trajectory
         ax.plot(data[iter_num][agent]['x'], data[iter_num][agent]['y'], color=color)
@@ -223,7 +236,15 @@ def plot_data(data,
 
     # legend
     legend_list = [iter_num for iter_num in sorted(list(legend.values()))]
-    legend_list.append('lead')
+    for i, number in enumerate(legend_list):
+        if legend_list[i] < 1000000 and legend_list[i] >= 1000:
+            legend_list[i] = str(int(legend_list[i] / 1000)) + 'k'
+        elif legend_list[i] > 1000000:
+            legend_list[i] = str(legend_list[i] / 1000000)[0:4] + 'M'
+
+    if task == "rejoin":
+        legend_list.append('lead')
+
     ax.legend(legend_list)
 
     plt.tight_layout(pad=0.5)
@@ -275,7 +296,7 @@ def main():
 
     # locate checkpoints
     expr_dir_path = verify_experiment_dir(expr_dir_path)
-    ckpt_dirs = glob(expr_dir_path + "/checkpoint_*")
+    ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"))
 
     # create output dir
     output_path = expr_dir_path + args.output
@@ -312,9 +333,23 @@ def main():
             ray.init(ignore_reinit_error=True)
 
             # load policy and env
-            env_config = ray_config['env_config']
-            agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
-            agent.restore(ckpt_path)
+            if alt_env_config:
+                parser = YAMLParser(yaml_file=alt_env_config, lookup=build_lookup())
+                config = parser.parse_env()
+                env_config = config["env_config"]
+            else:
+                env_config = ray_config['env_config']
+
+            # # HACKY DOCKING FIX
+            # del ray_config["_use_trajectory_view_api"]
+            # del ray_config["memory"]
+            # del ray_config["object_store_memory"]
+            # del ray_config["memory_per_worker"]
+            # del ray_config["object_store_memory_per_worker"]
+            # del ray_config["replay_sequence_length"]
+
+            rl_agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
+            rl_agent.restore(ckpt_path)
             env = ray_config['env'](env_config)
 
             # set seed
@@ -327,7 +362,7 @@ def main():
                 os.remove(log_dir)
 
             # run rollout episode + store logs
-            run_rollouts(agent, env, log_dir)
+            run_rollouts(rl_agent, env, log_dir)
 
         # collect number of env iters coresponding to ckpt num
         iters[ckpt_num] = get_iters(ckpt_num, expr_dir_path)
