@@ -170,11 +170,9 @@ class YAMLParser:
         return target
 
     def tune_search_space(self, method, arg_str):
+        arg_str = '['+arg_str+']'
         arg_values = ast.literal_eval(arg_str)
-        if arg_str[0] == '[':
-            return getattr(tune, method)(arg_values)
-        else:
-            return getattr(tune, method)(*arg_values)
+        return getattr(tune, method)(*arg_values)
 
     def tune_command(self, value):
         search_space_api_funcs = [
@@ -184,7 +182,7 @@ class YAMLParser:
                                  'choice', 'grid_search']
         method_value_arg = value
         left_paren = method_value_arg.find('(')
-        right_paren = method_value_arg.find(')')
+        right_paren = method_value_arg.rfind(')')
         method = method_value_arg[0:left_paren]
         argument_str = method_value_arg[left_paren+1:right_paren]
 
