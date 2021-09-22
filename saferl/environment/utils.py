@@ -3,12 +3,12 @@ import io
 import os
 import copy
 import inspect
-
+import ast
 import yaml
 import jsonlines
 import numpy as np
 import json
-
+from ray import tune
 import saferl
 
 
@@ -123,7 +123,8 @@ class YAMLParser:
 
     def __init__(self, yaml_file, lookup):
         self.commands = {
-            "file": self.file_command
+            "file": self.file_command,
+            "tune": self.tune_command,
         }
         self.yaml_path = os.path.abspath(yaml_file)
         self.working_dir = os.path.dirname(self.yaml_path)
@@ -167,6 +168,29 @@ class YAMLParser:
         target = self.process_yaml_items(contents)
         self.working_dir = old_working_dir
         return target
+
+    def tune_search_space(self, method, arg_str):
+        arg_str = '['+arg_str+']'
+        arg_values = ast.literal_eval(arg_str)
+        return getattr(tune, method)(*arg_values)
+
+    def tune_command(self, value):
+        search_space_api_funcs = [
+                                 'uniform', 'quniform', 'loguniform',
+                                 'qloguniform', 'randn', 'qrandn',
+                                 'randint', 'qrandint',
+                                 'choice', 'grid_search']
+        method_value_arg = value
+        left_paren = method_value_arg.find('(')
+        right_paren = method_value_arg.rfind(')')
+        method = method_value_arg[0:left_paren]
+        argument_str = method_value_arg[left_paren+1:right_paren]
+
+        if method in search_space_api_funcs:
+            return self.tune_search_space(method, argument_str)
+        else:
+            arg_values = ast.literal_eval(argument_str)
+            return getattr(tune, method)(*arg_values)
 
 
 def log_to_jsonlines(contents, output_dir, jsonline_filename):
