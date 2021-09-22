@@ -333,9 +333,9 @@ def main():
 
             # HACKY DOCKING FIX
             del ray_config["callbacks"]
-            del ray_config["render_env"]
-            del ray_config["record_env"]
-            del ray_config["placement_strategy"]
+            # del ray_config["render_env"]
+            # del ray_config["record_env"]
+            # del ray_config["placement_strategy"]
 
             rl_agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
             rl_agent.restore(ckpt_path)
