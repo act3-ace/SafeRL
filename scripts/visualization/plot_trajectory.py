@@ -27,8 +27,8 @@ DEFAULT_NUM_CKPTS = 5
 DEFAULT_SEED = 33
 DEFAULT_OUTPUT = "/figures/data"
 DEFAULT_TASK = "docking"
-DEFAULT_MARKER_FREQ = 150
-DEFAULT_CKPTS = [0, 4, 9, 14, 19]
+DEFAULT_MARKER_FREQ = 50
+DEFAULT_CKPTS = [0, 1, 2, 3, 4]
 DEFAULT_EXPR_INDEX = 6
 
 
@@ -125,7 +125,6 @@ def parse_log_markers(trajectories: dict, env_objs: list, marker_freq=100):
             markers[iter_num][obj].append(Marker(x_coords[-2], y_coords[-2], x_coords[-1], y_coords[-1], "end"))     # TODO: success / fail?
 
             # add intermediate points
-            has_traj_ended = False
             index = marker_freq
             while True:
                 # check if index out of bounds
@@ -334,6 +333,9 @@ def main():
 
             # HACKY DOCKING FIX
             del ray_config["callbacks"]
+            del ray_config["render_env"]
+            del ray_config["record_env"]
+            del ray_config["placement_strategy"]
 
             rl_agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
             rl_agent.restore(ckpt_path)
