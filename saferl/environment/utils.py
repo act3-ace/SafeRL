@@ -48,7 +48,7 @@ def get_ref_objs(env_objs, config):
             config[k] = get_ref_objs(env_objs, v)
     return config
 
-# maybe create a separate minisection for tune config -- or a separate method
+
 def setup_env_objs_from_config(config, default_initializer):
     safe_config = copy.deepcopy(config)
     env_objs = {}
@@ -169,25 +169,18 @@ class YAMLParser:
         self.working_dir = old_working_dir
         return target
 
-    def tune_search_space_command(self,value):
-        method_value_arg = value.split('.',1)[1]
+    def tune_search_space_command(self, value):
+        method_value_arg = value.split('.', 1)[1]
         left_paren = method_value_arg.find('(')
         right_paren = method_value_arg.find(')')
         method = method_value_arg[0:left_paren]
         argument_str = method_value_arg[left_paren+1:right_paren]
         arg_values = ast.literal_eval(argument_str)
         if argument_str[0] == '[':
-                return getattr(tune,method)(arg_values)
+                return getattr(tune, method)(arg_values)
         else:
-                return getattr(tune,method)(*arg_values)
+                return getattr(tune, method)(*arg_values)
 
-    def parse_number(x):
-        assert isinstance(x, str), "input must be a numeric string"
-
-        if '.' in x:
-            return float(x)
-        else:
-            return int(x)
 
 def log_to_jsonlines(contents, output_dir, jsonline_filename):
     """
