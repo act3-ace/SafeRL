@@ -44,7 +44,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir', type=str, default="", help="The path to the experiment directory", required=True)
-    parser.add_argument('--num_ckpts', type=int, default=DEFAULT_NUM_CKPTS, help="Number of checkpoints to plot")
+    # parser.add_argument('--num_ckpts', type=int, default=DEFAULT_NUM_CKPTS, help="Number of checkpoints to plot")
     parser.add_argument('--seed', type=int, default=DEFAULT_SEED,
                         help="The seed used to initialize the evaluation environment")
     parser.add_argument('--output', type=str, default=DEFAULT_OUTPUT,
