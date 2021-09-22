@@ -169,7 +169,7 @@ class YAMLParser:
         self.working_dir = old_working_dir
         return target
 
-    def tune_search_space(self,method,arg_str):
+    def tune_search_space(self, method, arg_str):
         arg_values = ast.literal_eval(arg_str)
         if arg_str[0] == '[':
             return getattr(tune, method)(arg_values)
@@ -177,9 +177,11 @@ class YAMLParser:
             return getattr(tune, method)(*arg_values)
 
     def tune_command(self, value):
-        search_space_api_funcs = ['uniform','quniform','loguniform',
-        'qloguniform','randn','qrandn','randint','qrandint',
-        'choice','grid_search']
+        search_space_api_funcs = [
+                                 'uniform', 'quniform', 'loguniform',
+                                 'qloguniform', 'randn', 'qrandn',
+                                 'randint', 'qrandint',
+                                 'choice', 'grid_search']
         method_value_arg = value
         left_paren = method_value_arg.find('(')
         right_paren = method_value_arg.find(')')
@@ -187,10 +189,10 @@ class YAMLParser:
         argument_str = method_value_arg[left_paren+1:right_paren]
 
         if method in search_space_api_funcs:
-            return self.tune_search_space(method,argument_str)
+            return self.tune_search_space(method, argument_str)
         else:
             arg_values = ast.literal_eval(argument_str)
-            return getattr(tune,method)(*arg_values)
+            return getattr(tune, method)(*arg_values)
 
 
 def log_to_jsonlines(contents, output_dir, jsonline_filename):
