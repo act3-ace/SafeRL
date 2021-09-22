@@ -29,11 +29,6 @@ DEFAULT_TASK = "docking"
 DEFAULT_CKPTS = [0, 1, 2, 3, 4]
 
 
-# expr_dir = "/home/john/AFRL/Dubins/have-deepsky/scripts/output/docking_dev_data_1000iters_complete_ep"
-# [0, 1, 4, 14, 35]
-# alt_env_config = "/home/john/AFRL/Dubins/have-deepsky/configs/docking/docking_default.yaml"
-
-
 def get_args():
     """
     A function to process script args.
@@ -83,15 +78,6 @@ def parse_log_trajectories(data_dir_path: str, agent_name: str, iters: dict):
                 trajectories[iter_num]["vel_limit"].append(state["info"]["status"]["max_vel_limit"])
 
     return trajectories
-
-
-class Marker:
-    def __init__(self, x1, y1, x2, y2, marker_type):
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.marker_type = marker_type
 
 
 def plot_data(data,
@@ -157,22 +143,6 @@ def plot_data(data,
     plt.show()
 
 
-# def get_iters(ckpt_num, expr_dir_path):
-#     progress_file = expr_dir_path + "/progress.csv"
-#
-#     with open(progress_file, newline='') as csvfile:
-#         reader = csv.reader(csvfile)
-#
-#         # define indices of interest
-#         agent_timesteps_total = 7
-#         training_iteration = 10
-#         ckpt_num = int(ckpt_num)
-#
-#         for row in reader:
-#             if str(ckpt_num) == row[training_iteration]:
-#                 return int(row[agent_timesteps_total])
-
-
 def main():
     # collect experiment path
     args = get_args()
@@ -180,7 +150,8 @@ def main():
 
     # locate checkpoints
     expr_dir_path = verify_experiment_dir(expr_dir_path)
-    ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"))
+    ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"),
+                       key=lambda ckpt_dir_name: int(ckpt_dir_name.split("_")[-1]))
 
     # create output dir
     output_path = expr_dir_path + args.output

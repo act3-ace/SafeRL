@@ -287,7 +287,8 @@ def main():
 
     # locate checkpoints
     expr_dir_path = verify_experiment_dir(expr_dir_path, experiment_index=args.expr_index)
-    ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"))
+    ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"),
+                       key=lambda ckpt_dir_name: int(ckpt_dir_name.split("_")[-1]))
 
     # create output dir
     output_path = expr_dir_path + args.output
