@@ -43,7 +43,7 @@ def get_args():
     """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dir', type=str, default="", help="The full path to the experiment directory", required=True)
+    parser.add_argument('--dir', type=str, default="", help="The path to the experiment directory", required=True)
     parser.add_argument('--num_ckpts', type=int, default=DEFAULT_NUM_CKPTS, help="Number of checkpoints to plot")
     parser.add_argument('--seed', type=int, default=DEFAULT_SEED,
                         help="The seed used to initialize the evaluation environment")
@@ -314,7 +314,7 @@ def main():
         ray_config_path = os.path.join(expr_dir_path, 'params.pkl')
         ckpt_num = ckpt_dir_name.split("_")[-1].lstrip('0')  # remove trailing ckpt number from file and clean
         ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
-        ckpt_path = os.path.join(expr_dir_path, ckpt_dir_name, ckpt_filename)
+        ckpt_path = os.path.join(ckpt_dir_name, ckpt_filename)
 
         if not args.only_plot:
             # load checkpoint
