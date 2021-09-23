@@ -35,7 +35,7 @@ def make_plots(args):
     data_dfs = [pd.read_csv(csv_file_tracker[i]) for i in range(len(csv_file_tracker))]
 
 
-    # perform necessary timestep clipping
+    # perform necessary timestep clipping -- maybe break into separate method ?
 
     # first need to ensure the following: are all timesteps equal if so - no need for clipping
     perform_clipping = False
@@ -53,6 +53,7 @@ def make_plots(args):
 
     perform_extrapolate = False
 
+    clipped_time_range = None
     if perform_clipping:
         perform_extrapolate = True
         # figure out which data_dfs did not have the same time ranges
@@ -64,7 +65,7 @@ def make_plots(args):
             if current_max_timesteps != max_timestep:
                 ds_ids.append(i)
 
-        # find max id amongst the data points that do not
+        # find max id amongst the data points that do not extend to full range
         max_id_num = -1
         max_id_timestep = -1
         for id in ds_ids:
@@ -75,7 +76,66 @@ def make_plots(args):
                 max_id_timestep = current_max_timesteps
                 max_id_num = id
 
+        clipped_time_range = data_dfs[max_id_num]['timesteps_total']
 
+    if perform_extrapolate:
+        timesteps_total_track = []
+        episode_len_mean_track = []
+        success_mean_track = []
+        eps_reward_mean_track = []
+
+        # dont need to walk through step by step , can just grab columns
+        for ds in data_dfs:
+            timestep_total = ds[key_timesteps]
+            episode_len_mean = ds[key_eps_len_mean]
+            success_mean = ds[key_success_mean]
+            reward_mean = ds[key_eps_reward_mean]
+
+            #interpolation functions
+            func_time_v_eps_len = interpolate.interp1d(timestep_total,episode_len_mean,fill_value='extrapolate')
+            func_time_v_success = interpolate.interp1d(timestep_total,success_mean,fill_value='extrapolate')
+            func_time_v_reward = interpolate.interp1d(timestep_total,reward_mean,fill_value='extrapolate')
+            interp_eps_len = func_time_v_eps_len(clipped_timesteps)
+            interp_success = func_time_v_success(clipped_timesteps)
+            interp_reward = func_time_v_reward(clipped_timesteps)
+
+            for i in clipped_timesteps:
+                timesteps_total_track.append(i)
+            for i in interp_eps_len:
+                episode_len_mean_track.append(i)
+            for i in interp_success:
+                success_mean_track.append(i)
+            for i in interp_reward:
+                eps_reward_mean_track.append(i)
+
+        sns.set_theme()
+        sns.set(font_scale=1.5)
+        timesteps_total_v_episode_len_mean = pd.DataFrame()
+        timesteps_total_v_episode_len_mean[key_timesteps] = timesteps_total_track
+        timesteps_total_v_episode_len_mean[key_eps_len_mean] = episode_len_mean_track
+
+        timesteps_total_v_success_mean = pd.DataFrame()
+        timesteps_total_v_success_mean[key_timesteps] = timesteps_total_track
+        timesteps_total_v_success_mean['success_mean'] = success_mean_track
+
+        timesteps_total_v_episode_reward_mean = pd.DataFrame()
+        timesteps_total_v_episode_reward_mean[key_timesteps] = timesteps_total_track
+        timesteps_total_v_episode_reward_mean['episode_reward_mean'] = eps_reward_mean_track
+
+        success_mean_plot = sns.relplot(data=timesteps_total_v_success_mean,x='timesteps_total',y='success_mean',kind='line')
+        success_mean_plot.set_axis_labels("Timesteps","Success Rate")
+
+        episode_mean_len_plot = sns.relplot(data=timesteps_total_v_episode_len_mean,x='timesteps_total',y='episode_len_mean',kind='line')
+        episode_mean_len_plot.set_axis_labels("Timesteps","Episode Length")
+
+        reward_plot = sns.relplot(data=timesteps_total_v_episode_reward_mean,x='timesteps_total',y='episode_reward_mean',kind='line')
+        reward_plot.set_axis_labels("Timesteps","Average Return")
+
+        episode_mean_len_plot.savefig('docking2d_eps_len_plot.png',dpi=1200)
+        success_mean_plot.savefig('docking2d_success_mean.png',dpi=1200)
+        reward_plot.savefig('docking2d_reward_graph.png',dpi=1200)
+
+    
 
 
 
