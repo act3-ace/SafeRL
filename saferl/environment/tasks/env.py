@@ -1,3 +1,4 @@
+import time
 import random
 import numpy as np
 import gym
@@ -59,17 +60,21 @@ class BaseEnv(gym.Env):
         if not has_success_processor:
             self.status_manager.processors.append(NeverSuccessStatusProcessor())
 
+        # Point of interest - 1
         # Get environment objects and initializers
         self.sim_state.agent, self.sim_state.env_objs, self.initializers = setup_env_objs_from_config(
             config=env_config,
             default_initializer=RandBoundsInitializer)
 
+        # Point of interest - 2
         # Setup action and observation space
         self._setup_action_space()
         self._setup_obs_space()
-
         # Reset environment
         self.reset()
+
+        # time needs to be set here
+        self.time_start = time.time()
 
     def seed(self, seed=None):
         np.random.seed(seed)
@@ -95,8 +100,14 @@ class BaseEnv(gym.Env):
 
         self._step_sim(action)
 
-        self.sim_state.status = self._generate_status()
+        # update time metrics - timesteps and time_elapsed
+        current_time = time.time()
+        elapsed_time = current_time - self.time_start
+        self.time_elapsed = elapsed_time
+        self.timesteps_elapsed += self.step_size
 
+        # update status and generate logs
+        self.sim_state.status = self._generate_status()
         reward = self._generate_reward()
         obs = self._generate_obs()
         info = self.generate_info()
@@ -106,6 +117,7 @@ class BaseEnv(gym.Env):
             done = True
         else:
             done = False
+
 
         return obs, reward, done, info
 
@@ -175,7 +187,9 @@ class BaseEnv(gym.Env):
             'success': self.status['success'],
             'status': self.status,
             'reward': self.reward_manager.generate_info(),
-            'timestep_size': self.step_size
+            'timestep_size': self.step_size,
+            'timesteps_elapsed': self.timesteps_elapsed,
+            'time_elapsed': self.time_elapsed
         }
 
         for obj_name in self.env_objs:
@@ -207,10 +221,31 @@ class BaseEnv(gym.Env):
     def agent(self, val):
         self.sim_state.agent = val
 
+    @property
+    def time_elapsed(self):
+        return self.sim_state.time_elapsed
+
+    @time_elapsed.setter
+    def time_elapsed(self,val):
+        self.sim_state.time_elapsed = val
+
+    @property
+    def timesteps_elapsed(self):
+        return self.sim_state.timesteps_elapsed
+
+    @timesteps_elapsed.setter
+    def timesteps_elapsed(self,val):
+        self.sim_state.timesteps_elapsed = val
+
+
 
 class SimulationState:
+    # add time_steps
+    # add time_elapsed to this object
 
     def __init__(self, env_objs=None, agent=None, status=None):
         self.env_objs = env_objs
         self.agent = agent
         self.status = status
+        self.time_elapsed = 0
+        self.timesteps_elapsed = 0
