@@ -60,21 +60,17 @@ class BaseEnv(gym.Env):
         if not has_success_processor:
             self.status_manager.processors.append(NeverSuccessStatusProcessor())
 
-        # Point of interest - 1
         # Get environment objects and initializers
         self.sim_state.agent, self.sim_state.env_objs, self.initializers = setup_env_objs_from_config(
             config=env_config,
             default_initializer=RandBoundsInitializer)
 
-        # Point of interest - 2
         # Setup action and observation space
         self._setup_action_space()
         self._setup_obs_space()
         # Reset environment
         self.reset()
 
-        # time needs to be set here
-        self.time_start = time.time()
 
     def seed(self, seed=None):
         np.random.seed(seed)
@@ -101,10 +97,8 @@ class BaseEnv(gym.Env):
         self._step_sim(action)
 
         # update time metrics - timesteps and time_elapsed
-        current_time = time.time()
-        elapsed_time = current_time - self.time_start
-        self.time_elapsed = elapsed_time
-        self.timesteps_elapsed += self.step_size
+        self.time_elapsed += self.step_size
+        self.timesteps_elapsed += 1
 
         # update status and generate logs
         self.sim_state.status = self._generate_status()
