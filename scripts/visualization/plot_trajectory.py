@@ -28,7 +28,7 @@ DEFAULT_OUTPUT = "/figures/data"
 DEFAULT_TASK = "docking"
 DEFAULT_MARKER_FREQ = 50
 DEFAULT_CKPTS = [0, 1, 2, 3, 4]
-DEFAULT_EXPR_INDEX = 6
+DEFAULT_TRIAL_INDEX = 6
 
 
 def get_args():
@@ -55,7 +55,7 @@ def get_args():
                         help="The frequency directional markers are drawn along trajectory lines.")
     parser.add_argument('--checkpoints', type=int, nargs="+", default=DEFAULT_CKPTS,
                         help="A list of checkpoint indices, from the experiment directory, to plot.")
-    parser.add_argument('--expr_index', type=int, default=DEFAULT_EXPR_INDEX,
+    parser.add_argument('--trial_index', type=int, default=DEFAULT_TRIAL_INDEX,
                         help="The index corresponding to the desired experiment to load. "
                              "Use when multiple experiments are run by Tune.")
     parser.add_argument('--alt_env_config', type=str, default=None,
@@ -279,7 +279,7 @@ def main():
     expr_dir_path = args.dir
 
     # locate checkpoints
-    expr_dir_path = verify_experiment_dir(expr_dir_path, experiment_index=args.expr_index)
+    expr_dir_path = verify_experiment_dir(expr_dir_path, trial_index=args.trial_index)
     ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"),
                        key=lambda ckpt_dir_name: int(ckpt_dir_name.split("_")[-1]))
 
