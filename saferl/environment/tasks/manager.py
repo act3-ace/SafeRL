@@ -48,7 +48,7 @@ class ObservationManager(Manager):
         manager_low = np.concatenate(processor_lows)
         manager_high = np.concatenate(processor_highs)
 
-        self.observation_space = gym.spaces.Box(low=manager_low, high=manager_high)
+        self.observation_space = gym.spaces.Box(low=manager_low, high=manager_high, dtype=np.float64)
 
     def reset(self, sim_state):
         super().reset(sim_state)
