@@ -1,4 +1,3 @@
-import time
 import random
 import numpy as np
 import gym
@@ -71,7 +70,6 @@ class BaseEnv(gym.Env):
         # Reset environment
         self.reset()
 
-
     def seed(self, seed=None):
         np.random.seed(seed)
         # note that python random should not be used (use numpy random instead)
@@ -111,7 +109,6 @@ class BaseEnv(gym.Env):
             done = True
         else:
             done = False
-
 
         return obs, reward, done, info
 
@@ -220,7 +217,7 @@ class BaseEnv(gym.Env):
         return self.sim_state.time_elapsed
 
     @time_elapsed.setter
-    def time_elapsed(self,val):
+    def time_elapsed(self, val):
         self.sim_state.time_elapsed = val
 
     @property
@@ -228,15 +225,11 @@ class BaseEnv(gym.Env):
         return self.sim_state.timesteps_elapsed
 
     @timesteps_elapsed.setter
-    def timesteps_elapsed(self,val):
+    def timesteps_elapsed(self, val):
         self.sim_state.timesteps_elapsed = val
 
 
-
 class SimulationState:
-    # add time_steps
-    # add time_elapsed to this object
-
     def __init__(self, env_objs=None, agent=None, status=None):
         self.env_objs = env_objs
         self.agent = agent
