@@ -67,6 +67,7 @@ class BaseEnv(gym.Env):
         # Setup action and observation space
         self._setup_action_space()
         self._setup_obs_space()
+
         # Reset environment
         self.reset()
 
@@ -120,6 +121,7 @@ class BaseEnv(gym.Env):
         self.sim_state.status = self.status_manager.reset(self.sim_state)
         self.reward_manager.reset(self.sim_state)
         self.observation_manager.reset(self.sim_state)
+        self.reset_time()
 
         # generate reset state observations
         obs = self._generate_obs()
@@ -227,6 +229,10 @@ class BaseEnv(gym.Env):
     @timesteps_elapsed.setter
     def timesteps_elapsed(self, val):
         self.sim_state.timesteps_elapsed = val
+
+    def reset_time(self):
+        self.time_elapsed = 0
+        self.timesteps_elapsed = 0
 
 
 class SimulationState:
