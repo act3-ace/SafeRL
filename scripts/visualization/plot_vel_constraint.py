@@ -48,7 +48,7 @@ def get_args():
     parser.add_argument('--only_plot', action="store_true",
                         help="If evaluation data already generated and user needs quick plot generation.")
     parser.add_argument('--checkpoints', type=int, nargs="+", default=DEFAULT_CKPTS,
-                        help="A list of 5 checkpoints, by index in experiment directory, to plot.")
+                        help="A list of checkpoint indices, from the experiment directory, to plot.")
     parser.add_argument('--alt_env_config', type=str, default=None,
                         help="The path to an alternative config from which to run all trajectory episodes.")
 
@@ -93,22 +93,25 @@ def plot_data(data,
 
     # create color map + set scale
     cmap = plt.cm.get_cmap('plasma')  # cool, spring
-    max_iter_num = 0
-    for iter_num in data:
-        if iter_num > max_iter_num:
-            max_iter_num = iter_num
 
     # plot each eval
     line_num = 0
+    longest_episode_len = 0
+    longest_episode = None
     for iter_num in sorted(list(data.keys())):
         # get color
         line_num += 1
-        color = cmap(line_num / 5)
+        color = cmap(line_num / len(data))
 
         ax.plot(data[iter_num]['distance'], data[iter_num]['velocity'], color=color)
 
+        # record longest episode
+        if len(data[iter_num]['distance']) > longest_episode_len:
+            longest_episode = iter_num
+            longest_episode_len = len(data[iter_num]["distance"])
+
     # plot vel limit
-    ax.plot(data[max_iter_num]['distance'], data[max_iter_num]['vel_limit'], color="black", linestyle='--')
+    ax.plot(data[longest_episode]['distance'], data[longest_episode]['vel_limit'], color="black", linestyle='--')
 
     axes_font_dict = {
         'fontstyle': 'italic',

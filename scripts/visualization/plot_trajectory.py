@@ -23,7 +23,6 @@ from saferl.environment.utils import YAMLParser, build_lookup
 
 
 # Define Defaults
-DEFAULT_NUM_CKPTS = 5
 DEFAULT_SEED = 33
 DEFAULT_OUTPUT = "/figures/data"
 DEFAULT_TASK = "docking"
@@ -44,7 +43,6 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir', type=str, default="", help="The path to the experiment directory", required=True)
-    # parser.add_argument('--num_ckpts', type=int, default=DEFAULT_NUM_CKPTS, help="Number of checkpoints to plot")
     parser.add_argument('--seed', type=int, default=DEFAULT_SEED,
                         help="The seed used to initialize the evaluation environment")
     parser.add_argument('--output', type=str, default=DEFAULT_OUTPUT,
@@ -56,7 +54,7 @@ def get_args():
     parser.add_argument('--marker_freq', type=int, default=DEFAULT_MARKER_FREQ,
                         help="The frequency directional markers are drawn along trajectory lines.")
     parser.add_argument('--checkpoints', type=int, nargs="+", default=DEFAULT_CKPTS,
-                        help="A list of 5 checkpoints, by index in experiment directory, to plot.")
+                        help="A list of checkpoint indices, from the experiment directory, to plot.")
     parser.add_argument('--expr_index', type=int, default=DEFAULT_EXPR_INDEX,
                         help="The index corresponding to the desired experiment to load. "
                              "Use when multiple experiments are run by Tune.")
@@ -157,10 +155,6 @@ def plot_data(data,
 
     # create color map + set scale
     cmap = plt.cm.get_cmap('plasma')        # cool, spring
-    max_iter_num = 0
-    for iter_num in data:
-        if iter_num > max_iter_num:
-            max_iter_num = iter_num
 
     # plot each trajectory onto figure
     longest_episode = None
@@ -168,9 +162,8 @@ def plot_data(data,
     line_num = 0
     for iter_num in sorted(list(data.keys())):
         # get color
-        # color = cmap(iter_num / max_iter_num)
         line_num += 1
-        color = cmap(line_num / 5)
+        color = cmap(line_num / len(data))
 
         # plot each agent trajectory
         ax.plot(data[iter_num][agent]['x'], data[iter_num][agent]['y'], color=color)
