@@ -106,14 +106,17 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
                     env.render()
 
 
-def verify_experiment_dir(expr_dir_path, experiment_index=None):
+def verify_experiment_dir(expr_dir_path, trial_index=None):
     """
     A function to ensure passed path points to experiment run directory (as opposed to the parent directory).
 
     Parameters
     ----------
     expr_dir_path : str
-        The full path to the experiment directory as received from arguments
+        The full path to the experiment directory as received from arguments.
+    trial_index : int
+        The index of the trial directory to return, given experiment directory was the result of a Tune run with
+        multiple trials.
 
     Returns
     -------
@@ -124,7 +127,8 @@ def verify_experiment_dir(expr_dir_path, experiment_index=None):
     params_file = "/params.pkl"
     given = glob(expr_dir_path + params_file)
     # look for params in child dirs
-    children = glob(expr_dir_path + "/*" + params_file)
+    children = sorted(glob(expr_dir_path + "/*" + params_file),
+                      key=lambda trial_dir_path: int(trial_dir_path.split("/")[-2].split("_")[4]))
 
     if len(given) == 0:
         # params file not in given dir
@@ -132,20 +136,16 @@ def verify_experiment_dir(expr_dir_path, experiment_index=None):
             raise InvalidExperimentDirStructure("No params.pkl file found!")
         elif len(children) > 1:
             # handle multiple episodes
-            if experiment_index:
-                # match expr_num to file name in children
-                for file_name in children:
-                    file_name = file_name[len(expr_dir_path):]
-                    file_name_fields = file_name.split("_")
-                    if experiment_index == int(file_name_fields[4]):
-                        file_name = file_name[:len(file_name) - len(params_file)]
-                        expr_dir_path += file_name
-                        return expr_dir_path
-
-                raise ValueError("No experiment directory corresponding to index {} was found!"
-                                 .format(experiment_index))
+            if trial_index:
+                if trial_index < len(children) and trial_index >= -len(children):
+                    file_name = children[trial_index]
+                    expr_dir_path = file_name[:len(file_name) - len(params_file)]
+                    return expr_dir_path
+                else:
+                    raise ValueError("No trial directory corresponding to index {} was found!"
+                                     .format(trial_index))
             else:
-                # take first expr in children
+                # take first trial in children
                 size = len(children[0])
                 expr_dir_path = children[0][:size - len(params_file)]
         else:

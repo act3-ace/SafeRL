@@ -27,6 +27,7 @@ DEFAULT_SEED = 0
 DEFAULT_OUTPUT = "/figures/limit_data"
 DEFAULT_TASK = "docking"
 DEFAULT_CKPTS = [0, 1, 2, 3, 4]
+DEFAULT_TRIAL_INDEX = 0
 
 
 def get_args():
@@ -51,6 +52,9 @@ def get_args():
                         help="A list of checkpoint indices, from the experiment directory, to plot.")
     parser.add_argument('--alt_env_config', type=str, default=None,
                         help="The path to an alternative config from which to run all trajectory episodes.")
+    parser.add_argument('--trial_index', type=int, default=DEFAULT_TRIAL_INDEX,
+                        help="The index corresponding to the desired experiment to load. "
+                             "Use when multiple trials are run by Tune.")
 
     return parser.parse_args()
 
@@ -152,7 +156,7 @@ def main():
     expr_dir_path = args.dir
 
     # locate checkpoints
-    expr_dir_path = verify_experiment_dir(expr_dir_path)
+    expr_dir_path = verify_experiment_dir(expr_dir_path, trial_index=args.trial_index)
     ckpt_dirs = sorted(glob(expr_dir_path + "/checkpoint_*"),
                        key=lambda ckpt_dir_name: int(ckpt_dir_name.split("_")[-1]))
 
