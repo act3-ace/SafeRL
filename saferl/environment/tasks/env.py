@@ -123,7 +123,6 @@ class BaseEnv(gym.Env):
         self.reward_manager.reset(self.sim_state)
         self.observation_manager.reset(self.sim_state)
 
-
         # generate reset state observations
         obs = self._generate_obs()
 
