@@ -22,7 +22,7 @@ class DockingObservationProcessor(ObservationProcessor):
         # add normalization + clipping
         if not self.has_normalization:
             if self.mode == '2d':
-                self._add_normalization([1000, 1000, 10, 10])
+                self._add_normalization([100, 100, .5, .5, 1, 1])
             elif self.mode == '3d':
                 self._add_normalization([1000, 1000, 1000, 10, 10, 10])
 
@@ -31,7 +31,7 @@ class DockingObservationProcessor(ObservationProcessor):
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         elif self.mode == '3d':
             observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         else:
