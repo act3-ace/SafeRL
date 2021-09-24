@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
+from saferl.environment.utils import vec2magnorm
 
 
 # --------------------- Observation Processors ------------------------
@@ -53,11 +54,6 @@ class DubinsObservationProcessor(ObservationProcessor):
 
         return observation_space
 
-    def vec2magnorm(self, vec):
-        norm = np.linalg.norm(vec)
-        mag_norm_vec = np.concatenate(([norm], vec / norm))
-        return mag_norm_vec
-
     def _process(self, sim_state):
 
         wingman_lead_r = sim_state.env_objs[self.lead].position - sim_state.env_objs[self.wingman].position
@@ -83,11 +79,11 @@ class DubinsObservationProcessor(ObservationProcessor):
         lead_vel = lead_vel[0:2]
 
         if self.mode == 'magnorm':
-            wingman_lead_r = self.vec2magnorm(wingman_lead_r)
-            wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
+            wingman_lead_r = vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 
-            wingman_vel = self.vec2magnorm(wingman_vel)
-            lead_vel = self.vec2magnorm(lead_vel)
+            wingman_vel = vec2magnorm(wingman_vel)
+            lead_vel = vec2magnorm(lead_vel)
 
         obs = np.concatenate([
             wingman_lead_r,
@@ -144,11 +140,6 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 
         return observation_space
 
-    def vec2magnorm(self, vec):
-        norm = np.linalg.norm(vec)
-        mag_norm_vec = np.concatenate(([norm], vec / norm))
-        return mag_norm_vec
-
     def _process(self, sim_state):
         wingman_lead_r = sim_state.env_objs[self.lead].position - sim_state.env_objs[self.wingman].position
         wingman_rejoin_r = sim_state.env_objs[self.rejoin_region].position - sim_state.env_objs[self.wingman].position
@@ -167,11 +158,11 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         lead_vel = reference_rotation.apply(lead_vel)
 
         if self.mode == 'magnorm':
-            wingman_lead_r = self.vec2magnorm(wingman_lead_r)
-            wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
+            wingman_lead_r = vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 
-            wingman_vel = self.vec2magnorm(wingman_vel)
-            lead_vel = self.vec2magnorm(lead_vel)
+            wingman_vel = vec2magnorm(wingman_vel)
+            lead_vel = vec2magnorm(lead_vel)
 
         # gamma and roll for 3d orientation info
         roll = np.array([sim_state.env_objs[self.wingman].roll], dtype=np.float64)
