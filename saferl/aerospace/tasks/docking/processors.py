@@ -40,7 +40,9 @@ class DockingObservationProcessor(ObservationProcessor):
         return observation_space
 
     def _process(self, sim_state):
-        obs = sim_state.env_objs[self.deputy].state.vector
+        obs = np.copy(sim_state.env_objs[self.deputy].state.vector)
+        obs = np.append(obs, np.linalg.norm(sim_state.env_objs[self.deputy].velocity))
+        obs = np.append(obs, sim_state.status['max_vel_limit'])
         return obs
 
 

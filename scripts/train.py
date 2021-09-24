@@ -6,6 +6,7 @@ from datetime import datetime
 
 import ray
 from ray import tune
+from ray.tune.logger import TBXLoggerCallback
 
 import ray.rllib.agents.ppo as ppo
 
@@ -205,7 +206,7 @@ def main(args):
 
             tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
-                     restore=args.restore)
+                     restore=args.restore, callbacks=[TBXLoggerCallback()])
     else:
         # Setup experiment
         expr_name, config = experiment_setup(args=args)
