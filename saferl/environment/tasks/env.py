@@ -241,5 +241,6 @@ class SimulationState:
         self.timesteps_elapsed = 0
 
     def reset(self):
+        self.status = None
         self.time_elapsed = 0
         self.timesteps_elapsed = 0
