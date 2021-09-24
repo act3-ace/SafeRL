@@ -9,9 +9,9 @@ import scipy
 import pdb
 
 
-
-
 def get_args():
+    # additional args - task := docking or rejoin , specifies the keys you want to use
+
     parser = argparse.ArgumentParser(description='reproduce paper plot script')
     parser.add_argument('--results_dir',type=str,default=None)
     args = parser.parse_args()
@@ -135,10 +135,59 @@ def make_plots(args):
         success_mean_plot.savefig('docking2d_success_mean.png',dpi=1200)
         reward_plot.savefig('docking2d_reward_graph.png',dpi=1200)
 
-    
+    else:
+        # prepare plots for the typical range e.g. eps_len, success_mean,reward_mean,return_graph
+        key_timesteps = 'timesteps_total'
+        key_eps_len_mean = 'episode_len_mean'
+        key_success_mean = 'custom_metrics/outcome/success_mean'
+        key_eps_reward_mean = 'episode_reward_mean'
 
+        timesteps_total_track = []
+        episode_len_mean_track = []
+        success_mean_track = []
+        eps_reward_mean_track = []
 
+        for ds in data_dfs:
+            timestep_total = ds[key_timesteps]
+            episode_len_mean = ds[key_eps_len_mean]
+            success_mean = ds[key_success_mean]
+            reward_mean = ds[key_eps_reward_mean]
 
+            for i in timestep_total:
+                timesteps_total_track.append(i)
+            for i in episode_len_mean:
+                episode_len_mean_track.append(i)
+            for i in success_mean:
+                success_mean_track.append(i)
+            for i in reward_mean:
+                eps_reward_mean_track.append(i)
+
+        sns.set_theme()
+        sns.set(font_scale=1.5)
+        timesteps_total_v_episode_len_mean = pd.DataFrame()
+        timesteps_total_v_episode_len_mean[key_timesteps] = timesteps_total_track
+        timesteps_total_v_episode_len_mean[key_eps_len_mean] = episode_len_mean_track
+
+        timesteps_total_v_success_mean = pd.DataFrame()
+        timesteps_total_v_success_mean[key_timesteps] = timesteps_total_track
+        timesteps_total_v_success_mean['success_mean'] = success_mean_track
+
+        timesteps_total_v_episode_reward_mean = pd.DataFrame()
+        timesteps_total_v_episode_reward_mean[key_timesteps] = timesteps_total_track
+        timesteps_total_v_episode_reward_mean['episode_reward_mean'] = eps_reward_mean_track
+
+        success_mean_plot = sns.relplot(data=timesteps_total_v_success_mean,x='timesteps_total',y='success_mean',kind='line')
+        success_mean_plot.set_axis_labels("Timesteps","Success Rate")
+
+        episode_mean_len_plot = sns.relplot(data=timesteps_total_v_episode_len_mean,x='timesteps_total',y='episode_len_mean',kind='line')
+        episode_mean_len_plot.set_axis_labels("Timesteps","Episode Length")
+
+        reward_plot = sns.relplot(data=timesteps_total_v_episode_reward_mean,x='timesteps_total',y='episode_reward_mean',kind='line')
+        reward_plot.set_axis_labels("Timesteps","Average Return")
+
+        episode_mean_len_plot.savefig('docking2d_eps_len_plot.png',dpi=1200)
+        success_mean_plot.savefig('docking2d_success_mean.png',dpi=1200)
+        reward_plot.savefig('docking2d_reward_graph.png',dpi=1200)
 
     return
 
