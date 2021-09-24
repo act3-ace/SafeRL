@@ -16,15 +16,15 @@ class DockingObservationProcessor(ObservationProcessor):
         # not platform ref, string for name of deputy
         self.deputy = deputy
 
+        # add default normalization
+        if normalization is None:
+            if self.mode == '2d':
+                normalization = [100, 100, .5, .5, 1, 1]
+            elif self.mode == '3d':
+                normalization = [1000, 1000, 1000, 10, 10, 10]
+
         # Invoke parent's constructor
         super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
-        # add normalization + clipping
-        if not self.has_normalization:
-            if self.mode == '2d':
-                self._add_normalization([100, 100, .5, .5, 1, 1])
-            elif self.mode == '3d':
-                self._add_normalization([1000, 1000, 1000, 10, 10, 10])
 
     def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
