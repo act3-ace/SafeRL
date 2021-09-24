@@ -29,7 +29,7 @@ def make_plots(args):
         if d == 'training_logs':
             continue
         else:
-            csv_path = logdir + '/' + d + '/' + 'progress.csv'
+            csv_path = results_dir + '/' + d + '/' + 'progress.csv'
             csv_file_tracker.append(csv_path)
 
     data_dfs = [pd.read_csv(csv_file_tracker[i]) for i in range(len(csv_file_tracker))]
@@ -37,7 +37,9 @@ def make_plots(args):
 
     # perform necessary timestep clipping -- maybe break into separate method ?
 
+    # perform clipping - START
     # first need to ensure the following: are all timesteps equal if so - no need for clipping
+    # theres something wrong here FIX IT !, maybe use the max function ? 
     perform_clipping = False
     i = 0
     max_timestep = 0
@@ -51,10 +53,13 @@ def make_plots(args):
                 perform_clipping = True
                 break
 
+                
+                
     perform_extrapolate = False
 
     clipped_time_range = None
     if perform_clipping:
+        print("Setup clipping")
         perform_extrapolate = True
         # figure out which data_dfs did not have the same time ranges
         # then figure out which one to set as the new
@@ -78,7 +83,10 @@ def make_plots(args):
 
         clipped_time_range = data_dfs[max_id_num]['timesteps_total']
 
+    # DO CLIPPPING - END 
+        
     if perform_extrapolate:
+        print("doing clip & extrapolate")
         timesteps_total_track = []
         episode_len_mean_track = []
         success_mean_track = []
@@ -136,6 +144,7 @@ def make_plots(args):
         reward_plot.savefig('docking2d_reward_graph.png',dpi=1200)
 
     else:
+        print("Normal procedure")
         # prepare plots for the typical range e.g. eps_len, success_mean,reward_mean,return_graph
         key_timesteps = 'timesteps_total'
         key_eps_len_mean = 'episode_len_mean'
