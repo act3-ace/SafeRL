@@ -22,9 +22,9 @@ class DockingObservationProcessor(ObservationProcessor):
         # add normalization + clipping
         if not self.has_normalization:
             if self.mode == '2d':
-                self.norm_const = np.array([1000, 1000, 10, 10])
+                self._add_normalization([1000, 1000, 10, 10])
             elif self.mode == '3d':
-                self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
+                self._add_normalization([1000, 1000, 1000, 10, 10, 10])
 
     def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
@@ -41,7 +41,6 @@ class DockingObservationProcessor(ObservationProcessor):
 
     def _process(self, sim_state):
         obs = sim_state.env_objs[self.deputy].state.vector
-        obs = obs / self.norm_const
         return obs
 
 
