@@ -118,10 +118,11 @@ class BaseEnv(gym.Env):
         self._initialize()
 
         # reset processor objects and status
+        self.sim_state.reset()
         self.sim_state.status = self.status_manager.reset(self.sim_state)
         self.reward_manager.reset(self.sim_state)
         self.observation_manager.reset(self.sim_state)
-        self.sim_state.reset()
+
 
         # generate reset state observations
         obs = self._generate_obs()
