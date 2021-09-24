@@ -161,9 +161,7 @@ class Rotate(PostProcessor):
 class MagNorm(PostProcessor):
     def __call__(self, input_array, sim_state):
         # assumes entire input_array is the standard repr (aka "rect")
-
-        norm = np.linalg.norm(input_array)
-        mag_norm_array = np.concatenate(([norm], input_array / norm))
+        mag_norm_array = vec2magnorm(input_array)
 
         return mag_norm_array
 
@@ -221,3 +219,9 @@ class DefineBounds(PostProcessor):
             obs_space.low = self.low
         else:
             raise ValueError("The shape of the given bounds do not align with the shape of the observation space!")
+
+
+def vec2magnorm(vec):
+    norm = np.linalg.norm(vec)
+    mag_norm_vec = np.concatenate(([norm], vec / norm))
+    return mag_norm_vec

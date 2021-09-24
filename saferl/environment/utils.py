@@ -280,9 +280,3 @@ def is_jsonable(object):
         return OverflowError
     except ValueError:
         return ValueError
-
-
-def vec2magnorm(vec):
-    norm = np.linalg.norm(vec)
-    mag_norm_vec = np.concatenate(([norm], vec / norm))
-    return mag_norm_vec
