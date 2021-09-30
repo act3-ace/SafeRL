@@ -6,8 +6,8 @@ import seaborn as sns
 import scipy
 import scipy.interpolate as interpolate
 
-def data_frame_processing(args):
-    results_dir = args.results_dir
+def data_frame_processing(logdir):
+    results_dir = logdir
     all_subdirs = next(os.walk(results_dir))[1]
 
     # preprocessing logic
@@ -37,31 +37,6 @@ def data_frame_processing(args):
 
     return data_dfs, exper_name
 
-# how should clip_method be specified ?
-def perform_timestep_clipping(clip_method,data_dfs):
-    # 3 cases , clip to upper bound , clip to shortest trajectory, specified trajectory
-    clipped_timesteps = None
-
-    # fine
-    if args.clip_short_traj:
-        check_pos = data_dfs[0].shape[0] -1
-        per_df_max_timesteps = [ds.iloc[[check_pos]]['timesteps_total'] for ds in data_dfs]
-        min_df_total_timesteps = np.argmin(per_df_max_timesteps)
-
-        check_max_pos_row = data_dfs[min_df_total_timesteps].shape[0]-1
-        timestep_total_min = data_dfs[min_df_total_timesteps].iloc[[check_max_pos_row]]['timesteps_total']
-        clipped_timesteps = np.array(list(range(timestep_total_min)))
-    # needs its own argument
-    elif args.clip_to_upper_bound != None:
-        upper_bound = args.clip_to_upper_bound
-        clipped_timesteps = np.array(list(range(int(upper_bound)+1)))
-    # needs
-    elif args.clip_to_bounds != None:
-        bounds = args.clip_to_bounds
-        lower_bound, upper_bound = bounds
-        clipped_timesteps = np.array(list(range(lower, upper_bound+1)))
-
-    return clipped_timesteps
 
 def find_quantity_handle(quantity,data_dfs):
     look_quantity = quantity.lower()
@@ -76,83 +51,86 @@ def find_quantity_handle(quantity,data_dfs):
 
     return quantity_handle
 
-# make a general clipping function
-# make a general plot function , x vs y
 
-def general_clip():
-    return
 
-def plot_quantity1_v_quantity2():
-    return
+# how should clip_method be specified ?
+def clip(q1,data_dfs,clip_method):
+    # 3 cases , clip to upper bound , clip to shortest trajectory, specified trajectory
+    clipped_timesteps = None
+    # need q1 handle
+    q1_handle = find_quantity_handle(q1,data_dfs)
 
-def plot_timesteps_v_quantity(data_dfs,quantity,exper_name):
-    quantity_handle = find_quantity_handle(quantity,data_dfs)
+    if clip_method == 'short_traj':
+        check_pos = data_dfs[0].shape[0] -1
+        per_df_max_timesteps = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
+        min_df_pos = np.argmin(per_df_max_vals)
+
+        check_max_pos_row = data_dfs[min_df_pos].shape[0]-1
+        q1_min = data_dfs[min_df_pos].iloc[[check_max_pos_row]][q1_handle]
+        clipped_timesteps = np.array(list(range(q1_min)))
+    # needs its own argument
+    elif type(clip_method) == int:
+        # clip to an upper bound
+        upper_bound = clip_method
+        clipped_timesteps = np.array(list(range(int(upper_bound)+1)))
+    elif type(clip_method) == tuple:
+        bounds = clip_method
+        lower_bound, upper_bound = bounds
+        clipped_timesteps = np.array(list(range(lower, upper_bound+1)))
+
+    return clipped_timesteps
+
+
+def plot_quantity1_v_quantity2(data_dfs,q1,q2,clip_method):
+    q1_handle = find_quantity_handle(q1,data_dfs)
+    q2_handle = find_quantity_handle(q2,data_dfs)
     # need to look through df.columns to get appropriate handle
+    interp = False
+    if clip_method is not None:
+        interp = True
+        clipped_q1 = clip(clip_method,data_dfs,q1)
 
-    timesteps_total_track = []
-    quantity_track = []
+
+    q1_track = []
+    q2_track = []
+
 
     for ds in data_dfs:
-        timestep_total = ds['timesteps_total']
-        quantity = ds[quantity_handle]
+        q1_value = ds[q1_handle]
+        q2_value = ds[quantity_handle]
 
-        for i in timestep_total:
-            timesteps_total_track.append(i)
-        for i in quantity:
-            quantity_track.append(i)
+        if interp:
+            func_q1_v_q2 = interpolate.interp1d(q1_value,q2_value,fill_value='extrapolate')
+
+            q2_value = func_time_v_quantity(clipped_q1)
+
+            for i in q1_clipped:
+                q1_track.append(i)
+        else:
+            for i in q1_value:
+                q1_track.append(i)
+
+        for i in q2_value:
+            q2_track.append(i)
 
     graph_data = pd.DataFrame()
-    graph_data['timesteps'] = timesteps_total_track
-    graph_data[quantity] = episode_len_mean_track
+    graph_data[q1] = q1_track
+    graph_data[q2] = q2_track
 
-    plot = sns.relplot(data=graph_data,x='timesteps',y=quantity,kind='line')
-    plot.set_axis_labels("Timesteps",quantity)
+    plot = sns.relplot(data=graph_data,x=q1,y=q2,kind='line')
+    plot.set_axis_labels(q1,q2)
 
     # save figure here itself
-    save_file = exper_name + 'timesteps' + '_v_' + quantity + '.png'
+    save_file =  q1 + '_v_' + q2 + '.png'
     plot.savefig(save_file,dpi=1200)
 
     return plot
-
-# this function is used alongside clipping,
-# timesteps should be set based on the clipping needed
-def plot_interp_time_v_quantity(data_dfs,quantity,exper_name,clipped_timesteps):
-    quantity_handle = find_quantity_handle(quantity,data_dfs)
-    # need to look through df.columns to get appropriate handle
-
-    timesteps_total_track = []
-    quantity_track = []
-
-    for ds in data_dfs:
-        timestep_total = ds['timesteps_total']
-        quantity = ds[quantity_handle]
-
-        func_time_v_quantity = interpolate.interp1d(timestep_total,quantity,fill_value='extrapolate')
-
-        interp_quantity = func_time_v_quantity(clipped_timesteps)
-
-        for i in clipped_timesteps:
-            timesteps_total_track.append(i)
-        for i in interp_quantity:
-            quantity_track.append(i)
-
-    graph_data = pd.DataFrame()
-    graph_data['timesteps'] = timesteps_total_track
-    graph_data[quantity] = quantity_track
-
-    plot = sns.relplot(data=graph_data,x='timesteps',y=quantity,kind='line')
-    plot.set_axis_labels("Timesteps",quantity)
-
-    # save figure here itself
-    save_file = exper_name + 'timesteps' + '_v_' + quantity + '.png'
-    plot.savefig(save_file,dpi=1200)
-
-    return plot
-
 
 # general graph function
 # needs logdir
 # set of quantities
 # pass clipping method
-def graph():
-    return
+def graph_q1_v_q2(logdir,q1,q2,clip_method):
+    data_dfs,exper_name = data_frame_processing(logdir)
+    plot_handle = plot_quantity1_v_quantity2(data_dfs,q1,q2,clip_method)
+    return plot_handle
