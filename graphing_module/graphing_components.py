@@ -41,6 +41,74 @@ def find_quantity_handle(quantity,data_dfs):
 
 
 
+def clip2(q1,data_dfs,clip_method):
+        """
+        Parameters:
+            q1 : str
+                name of quantity to be clipped
+            data_dfs : list of pandas dataframes
+                a list containing all the pandas dataframes that comprise the dataset
+            clip_method : str or int or tuple of ints
+                If 'string' , value must be 'short_traj' to specify clipping to the minimum bound of a quantity
+                If 'int' , quantity will be clipped will occur from (0,clip_method+1) ,
+                If a tuple of ints is passed quantity will be clipped into following range (lower_bound,upper_bound)
+
+        Returns
+            clipped_quantity: list
+                list of ints over the specified clipping bounds for a quantity
+
+        """
+
+        clipped_quantity = None
+        # need q1 handle
+        q1_handle = find_quantity_handle(q1,data_dfs)
+
+        if clip_method == 'short_traj':
+            check_pos = data_dfs[0].shape[0] -1
+            per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
+            min_df_pos = np.argmin(per_df_max_vals)
+
+
+            # give me the shortest trajectory of the specified quantity
+            q_short_traj = data_dfs[min_df_pos][q1_handle]
+
+            # set value
+            clipped_quantity = np.array(q_short_traj)
+
+            #clipped_timesteps = np.array(list(range(q1_min)))
+        elif type(clip_method) == int:
+            # clip to an upper bound
+            upper_bound = clip_method
+
+            # find longest trajectory
+            check_pos = data_dfs[0].shape[0] -1
+            per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
+            max_df_pos = np.argmax(per_df_max_vals)
+
+            longest_trajectory_of_quantity = np.array(data_dfs[max_df_pos][q1_handle])
+
+            # now using longest trajectory of the quantity clip it to the new range
+            new_clipped_range = longest_trajectory_of_quantity[longest_trajectory_of_quantity < clip_method]
+
+            clipped_quantity = new_clipped_range
+        elif type(clip_method) == tuple:
+            # clip between bounds
+            bounds = clip_method
+            lower_bound, upper_bound = bounds
+
+            # find longest trajectory
+            check_pos = data_dfs[0].shape[0] -1
+            per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
+            max_df_pos = np.argmax(per_df_max_vals)
+
+            longest_trajectory_of_quantity = np.array(data_dfs[max_df_pos][q1_handle])
+
+            new_clipped_range = longest_trajectory_of_quantity[(longest_trajectory_of_quantity < upper_bound) and (longest_trajectory_of_quantity > lower_bound)]
+            clipped_quantity = new_clipped_range
+
+        return clipped_quantity
+
+
 def clip(q1,data_dfs,clip_method):
     """
     Parameters:
