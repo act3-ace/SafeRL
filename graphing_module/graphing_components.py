@@ -1,9 +1,10 @@
 import os
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.interpolate as interpolate
+
 
 def data_frame_processing(logdir):
     results_dir = logdir
@@ -22,7 +23,7 @@ def data_frame_processing(logdir):
     return data_dfs
 
 
-def find_quantity_handle(quantity,data_dfs):
+def find_quantity_handle(quantity, data_dfs):
     look_quantity = quantity.lower()
     quantity_handle = None
     col_names = list(data_dfs[0].columns)
@@ -31,17 +32,16 @@ def find_quantity_handle(quantity,data_dfs):
         if look_quantity in label:
             quantity_handle = label
 
-    if quantity_handle == None:
+    if quantity_handle is None:
         print("Fatal: unable to find quantity in data files, please make sure the quantity is spelled correctly")
-        print('quantity name',quantity)
+        print('quantity name', quantity)
         print(col_names)
         exit()
 
     return quantity_handle
 
 
-
-def clip(q1,data_dfs,clip_method):
+def clip(q1, data_dfs, clip_method):
         """
         Parameters:
             q1 : str
@@ -61,13 +61,12 @@ def clip(q1,data_dfs,clip_method):
 
         clipped_quantity = None
         # need q1 handle
-        q1_handle = find_quantity_handle(q1,data_dfs)
+        q1_handle = find_quantity_handle(q1, data_dfs)
 
         if clip_method == 'short_traj':
-            check_pos = data_dfs[0].shape[0] -1
+            check_pos = data_dfs[0].shape[0] - 1
             per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
             min_df_pos = np.argmin(per_df_max_vals)
-
 
             # give me the shortest trajectory of the specified quantity
             q_short_traj = data_dfs[min_df_pos][q1_handle]
@@ -80,7 +79,7 @@ def clip(q1,data_dfs,clip_method):
             upper_bound = clip_method
 
             # find longest trajectory
-            check_pos = data_dfs[0].shape[0] -1
+            check_pos = data_dfs[0].shape[0] - 1
             per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
             max_df_pos = np.argmax(per_df_max_vals)
 
@@ -96,43 +95,39 @@ def clip(q1,data_dfs,clip_method):
             lower_bound, upper_bound = bounds
 
             # find longest trajectory
-            check_pos = data_dfs[0].shape[0] -1
+            check_pos = data_dfs[0].shape[0] - 1
             per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
             max_df_pos = np.argmax(per_df_max_vals)
 
             longest_trajectory_of_quantity = np.array(data_dfs[max_df_pos][q1_handle])
-            
-            mask = np.logical_and(longest_trajectory_of_quantity < upper_bound,longest_trajectory_of_quantity > lower_bound)
-            
+
+            mask = np.logical_and(longest_trajectory_of_quantity < upper_bound, longest_trajectory_of_quantity > lower_bound)
+
             new_clipped_range = longest_trajectory_of_quantity[mask]
             clipped_quantity = new_clipped_range
 
         return clipped_quantity
 
 
-
-
-def plot_quantity1_v_quantity2(data_dfs,q1,q2,clip_method):
+def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method):
     # need to look through df.columns to get appropriate handle
-    q1_handle = find_quantity_handle(q1,data_dfs)
-    q2_handle = find_quantity_handle(q2,data_dfs)
+    q1_handle = find_quantity_handle(q1, data_dfs)
+    q2_handle = find_quantity_handle(q2, data_dfs)
 
     interp = False
     if clip_method is not None:
         interp = True
-        q1_clipped = clip(q1,data_dfs,clip_method)
-
+        q1_clipped = clip(q1, data_dfs, clip_method)
 
     q1_track = []
     q2_track = []
-
 
     for ds in data_dfs:
         q1_value = ds[q1_handle]
         q2_value = ds[q2_handle]
 
         if interp:
-            func_q1_v_q2 = interpolate.interp1d(q1_value,q2_value,fill_value='extrapolate')
+            func_q1_v_q2 = interpolate.interp1d(q1_value, q2_value, fill_value='extrapolate')
 
             q2_value = func_q1_v_q2(q1_clipped)
 
@@ -150,17 +145,18 @@ def plot_quantity1_v_quantity2(data_dfs,q1,q2,clip_method):
     graph_data[q2] = q2_track
 
     sns.set_theme()
-    plot = sns.relplot(data=graph_data,x=q1,y=q2,kind='line')
-    plot.set_axis_labels(q1,q2)
+    plot = sns.relplot(data=graph_data, x=q1, y=q2, kind='line')
+    plot.set_axis_labels(q1, q2)
 
     # save figure here itself
-    save_file =  q1 + '_v_' + q2 + '.png'
-    plot.savefig(save_file,dpi=1200)
+    save_file = q1 + '_v_' + q2 + '.png'
+    plot.savefig(save_file, dpi=1200)
 
     return plot
 
+
 # graph wrapper function
-def graph_q1_v_q2(logdir,q1,q2,clip_method):
+def graph_q1_v_q2(logdir, q1, q2, clip_method):
     data_dfs = data_frame_processing(logdir)
-    plot_handle = plot_quantity1_v_quantity2(data_dfs,q1,q2,clip_method)
+    plot_handle = plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method)
     return plot_handle
