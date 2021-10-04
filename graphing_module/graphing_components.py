@@ -41,7 +41,7 @@ def find_quantity_handle(quantity,data_dfs):
 
 
 
-def clip2(q1,data_dfs,clip_method):
+def clip(q1,data_dfs,clip_method):
         """
         Parameters:
             q1 : str
@@ -75,7 +75,6 @@ def clip2(q1,data_dfs,clip_method):
             # set value
             clipped_quantity = np.array(q_short_traj)
 
-            #clipped_timesteps = np.array(list(range(q1_min)))
         elif type(clip_method) == int:
             # clip to an upper bound
             upper_bound = clip_method
@@ -102,54 +101,15 @@ def clip2(q1,data_dfs,clip_method):
             max_df_pos = np.argmax(per_df_max_vals)
 
             longest_trajectory_of_quantity = np.array(data_dfs[max_df_pos][q1_handle])
-
-            new_clipped_range = longest_trajectory_of_quantity[(longest_trajectory_of_quantity < upper_bound) and (longest_trajectory_of_quantity > lower_bound)]
+            
+            mask = np.logical_and(longest_trajectory_of_quantity < upper_bound,longest_trajectory_of_quantity > lower_bound)
+            
+            new_clipped_range = longest_trajectory_of_quantity[mask]
             clipped_quantity = new_clipped_range
 
         return clipped_quantity
 
 
-def clip(q1,data_dfs,clip_method):
-    """
-    Parameters:
-        q1 : str
-            name of quantity to be clipped
-        data_dfs : list of pandas dataframes
-            a list containing all the pandas dataframes that comprise the dataset
-        clip_method : str or int or tuple of ints
-            if 'string' , value must be 'short_traj' to specify clipping to the minimum bound of a quantity
-            if 'int' , quantity will be clipped will occur from (0,clip_method+1) ,
-            If a tuple of ints is passed quantity will be clipped into following range (lower_bound,upper_bound)
-
-    Returns
-        clipped_quantity: list
-            list of ints over the specified clipping bounds for a quantity
-
-    """
-
-    clipped_quantity = None
-    # need q1 handle
-    q1_handle = find_quantity_handle(q1,data_dfs)
-
-    if clip_method == 'short_traj':
-        check_pos = data_dfs[0].shape[0] -1
-        per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
-        min_df_pos = np.argmin(per_df_max_vals)
-
-        check_max_pos_row = data_dfs[min_df_pos].shape[0]-1
-        q1_min = data_dfs[min_df_pos].iloc[[check_max_pos_row]][q1_handle]
-        clipped_timesteps = np.array(list(range(q1_min)))
-    elif type(clip_method) == int:
-        # clip to an upper bound
-        upper_bound = clip_method
-        clipped_quantity = np.array(list(range(int(upper_bound)+1)))
-    elif type(clip_method) == tuple:
-        # clip between bounds
-        bounds = clip_method
-        lower_bound, upper_bound = bounds
-        clipped_quantity = np.array(list(range(lower, upper_bound+1)))
-
-    return clipped_quantity
 
 
 def plot_quantity1_v_quantity2(data_dfs,q1,q2,clip_method):
