@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 from saferl.environment.tasks.processor import RewardProcessor
 
@@ -66,12 +67,12 @@ class DistanceExponentialChangeRewardProcessor(RewardProcessor):
         self.target = target
         self.a = math.log(2)/initial_distance
         self.c = c
-        self.prev_dist = 0
-        self.curr_dist = 0
+        self.prev_dist = math.inf
+        self.curr_dist = math.inf
 
     def reset(self, sim_state):
-        self.prev_dist = 0
-        self.curr_dist = 0
+        self.prev_dist = math.inf
+        self.curr_dist = math.inf
 
     def _increment(self, sim_state, step_size):
         # update distances
