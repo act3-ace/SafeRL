@@ -219,9 +219,3 @@ class DefineBounds(PostProcessor):
             obs_space.low = self.low
         else:
             raise ValueError("The shape of the given bounds do not align with the shape of the observation space!")
-
-
-def vec2magnorm(vec):
-    norm = np.linalg.norm(vec)
-    mag_norm_vec = np.concatenate(([norm], vec / norm))
-    return mag_norm_vec
