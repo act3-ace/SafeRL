@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
-from saferl.environment.tasks.processor.post_processors import vec2magnorm
+from saferl.environment.utils import vec2magnorm
 
 
 # --------------------- Observation Processors ------------------------
