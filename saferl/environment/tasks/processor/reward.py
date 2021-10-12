@@ -61,11 +61,19 @@ class ProportionalRewardProcessor(RewardProcessor):
 
 
 class DistanceExponentialChangeRewardProcessor(RewardProcessor):
-    def __init__(self, name, c=2, a=math.log(2)/150, agent=None, target=None):
+    def __init__(self, name, c=2, a=None, pivot=None, pivot_ratio=2, agent=None, target=None):
+        # defensive checks
+        assert not (a and pivot), "Both 'a' and 'pivot' cannot be specified."
+        assert a or pivot, "Either 'a' or 'pivot' must be specified."
+
         super().__init__(name, reward=0)
         self.agent = agent
         self.target = target
-        self.a = a
+        if a:
+            self.a = a
+        else:
+            self.a = math.log(pivot_ratio)/pivot
+
         self.c = c
         self.prev_dist = math.inf
         self.curr_dist = math.inf
