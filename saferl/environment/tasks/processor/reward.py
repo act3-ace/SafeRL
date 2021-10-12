@@ -61,18 +61,19 @@ class ProportionalRewardProcessor(RewardProcessor):
 
 
 class DistanceExponentialChangeRewardProcessor(RewardProcessor):
-    def __init__(self, name, c=2, initial_distance=150, agent=None, target=None):
+    def __init__(self, name, c=2, a=math.log(2)/150, agent=None, target=None):
         super().__init__(name, reward=0)
         self.agent = agent
         self.target = target
-        self.a = math.log(2)/initial_distance
+        self.a = a
         self.c = c
         self.prev_dist = math.inf
         self.curr_dist = math.inf
 
     def reset(self, sim_state):
-        self.prev_dist = math.inf
-        self.curr_dist = math.inf
+        dist = sim_state.env_objs[self.target].position - sim_state.env_objs[self.agent].position
+        self.prev_dist = np.linalg.norm(dist)
+        self.curr_dist = np.linalg.norm(dist)
 
     def _increment(self, sim_state, step_size):
         # update distances
@@ -82,4 +83,4 @@ class DistanceExponentialChangeRewardProcessor(RewardProcessor):
         self.curr_dist = np.linalg.norm(dist)
 
     def _process(self, sim_state):
-        return self.c * (math.e ** (-self.a * self.curr_dist) - math.e ** (-self.a * self.prev_dist))
+        return self.c * (math.exp(-self.a * self.curr_dist) - math.exp(-self.a * self.prev_dist))
