@@ -220,11 +220,10 @@ def main(args):
             # Setup experiment
             expr_name, config = experiment_setup(args=args)
 
-            a = tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
+            tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
                      restore=args.restore, callbacks=[TBXLoggerCallback()],
                      num_samples=20, scheduler=scheduler, search_alg=zoopt_search, metric="episode_reward_mean", mode="max",)
-            import pdb; pdb.set_trace()
     else:
         # Setup experiment
         expr_name, config = experiment_setup(args=args)
