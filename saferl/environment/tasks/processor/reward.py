@@ -79,6 +79,7 @@ class DistanceExponentialChangeRewardProcessor(RewardProcessor):
         self.curr_dist = math.inf
 
     def reset(self, sim_state):
+        super().reset(sim_state)
         dist = sim_state.env_objs[self.target].position - sim_state.env_objs[self.agent].position
         self.prev_dist = np.linalg.norm(dist)
         self.curr_dist = np.linalg.norm(dist)
