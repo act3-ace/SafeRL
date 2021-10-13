@@ -1,3 +1,6 @@
+import math
+import numpy as np
+
 from saferl.environment.tasks.processor import RewardProcessor
 
 
@@ -55,3 +58,38 @@ class ProportionalRewardProcessor(RewardProcessor):
             reward = 0
 
         return reward
+
+
+class DistanceExponentialChangeRewardProcessor(RewardProcessor):
+    def __init__(self, name, c=2, a=None, pivot=None, pivot_ratio=2, agent=None, target=None):
+        # defensive checks
+        assert not (a and pivot), "Both 'a' and 'pivot' cannot be specified."
+        assert a or pivot, "Either 'a' or 'pivot' must be specified."
+
+        super().__init__(name, reward=0)
+        self.agent = agent
+        self.target = target
+        if a:
+            self.a = a
+        else:
+            self.a = math.log(pivot_ratio)/pivot
+
+        self.c = c
+        self.prev_dist = math.inf
+        self.curr_dist = math.inf
+
+    def reset(self, sim_state):
+        super().reset(sim_state)
+        dist = sim_state.env_objs[self.target].position - sim_state.env_objs[self.agent].position
+        self.prev_dist = np.linalg.norm(dist)
+        self.curr_dist = np.linalg.norm(dist)
+
+    def _increment(self, sim_state, step_size):
+        # update distances
+        self.prev_dist = self.curr_dist
+
+        dist = sim_state.env_objs[self.target].position - sim_state.env_objs[self.agent].position
+        self.curr_dist = np.linalg.norm(dist)
+
+    def _process(self, sim_state):
+        return self.c * (math.exp(-self.a * self.curr_dist) - math.exp(-self.a * self.prev_dist))
