@@ -97,16 +97,12 @@ env_config:
         deputy: deputy
         mode: 2d
   reward:
-    - name: time_reward
-      class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
-      config:
-        reward: 0
     - name: dist_change_reward
-      class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
+      class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
       config:
-        deputy: deputy
-        docking_region: docking_region
-        reward: -1.0e-02
+        agent: deputy
+        target: docking_region
+        pivot: 100
     - name: delta_v
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
@@ -137,3 +133,4 @@ env_config:
   verbose: false
 gamma: "!tune:uniform(0.8, 0.9999)"
 lambda: "!tune:uniform(0.9, 1)"
+seed: "!tune:choice([913840577, 993895017, 729298620])"
