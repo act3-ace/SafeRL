@@ -9,6 +9,8 @@ Author: John McCarroll
 import math
 import csv
 import seaborn as sns
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import jsonlines
 import os
@@ -250,7 +252,7 @@ def plot_data(data,
     # TODO: failure markers*
 
     # save figure
-    if not output_filename:
+    if output_filename:
         fig.savefig(output_filename)
 
     # show figure
@@ -358,7 +360,8 @@ def main():
     markers = parse_log_markers(trajectories, environment_objs, args.marker_freq)
 
     # create plot
-    output_filename = output_path + "/../figure1"
+    #output_filename = output_path + "/../figure1"
+    output_filename = "./figs/figure1.png"
     plot_data(trajectories,
               output_filename=output_filename,
               # title=title,
