@@ -143,7 +143,7 @@ def plot_data(data,
     plt.tight_layout(pad=0.5)
 
     # save figure
-    if not output_filename:
+    if output_filename:
         fig.savefig(output_filename)
 
     # show figure
@@ -215,7 +215,8 @@ def main():
     data = parse_log_trajectories(output_path, agent_name, iters)
 
     ## plot data in matplotlib
-    output_filename = output_path + "/figure1"
+    # output_filename = output_path + "/figure1"
+    output_filename = "./figs/vel_constr.png"
     plot_data(data, output_filename=output_filename, legend=iters)
 
 
