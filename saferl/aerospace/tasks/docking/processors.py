@@ -22,8 +22,8 @@ class DockingObservationProcessor(ObservationProcessor):
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
-            self.norm_const = np.array([100, 100, .5, .5])
+            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
+            self.norm_const = np.array([100, 100, .5, .5, 1, 1])
         elif self.mode == '3d':
             self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
             self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
@@ -31,7 +31,9 @@ class DockingObservationProcessor(ObservationProcessor):
             raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
 
     def _process(self, sim_state):
-        obs = sim_state.env_objs[self.deputy].state.vector
+        obs = np.copy(sim_state.env_objs[self.deputy].state.vector)
+        obs = np.append(obs, np.linalg.norm(sim_state.env_objs[self.deputy].velocity))
+        obs = np.append(obs, sim_state.status['max_vel_limit'])
         obs = obs / self.norm_const
         return obs
 
@@ -130,9 +132,10 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
 
 
 class SuccessRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, success_status=None, reward=None):
+    def __init__(self, name=None, success_status=None, reward=None, timeout=None):
         super().__init__(name=name, reward=reward)
         self.success_status = success_status
+        self.timeout = timeout
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
@@ -142,6 +145,8 @@ class SuccessRewardProcessor(RewardProcessor):
         step_reward = 0
         if sim_state.status[self.success_status]:
             step_reward = self.reward
+            if self.timeout is not None:
+                step_reward += 1 - (sim_state.time_elapsed / self.timeout)
         return step_reward
 
 
