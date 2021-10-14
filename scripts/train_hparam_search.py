@@ -193,6 +193,22 @@ def main(args):
         'training_iteration': args.stop_iteration,
     }
 
+    from ray.tune.schedulers import AsyncHyperBandScheduler
+    scheduler = AsyncHyperBandScheduler(grace_period=25, max_t=args.stop_iteration)
+
+    from ray.tune.suggest.zoopt import ZOOptSearch
+
+    zoopt_search_config = {
+        "parallel_num": 10,  # how many workers to parallel
+    }
+
+    zoopt_search = ZOOptSearch(
+        algo="Asracos",  # only support Asracos currently
+        budget=20,  # must match `num_samples` in `tune.run()`.
+        **zoopt_search_config
+    )
+
+
     # Run training
     if not args.debug:
         if args.resume:
@@ -206,7 +222,8 @@ def main(args):
 
             tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
-                     restore=args.restore, callbacks=[TBXLoggerCallback()])
+                     restore=args.restore, callbacks=[TBXLoggerCallback()],
+                     num_samples=20, scheduler=scheduler, search_alg=zoopt_search, metric="episode_reward_mean", mode="max",)
     else:
         # Setup experiment
         expr_name, config = experiment_setup(args=args)
