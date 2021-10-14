@@ -1,6 +1,7 @@
 import os
 import argparse
-import pickle5 as pickle
+# import pickle5 as pickle
+import pickle
 import jsonlines
 import tqdm
 from glob import glob
