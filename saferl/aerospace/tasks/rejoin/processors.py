@@ -124,7 +124,7 @@ class Dubins3dObservationProcessor(ObservationProcessor):
             self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,), dtype=np.float64)
             if not self.has_normalization:
                 # if no custom normalization defined
-                self._add_normalization([1000, 1, 1, 1, 10[[00, 1, 1, 1, 400, 1, 1, 1, 400, 1, 1, 1, math.pi/3, math.pi/9])
+                self._add_normalization([1000, 1, 1, 1, 1000, 1, 1, 1, 400, 1, 1, 1, 400, 1, 1, 1, math.pi/3, math.pi/9])
 
         if not self.has_clipping:
             # if no custom clipping defined
