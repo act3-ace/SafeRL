@@ -78,8 +78,7 @@ def clip(q1, data_dfs, clip_method):
             upper_bound = clip_method
 
             # find longest trajectory
-            check_pos = data_dfs[0].shape[0] - 1
-            per_df_max_vals = [ds.iloc[[check_pos]][q1_handle] for ds in data_dfs]
+            per_df_max_vals = [ds.iloc[[-1]][q1_handle] for ds in data_dfs]
             max_df_pos = np.argmax(per_df_max_vals)
 
             longest_trajectory_of_quantity = np.array(data_dfs[max_df_pos][q1_handle])
@@ -108,7 +107,12 @@ def clip(q1, data_dfs, clip_method):
         return clipped_quantity
 
 
-def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method):
+def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x_label=None, y_label=None):
+    if x_label is None:
+        x_label = q1
+    if y_label is None:
+        y_label = q2
+
     # need to look through df.columns to get appropriate handle
     q1_handle = find_quantity_handle(q1, data_dfs)
     q2_handle = find_quantity_handle(q2, data_dfs)
@@ -145,17 +149,17 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method):
 
     sns.set_theme()
     plot = sns.relplot(data=graph_data, x=q1, y=q2, kind='line')
-    plot.set_axis_labels(q1, q2)
+    plot.set_axis_labels(x_label, y_label)
 
     # save figure here itself
-    save_file = q1 + '_v_' + q2 + '.png'
+    save_file = os.path.join(output_dir, q1 + '_v_' + q2 + '.png')
     plot.savefig(save_file, dpi=1200)
 
     return plot
 
 
 # graph wrapper function
-def graph_q1_v_q2(logdir, q1, q2, clip_method):
+def graph_q1_v_q2(logdir, q1, q2, clip_method, output_dir='./', rename_map=None):
     data_dfs = data_frame_processing(logdir)
-    plot_handle = plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method)
+    plot_handle = plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir=output_dir, x_label=rename_map.get(q1, q1), y_label=rename_map.get(q2, q2),)
     return plot_handle
