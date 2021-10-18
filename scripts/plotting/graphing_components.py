@@ -125,12 +125,15 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
     q1_track = []
     q2_track = []
 
+    q1_tracks = []
+    q2_tracks = []
+
     for ds in data_dfs:
         q1_value = ds[q1_handle]
         q2_value = ds[q2_handle]
 
         if interp:
-            func_q1_v_q2 = interpolate.interp1d(q1_value, q2_value, fill_value='extrapolate')
+            func_q1_v_q2 = interpolate.interp1d(q1_value, q2_value, bounds_error=False, fill_value=(q2_value.iloc[0], q2_value.iloc[-1]))
 
             q2_value = func_q1_v_q2(q1_clipped)
 
@@ -149,11 +152,12 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
 
     sns.set_theme()
     plot = sns.relplot(data=graph_data, x=q1, y=q2, kind='line')
+    # plot = sns.relplot(data=graph_data, x=q1, y=q2, kind='scatter')
     plot.set_axis_labels(x_label, y_label)
 
     # save figure here itself
     save_file = os.path.join(output_dir, q1 + '_v_' + q2 + '.png')
-    plot.savefig(save_file, dpi=1200)
+    plot.savefig(save_file, dpi=150)
 
     return plot
 
