@@ -21,16 +21,13 @@ env_config:
         class: saferl.environment.models.platforms.AgentController
         actuators:
         - name: thrust_x
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
         - name: thrust_y
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
         - name: thrust_z
-          space: discrete
-          points: 11
+          space: continuous
           bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
@@ -108,27 +105,23 @@ env_config:
         deputy: deputy
         mode: 3d
   reward:
-    - name: time_reward
-      class: saferl.aerospace.tasks.docking.processors.TimeRewardProcessor
-      config:
-        reward: -0.001
     - name: dist_change_reward
-      class: saferl.aerospace.tasks.docking.processors.DistanceChangeRewardProcessor
+      class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
       config:
-        deputy: deputy
-        docking_region: docking_region
-        reward: -1.0e-02
+        agent: deputy
+        target: docking_region
+        pivot: 100
     - name: delta_v
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: 0   # change me
+        scale: -0.01
         bias: 0
         proportion_status: delta_v
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.001
-        bias: -0.01
+        scale: -0.1
+        bias: -0.001
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
         cond_status_invert: True
@@ -139,10 +132,13 @@ env_config:
         reward:
           crash: -1
           distance: -1
-          timeout: -5
+          timeout: -1
     - name: success_reward
       class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
       config:
-        reward: 5
+        reward: 1
         success_status: success
+        timeout: 2000
   verbose: false
+gamma: 0.968559
+lambda: 0.928544
