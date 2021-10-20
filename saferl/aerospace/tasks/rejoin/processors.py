@@ -36,9 +36,9 @@ class DubinsObservationProcessor(ObservationProcessor):
         if not self.has_normalization:
             # if no custom normalization defined
             if self.mode == 'rect':
-                self._add_normalization([10000, 10000, 10000, 10000, 100, 100, 100, 100])
+                self._add_normalization([1000, 1000, 1000, 1000, 400, 400, 400, 400])
             elif self.mode == 'magnorm':
-                self._add_normalization([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1])
+                self._add_normalization([1000, 1, 1, 1000, 1, 1, 400, 1, 1, 400, 1, 1])
 
         if not self.has_clipping:
             # if no custom clipping defined
@@ -122,9 +122,10 @@ class Dubins3dObservationProcessor(ObservationProcessor):
             # if no custom normalization defined
             if self.mode == 'rect':
                 self._add_normalization(
-                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi])
+                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi/3, math.pi/9])
             elif self.mode == 'magnorm':
-                self._add_normalization([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi])
+                self._add_normalization(
+                    [1000, 1, 1, 1, 1000, 1, 1, 1, 400, 1, 1, 1, 400, 1, 1, 1, math.pi/3, math.pi/9])
 
         if not self.has_clipping:
             # if no custom clipping defined

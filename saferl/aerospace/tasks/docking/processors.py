@@ -21,7 +21,7 @@ class DockingObservationProcessor(ObservationProcessor):
             if self.mode == '2d':
                 normalization = [100, 100, .5, .5, 1, 1]
             elif self.mode == '3d':
-                normalization = [1000, 1000, 1000, 10, 10, 10]
+                normalization = [100, 100, 100, .5, .5, .5, 1, 1]
 
         # Invoke parent's constructor
         super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
@@ -33,7 +33,7 @@ class DockingObservationProcessor(ObservationProcessor):
         if self.mode == '2d':
             observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         elif self.mode == '3d':
-            observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
         else:
             raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
 
@@ -145,9 +145,10 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
 
 
 class SuccessRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, success_status=None, reward=None):
+    def __init__(self, name=None, success_status=None, reward=None, timeout=None):
         super().__init__(name=name, reward=reward)
         self.success_status = success_status
+        self.timeout = timeout
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
@@ -157,6 +158,8 @@ class SuccessRewardProcessor(RewardProcessor):
         step_reward = 0
         if sim_state.status[self.success_status]:
             step_reward = self.reward
+            if self.timeout is not None:
+                step_reward += 1 - (sim_state.time_elapsed / self.timeout)
         return step_reward
 
 
