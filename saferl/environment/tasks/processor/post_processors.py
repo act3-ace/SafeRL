@@ -9,6 +9,8 @@ import abc
 import numpy as np
 import gym
 
+from saferl.environment.utils import vec2magnorm
+
 
 class PostProcessor:
     @abc.abstractmethod
