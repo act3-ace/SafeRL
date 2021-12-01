@@ -4,18 +4,25 @@ from scipy.spatial.transform import Rotation
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
     BaseActuatorSet, BaseLinearODESolverDynamics
+from saferl.aerospace.models.cwhspacecraft.platforms.cwh import CWH2dDynamics
 
 
 class CWHSpacecraftOriented2d(BasePlatform):
 
-    def __init__(self, name, controller=None, **kwargs):
+    def __init__(self, name, controller=None, integration_method='RK45', **kwargs):
         self.mass = 12  # kg
         self.moment = 0.056  # kg*m^2
         self.react_wheel_moment = 4.1e-5  # kg*m^2
+        self.react_wheel_ang_acc_limit = 181.3  # rad/s^2
+        self.react_wheel_ang_vel_limit = 576  # rad/s
         self.n = 0.001027  # rad/s
 
-        dynamics = CWHOriented2dDynamics(self)
-        actuator_set = CWHOriented2dActuatorSet()
+        ang_acc_limit = min(np.deg2rad(1), self.react_wheel_moment * self.react_wheel_ang_acc_limit / self.moment)
+        ang_vel_limit = min(np.deg2rad(2), self.react_wheel_moment * self.react_wheel_ang_vel_limit / self.moment)
+
+        dynamics = CWHOriented2dDynamics(
+            ang_vel_limit=ang_vel_limit, m=self.mass, n=self.n, integration_method=integration_method)
+        actuator_set = CWHOriented2dActuatorSet(ang_acc_limit=ang_acc_limit)
 
         state = CWHOriented2dState()
 
@@ -28,7 +35,6 @@ class CWHSpacecraftOriented2d(BasePlatform):
             'x_dot': self.x_dot,
             'y_dot': self.y_dot,
             'theta_dot': self.theta_dot,
-            'react_wheel_ang_vel': self.react_wheel_ang_vel
         }
 
         info_parent = super().generate_info()
@@ -52,19 +58,15 @@ class CWHSpacecraftOriented2d(BasePlatform):
     def theta_dot(self):
         return self.state.theta_dot
 
-    @property
-    def react_wheel_ang_vel(self):
-        return self.state.react_wheel_ang_vel
-
 
 class CWHOriented2dState(BasePlatformStateVectorized):
 
-    def build_vector(self, x=0, y=0, theta=0, x_dot=0, y_dot=0, theta_dot=0, react_wheel_ang_vel=0, **kwargs):
-        return np.array([x, y, theta, x_dot, y_dot, theta_dot, react_wheel_ang_vel], dtype=np.float64)
+    def build_vector(self, x=0, y=0, theta=0, x_dot=0, y_dot=0, theta_dot=0, **kwargs):
+        return np.array([x, y, theta, x_dot, y_dot, theta_dot], dtype=np.float64)
 
     @property
     def vector_shape(self):
-        return (7,)
+        return (6,)
 
     @property
     def x(self):
@@ -95,10 +97,6 @@ class CWHOriented2dState(BasePlatformStateVectorized):
         return self._vector[5]
 
     @property
-    def react_wheel_ang_vel(self):
-        return self._vector[6]
-
-    @property
     def position(self):
         position = np.zeros((3,))
         position[0:2] = self._vector[0:2]
@@ -116,16 +114,19 @@ class CWHOriented2dState(BasePlatformStateVectorized):
 
 class CWHOriented2dActuatorSet(BaseActuatorSet):
 
-    def __init__(self):
+    def __init__(self, ang_acc_limit):
+        assert isinstance(ang_acc_limit, float), "ang_acc_limit must be type float"
+        assert ang_acc_limit > 0, "ang_acc_limit must be positive"
+
         actuators = [
             ContinuousActuator(
                 'thrust',
-                [-100, 100],
+                [-1, 1],
                 0
             ),
             ContinuousActuator(
                 'reaction_wheel',
-                [-181.3, 181.3],
+                [-ang_acc_limit, ang_acc_limit],
                 0
             ),
         ]
@@ -133,28 +134,27 @@ class CWHOriented2dActuatorSet(BaseActuatorSet):
         super().__init__(actuators)
 
 
-class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
-    def __init__(self, platform, integration_method='Euler'):
-        self.platform = platform
+class CWHOriented2dDynamics(CWH2dDynamics):
+    def __init__(self, ang_vel_limit, m=12, n=0.001027, integration_method='RK45'):
+        self.ang_vel_limit = ang_vel_limit
 
-        super().__init__(integration_method=integration_method)
+        super().__init__(m=m, n=n, integration_method=integration_method)
 
     def dx(self, t, state_vec, control):
         state_cur = CWHOriented2dState(vector=state_vec, vector_deep_copy=False)
-
-        # check reaction wheel velocity limit
-        if state_cur.react_wheel_ang_vel >= 576:
-            control[1] = min(0, control[1])
-        elif state_cur.react_wheel_ang_vel <= -576:
-            control[1] = max(0, control[1])
 
         pos_vel_state_vec = np.array([state_cur.x, state_cur.y, state_cur.x_dot, state_cur.y_dot], dtype=np.float64)
 
         thrust_vector = control[0] * np.array([math.cos(state_cur.theta), math.sin(state_cur.theta)])
         pos_vel_derivative = np.matmul(self.A, pos_vel_state_vec) + np.matmul(self.B, thrust_vector)
 
-        react_wheel_ang_acc = control[1]
-        theta_dot_dot = -1 * self.platform.react_wheel_moment * react_wheel_ang_acc / self.platform.moment
+        theta_dot_dot = control[1]
+
+        # check angular velocity limit
+        if state_cur.theta_dot >= self.ang_vel_limit:
+            theta_dot_dot = min(0, theta_dot_dot)
+        elif state_cur.theta_dot <= self.ang_vel_limit:
+            theta_dot_dot = max(0, theta_dot_dot)
 
         state_derivative = CWHOriented2dState(
             x=pos_vel_derivative[0],
@@ -163,27 +163,6 @@ class CWHOriented2dDynamics(BaseLinearODESolverDynamics):
             x_dot=pos_vel_derivative[2],
             y_dot=pos_vel_derivative[3],
             theta_dot=theta_dot_dot,
-            react_wheel_ang_vel=react_wheel_ang_acc,
         )
 
         return state_derivative.vector
-
-    def gen_dynamics_matrices(self):
-        m = self.platform.mass
-        n = self.platform.n
-
-        A = np.array([
-            [0, 0, 1, 0],
-            [0, 0, 0, 1],
-            [3 * n ** 2, 0, 0, 2 * n],
-            [0, 0, -2 * n, 0],
-        ], dtype=np.float64)
-
-        B = np.array([
-            [0, 0],
-            [0, 0],
-            [1 / m, 0],
-            [0, 1 / m],
-        ], dtype=np.float64)
-
-        return A, B
