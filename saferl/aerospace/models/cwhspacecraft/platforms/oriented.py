@@ -3,25 +3,25 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseLinearODESolverDynamics
+    BaseActuatorSet
 from saferl.aerospace.models.cwhspacecraft.platforms.cwh import CWH2dDynamics
 
 
 class CWHSpacecraftOriented2d(BasePlatform):
 
-    def __init__(self, name, controller=None, integration_method='RK45', **kwargs):
-        self.mass = 12  # kg
+    def __init__(self, name, controller=None, integration_method='RK45', m = 12, n = 0.001027, **kwargs):
+        self.m = m  # kg
         self.moment = 0.056  # kg*m^2
         self.react_wheel_moment = 4.1e-5  # kg*m^2
         self.react_wheel_ang_acc_limit = 181.3  # rad/s^2
         self.react_wheel_ang_vel_limit = 576  # rad/s
-        self.n = 0.001027  # rad/s
+        self.n = n  # rad/s
 
         ang_acc_limit = min(np.deg2rad(1), self.react_wheel_moment * self.react_wheel_ang_acc_limit / self.moment)
         ang_vel_limit = min(np.deg2rad(2), self.react_wheel_moment * self.react_wheel_ang_vel_limit / self.moment)
 
         dynamics = CWHOriented2dDynamics(
-            ang_vel_limit=ang_vel_limit, m=self.mass, n=self.n, integration_method=integration_method)
+            ang_vel_limit=ang_vel_limit, m=self.m, n=self.n, integration_method=integration_method)
         actuator_set = CWHOriented2dActuatorSet(ang_acc_limit=ang_acc_limit)
 
         state = CWHOriented2dState()
@@ -72,9 +72,17 @@ class CWHOriented2dState(BasePlatformStateVectorized):
     def x(self):
         return self._vector[0]
 
+    @x.setter
+    def x(self, value):
+        self._vector[0] = value
+
     @property
     def y(self):
         return self._vector[1]
+
+    @y.setter
+    def y(self, value):
+        self._vector[1] = value
 
     @property
     def z(self):
@@ -84,17 +92,33 @@ class CWHOriented2dState(BasePlatformStateVectorized):
     def theta(self):
         return self._vector[2]
 
+    @theta.setter
+    def theta(self, value):
+        self._vector[2] = value
+
     @property
     def x_dot(self):
         return self._vector[3]
+
+    @x_dot.setter
+    def x_dot(self, value):
+        self._vector[3] = value
 
     @property
     def y_dot(self):
         return self._vector[4]
 
+    @y_dot.setter
+    def y_dot(self, value):
+        self._vector[4] = value
+
     @property
     def theta_dot(self):
         return self._vector[5]
+
+    @theta_dot.setter
+    def theta_dot(self, value):
+        self._vector[5] = value
 
     @property
     def position(self):
@@ -140,6 +164,20 @@ class CWHOriented2dDynamics(CWH2dDynamics):
 
         super().__init__(m=m, n=n, integration_method=integration_method)
 
+    def step(self, step_size, state, control):
+        state = super().step(step_size, state, control)
+
+        # enforce angular velocity limits
+        if state.theta_dot >= self.ang_vel_limit:
+            state.theta_dot = self.ang_vel_limit
+        elif state.theta_dot <= -self.ang_vel_limit:
+            state.theta_dot = -self.ang_vel_limit
+
+        # wrap angles
+        state.theta = (state.theta + np.pi) % (2*np.pi) - np.pi
+
+        return state
+
     def dx(self, t, state_vec, control):
         state_cur = CWHOriented2dState(vector=state_vec, vector_deep_copy=False)
 
@@ -153,8 +191,10 @@ class CWHOriented2dDynamics(CWH2dDynamics):
         # check angular velocity limit
         if state_cur.theta_dot >= self.ang_vel_limit:
             theta_dot_dot = min(0, theta_dot_dot)
-        elif state_cur.theta_dot <= self.ang_vel_limit:
+            state_cur.theta_dot = self.ang_vel_limit
+        elif state_cur.theta_dot <= -self.ang_vel_limit:
             theta_dot_dot = max(0, theta_dot_dot)
+            state_cur.theta_dot = -self.ang_vel_limit
 
         state_derivative = CWHOriented2dState(
             x=pos_vel_derivative[0],
