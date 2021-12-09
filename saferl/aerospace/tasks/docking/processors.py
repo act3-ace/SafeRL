@@ -1,7 +1,7 @@
 import gym.spaces
 import numpy as np
 
-from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d
+from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
 
@@ -58,14 +58,14 @@ class DockingObservationProcessorOriented(ObservationProcessor):
         if not self.has_normalization:
             if self.mode == '2d':
                 # if no custom normalization defined
-                self._add_normalization([1000, 1000, np.pi, 100, 100, 0.4, 500])
+                self._add_normalization([100, 100, np.pi, 0.5, 0.5, np.deg2rad(2), 1, 1])
 
     def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
         elif self.mode == '3d':
             raise NotImplementedError
         else:
@@ -78,6 +78,9 @@ class DockingObservationProcessorOriented(ObservationProcessor):
 
         # if self.config['mode'] == '2d':
         #     obs[2]
+
+        obs = np.append(obs, np.linalg.norm(sim_state.env_objs[self.deputy].velocity))
+        obs = np.append(obs, sim_state.status['max_vel_limit'])
 
         return obs
 
@@ -335,8 +338,13 @@ class DockingThrustDeltaVStatusProcessor(StatusProcessor):
     def _increment(self, sim_state, step_size):
         # status derived directly from simulation state. No state machine necessary
         target_platform = sim_state.env_objs[self.target]
-        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d)
+        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d) or \
+            isinstance(target_platform, CWHSpacecraftOriented2d)
         control_vec = target_platform.current_control
+        
+        if isinstance(target_platform, CWHSpacecraftOriented2d):
+            control_vec = control_vec[:-1]
+
         mass = target_platform.dynamics.m
 
         self.step_delta_v = np.sum(np.abs(control_vec)) / mass * step_size
