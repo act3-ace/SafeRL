@@ -268,7 +268,7 @@ def main(args):
                     raise ValueError(f"scheduler {scheduler} is not currently supported")
 
                 hpo_config['scheduler'] = scheduler
-            import pdb; pdb.set_trace()
+
             tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
                      restore=args.restore, callbacks=[TBXLoggerCallback()], **hpo_config)
