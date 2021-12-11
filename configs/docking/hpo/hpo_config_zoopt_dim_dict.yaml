@@ -1,0 +1,14 @@
+num_samples: 20
+metric: "episode_reward_mean"
+mode: max
+search_alg:
+  type: zoopt
+  metric: "episode_reward_mean"
+  mode: max
+  dim_dict:
+    gamma: [continuous, [0.8, 1], 1.0e-6]
+    lambda: [continuous, [0.8, 1], 1.0e-6]
+    seed: [grid, [910953884, 233390842, 490505108, 436728173, 698489089]]
+scheduler:
+  type: asha
+  max_t: 50
