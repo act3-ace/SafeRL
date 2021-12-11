@@ -10,55 +10,68 @@ from saferl.environment.models.geometry import distance
 
 class DockingObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
         # Initialize member variables from config
-
         # 2d or 3d
         self.mode = mode
         # not platform ref, string for name of deputy
         self.deputy = deputy
 
+        # add default normalization
+        if normalization is None:
+            if self.mode == '2d':
+                normalization = [100, 100, .5, .5, 1, 1]
+            elif self.mode == '3d':
+                normalization = [100, 100, 100, .5, .5, .5, 1, 1]
+
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+    def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
-            self.norm_const = np.array([100, 100, .5, .5, 1, 1])
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         elif self.mode == '3d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
-            self.norm_const = np.array([100, 100, 100, .5, .5, .5, 1, 1])
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
+
+        return observation_space
 
     def _process(self, sim_state):
         obs = np.copy(sim_state.env_objs[self.deputy].state.vector)
         obs = np.append(obs, np.linalg.norm(sim_state.env_objs[self.deputy].velocity))
         obs = np.append(obs, sim_state.status['max_vel_limit'])
-        obs = obs / self.norm_const
         return obs
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
-        # Invoke parent's constructor
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
         self.mode = mode
         self.deputy = deputy
 
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        if not self.has_normalization:
+            if self.mode == '2d':
+                # if no custom normalization defined
+                self._add_normalization([1000, 1000, np.pi, 100, 100, 0.4, 500])
+
+    def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([1000, 1000, np.pi, 100, 100, 0.4, 500])
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
         elif self.mode == '3d':
             raise NotImplementedError
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
+
+        return observation_space
 
     def _process(self, sim_state):
         obs = sim_state.env_objs[self.deputy].state.vector
