@@ -1,0 +1,5 @@
+num_samples: 20
+metric: "episode_reward_mean"
+mode: max
+search_alg:
+  type: zoopt
