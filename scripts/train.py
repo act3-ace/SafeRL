@@ -188,13 +188,40 @@ def config_fill_with_arg(config, key, arg, arg_default):
             config[key] = arg_default
 
 
-def main(args):
+def build_zoopt_search(search_alg_config, hpo_config, config):
+    from ray.tune.suggest.zoopt import ZOOptSearch
+    from zoopt import ValueType
 
-    # Initialize stop dict
-    stop_dict = {
-        'training_iteration': args.stop_iteration,
+    zoopt_valuetype_map = {
+        'continuous': ValueType.CONTINUOUS,
+        'discrete': ValueType.DISCRETE,
+        'grid': ValueType.GRID,
     }
 
+    zoopt_search_config = {
+        'budget': hpo_config['num_samples'],  # must match `num_samples` in `tune.run()`.
+        'parallel_num': config['num_workers'],  # how many workers to parallel
+    }
+
+    if 'dim_dict' in search_alg_config:
+        dim_dict = search_alg_config.get('dim_dict', {})
+        for _, dim_args in dim_dict.items():
+            try:
+                dim_args[0] = zoopt_valuetype_map[dim_args[0]]
+            except KeyError as e:
+                raise Exception(f"search space {dim_args[0]} is not available. \
+                    Must be one of ['continuous', 'discrete', 'grid']") from e
+            search_alg_config['dim_dict'] = dim_dict
+
+    search_alg = ZOOptSearch(
+        algo="Asracos",  # only support Asracos currently
+        **{**zoopt_search_config, **search_alg_config},
+    )
+
+    return search_alg
+
+
+def build_hpo_config(config, args):
     assert not (args.resume and args.hpo_config), "hyperparameter optimization currently not supported with resume"
 
     if args.hpo_config:
@@ -202,6 +229,44 @@ def main(args):
             hpo_config = yaml.load(f_hpo_config)
     else:
         hpo_config = {}
+
+    # construct search algorithm object from hpo config
+    if 'search_alg' in hpo_config:
+        search_alg_config = hpo_config['search_alg']
+        search_alg = search_alg_config.pop('type', None)
+
+        if search_alg == 'zoopt':
+            search_alg = build_zoopt_search(search_alg_config, hpo_config, config)
+        elif search_alg is not None:
+            raise ValueError(f"search algorithm {search_alg} is not currently supported")
+
+        hpo_config['search_alg'] = search_alg
+
+    # construct scheduler object from hpo config
+    if 'scheduler' in hpo_config:
+        scheduler = hpo_config['scheduler'].pop('type', None)
+
+        if scheduler == 'asha':
+            from ray.tune.schedulers import AsyncHyperBandScheduler
+            asha_config = {
+                'max_t': args.stop_iteration,
+            }
+
+            scheduler = AsyncHyperBandScheduler(**{**asha_config, **hpo_config['scheduler']})
+        elif scheduler is not None:
+            raise ValueError(f"scheduler {scheduler} is not currently supported")
+
+        hpo_config['scheduler'] = scheduler
+
+    return hpo_config
+
+
+def main(args):
+
+    # Initialize stop dict
+    stop_dict = {
+        'training_iteration': args.stop_iteration,
+    }
 
     # Run training
     if not args.debug:
@@ -214,60 +279,7 @@ def main(args):
             # Setup experiment
             expr_name, config = experiment_setup(args=args)
 
-            # construct search algorithm object from hpo config
-            if 'search_alg' in hpo_config:
-                search_alg_config = hpo_config['search_alg']
-                search_alg = search_alg_config.pop('type', None)
-
-                if search_alg == 'zoopt':
-                    from ray.tune.suggest.zoopt import ZOOptSearch
-                    from zoopt import ValueType
-
-                    zoopt_valuetype_map = {
-                        'continuous': ValueType.CONTINUOUS,
-                        'discrete': ValueType.DISCRETE,
-                        'grid': ValueType.GRID,
-                    }
-
-                    zoopt_search_config = {
-                        'budget': hpo_config['num_samples'],  # must match `num_samples` in `tune.run()`.
-                        'parallel_num': config['num_workers'],  # how many workers to parallel
-                    }
-
-                    if 'dim_dict' in search_alg_config:
-                        dim_dict = search_alg_config.get('dim_dict', {})
-                        for _, dim_args in dim_dict.items():
-                            try:
-                                dim_args[0] = zoopt_valuetype_map[dim_args[0]]
-                            except KeyError as e:
-                                raise Exception(f"search space {dim_args[0]} is not available. \
-                                    Must be one of ['continuous', 'discrete', 'grid']") from e
-                            search_alg_config['dim_dict'] = dim_dict
-
-                    search_alg = ZOOptSearch(
-                        algo="Asracos",  # only support Asracos currently
-                        **{**zoopt_search_config, **search_alg_config},
-                    )
-                elif search_alg is not None:
-                    raise ValueError(f"search algorithm {search_alg} is not currently supported")
-
-                hpo_config['search_alg'] = search_alg
-
-            # construct scheduler object from hpo config
-            if 'scheduler' in hpo_config:
-                scheduler = hpo_config['scheduler'].pop('type', None)
-
-                if scheduler == 'asha':
-                    from ray.tune.schedulers import AsyncHyperBandScheduler
-                    asha_config = {
-                        'max_t': args.stop_iteration,
-                    }
-
-                    scheduler = AsyncHyperBandScheduler(**{**asha_config, **hpo_config['scheduler']})
-                elif scheduler is not None:
-                    raise ValueError(f"scheduler {scheduler} is not currently supported")
-
-                hpo_config['scheduler'] = scheduler
+            hpo_config = build_hpo_config(config, args)
 
             tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
