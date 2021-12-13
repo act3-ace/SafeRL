@@ -6,8 +6,8 @@ Author: John McCarroll
 """
 
 from ray.tune.stopper import Stopper
-from constants import DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, CUSTOM_METRICS, SUCCESS_MEAN, \
-    TRAINING_ITERATIONS
+from tests.system_tests.training.constants import DEFAULT_SUCCESS_THRESHOLD, DEFAULT_MAX_ITERATIONS, \
+    CUSTOM_METRICS, SUCCESS_MEAN, TRAINING_ITERATIONS
 
 
 class SuccessCriteria(Stopper):
