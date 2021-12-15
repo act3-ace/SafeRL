@@ -29,5 +29,6 @@ setuptools.setup(
         "flatten_json==0.1.13",
         "aioredis==1.3.1",
         "pyglet==1.5.19",
+        "aiohttp==3.7.4",
     ]
 )
