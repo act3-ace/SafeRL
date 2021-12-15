@@ -226,7 +226,7 @@ def build_hpo_config(config, args):
 
     if args.hpo_config:
         with open(args.hpo_config, 'r') as f_hpo_config:
-            hpo_config = yaml.load(f_hpo_config)
+            hpo_config = yaml.safe_load(f_hpo_config)
     else:
         hpo_config = {}
 
