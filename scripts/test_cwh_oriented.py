@@ -19,14 +19,15 @@ platform = CWHSpacecraftOriented2d(name='test', controller=controller, n=0)
 
 turn_time = 135
 thrust_time = 5
+turn_sign = -1
 
-platform.step(None, 2, (0, 1))
+platform.step(None, 2, (0, turn_sign*1))
 platform.step(None, turn_time, (0, 0))
-platform.step(None, 2, (0, -1))
+platform.step(None, 2, (0, turn_sign*-1))
 
 platform.step(None, thrust_time, (1, 0))
 
-expected_theta = 2*np.deg2rad(1)*0.5*(2**2) + np.deg2rad(2) * (turn_time)
+expected_theta = 2*np.deg2rad(turn_sign*1)*0.5*(2**2) + np.deg2rad(turn_sign*2) * (turn_time)
 
 thrust_dist = 1/12 * 1/2 * thrust_time**2
 x_err = abs(platform.x - thrust_dist*np.cos(platform.state.theta))
