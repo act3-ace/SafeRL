@@ -131,7 +131,7 @@ class YAMLParser:
 
     def parse_env(self):
         with open(self.yaml_path, 'r') as f:
-            config = yaml.load(f)
+            config = yaml.safe_load(f)
         config = self.process_yaml_items(config)
         return config
 
@@ -163,7 +163,7 @@ class YAMLParser:
         old_working_dir = self.working_dir
         self.working_dir = os.path.dirname(path)
         with open(path, 'r') as f:
-            contents = yaml.load(f)
+            contents = yaml.safe_load(f)
         target = self.process_yaml_items(contents)
         self.working_dir = old_working_dir
         return target
