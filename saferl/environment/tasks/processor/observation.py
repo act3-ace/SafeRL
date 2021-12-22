@@ -16,6 +16,68 @@ from saferl.environment.tasks.processor import ObservationProcessor
 from saferl.environment.tasks.processor.post_processors import Rotate
 
 
+class StatusObservationProcessor(ObservationProcessor):
+    def __init__(
+            self,
+            status,
+            observation_space_shape,
+            **kwargs):
+        self.status = status
+        super().__init__(observation_space_shape=observation_space_shape, **kwargs)
+
+    def _process(self, sim_state):
+        try:
+            status_val = sim_state.status[self.status]
+        except KeyError as e:
+            raise KeyError(f"Status value {self.status} not found") from e
+
+        if not isinstance(status_val, np.ndarray):
+            status_val = np.array(status_val, dtype=float, ndmin=1)
+
+        return status_val
+
+    def define_observation_space(self) -> gym.spaces.Box:
+        pass
+
+
+class AttributeObservationProcessor(ObservationProcessor):
+    """
+    Class to handle observations of arbitrary environment object attributes
+    """
+    def __init__(
+            self,
+            target,
+            attr,
+            observation_space_shape,
+            name=None,
+            normalization=None,
+            clip=None,
+            post_processors=None):
+        self.target = target
+        self.attr = attr
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors,
+                         observation_space_shape=observation_space_shape)
+
+    def _process(self, sim_state) -> np.ndarray:
+        try:
+            target_obj = sim_state.env_objs[self.target]
+        except KeyError as e:
+            raise KeyError(f"env_obj {self.target} does not exist") from e
+
+        try:
+            attr_value = getattr(target_obj, self.attr)
+        except AttributeError as e:
+            raise AttributeError(f"env_obj {self.targe} does not have attribute {self.attr}") from e
+
+        if not isinstance(attr_value, np.ndarray):
+            attr_value = np.array(attr_value, dtype=float, ndmin=1)
+
+        return attr_value
+
+    def define_observation_space(self) -> gym.spaces.Box:
+        pass
+
+
 class SpatialObservationProcessor(ObservationProcessor):
     """
     Class to handle observations in 3D and 2D space.

@@ -221,3 +221,28 @@ class DefineBounds(PostProcessor):
             obs_space.low = self.low
         else:
             raise ValueError("The shape of the given bounds do not align with the shape of the observation space!")
+
+
+class Angle2UnitCircleXY(PostProcessor):
+    """Converts an angle in radians to it's xy position on the unit circle [cos(x), sin(x)]
+    """
+    def __call__(self, input_array, sim_state):
+        assert input_array.shape == (1,)
+        return np.concatenate((np.cos(input_array), np.sin(input_array)))
+
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+        return gym.spaces.Box(low=-1, high=1, shape=(2,))
+
+
+class VectorMagnitude(PostProcessor):
+    """Converts an angle in radians to it's xy position on the unit circle [cos(x), sin(x)]
+    """
+    def __call__(self, input_array, sim_state):
+        return np.array([np.linalg.norm(input_array)], dtype=float)
+
+    def modify_observation_space(self, obs_space: gym.spaces.Box):
+
+        component_maxes = np.maximum(np.abs(obs_space.low), np.abs(obs_space.high))
+        max_val = np.linalg.norm(component_maxes)
+
+        return gym.spaces.Box(low=0, high=max_val, shape=(1,))
