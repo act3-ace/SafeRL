@@ -23,14 +23,16 @@ class ConstrainedDeputyPolarInitializer(Initializer):
         if mode == '3d':
             polar_angle = self.init_config.get('polar_angle', np.pi/2)
             polar_angle = draw_from_range(polar_angle)
-        elif mode == '2d':
+            vel_mode = '3d'
+        elif mode == '2d' or mode == '2d_oriented':
             polar_angle = np.pi/2
+            vel_mode = '2d'
         else:
             raise ValueError("mode {} is invalid. Must be one of ('2d', '3d')".format(mode))
 
         x, y, z = get_relative_rect_from_polar(ref, radius, angle, polar_angle)
 
-        x_dot, y_dot, z_dot = get_constrainted_velocity(ref, x, y, z, mode=mode)
+        x_dot, y_dot, z_dot = get_constrainted_velocity(ref, x, y, z, mode=vel_mode)
 
         new_params = {
             "x": x,
@@ -42,6 +44,15 @@ class ConstrainedDeputyPolarInitializer(Initializer):
         if mode == '3d':
             new_params['z'] = z
             new_params['z_dot'] = z_dot
+
+        if mode == '2d_oriented':
+            theta_range = self.init_config.get("theta", [-np.pi, np.pi])
+            theta_dot_range = self.init_config.get("theta_dot", [-np.deg2rad(2), np.deg2rad(2)])
+            theta = np.random.rand() * (theta_range[1] - theta_range[0]) + theta_range[0]
+            theta_dot = np.random.rand() * (theta_dot_range[1] - theta_dot_range[0]) + theta_dot_range[0]
+
+            new_params['theta'] = theta
+            new_params['theta_dot'] = theta_dot
 
         return new_params
 
