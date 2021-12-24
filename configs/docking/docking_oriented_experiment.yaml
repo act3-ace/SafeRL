@@ -173,5 +173,6 @@ env_config:
         success_status: success
         timeout: 3000
   verbose: false
-gamma: 0.968559
-lambda: 0.928544
+gamma: 0.962283
+lambda: 0.944518
+seed: "!tune:grid_search([910953884, 233390842, 490505108, 436728173, 698489089, 841154584, 354590148, 250752590, 831449822, 852666319])"
