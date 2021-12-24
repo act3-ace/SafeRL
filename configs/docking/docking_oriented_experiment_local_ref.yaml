@@ -20,6 +20,9 @@ env_config:
         actuators:
         - name: thrust
           space: continuous
+          bounds: [-1, 2]
+          rescale: True
+          zero_centered: True
         - name: reaction_wheel
           space: continuous
       init:
