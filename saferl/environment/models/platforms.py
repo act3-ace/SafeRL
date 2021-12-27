@@ -139,10 +139,22 @@ class AgentController(BaseController):
                 bounds_max = actuator.bounds[1]
 
                 if ('space' not in actuator_config) or (actuator_config['space'] == 'continuous'):
+                    # validate config values
+                    cont_act_config_keys = ['name', 'space', 'bounds', 'rescale', 'zero_centered']
+                    for k in actuator_config.keys():
+                        if k not in cont_act_config_keys:
+                            raise ValueError(
+                                f"Action Config for Actuator {actuator.name} has invalid config entry of {k}. "
+                                f"Must be on of {cont_act_config_keys}")
+
+                    zero_centered = actuator_config.get('zero_centered', False)
                     if ('rescale' not in actuator_config) or (actuator_config['rescale']):
-                        preprocessor = ActionPreprocessorContinuousRescale(actuator_name, [bounds_min, bounds_max])
+                        preprocessor = ActionPreprocessorContinuousRescale(
+                            actuator_name, [bounds_min, bounds_max], zero_centered=zero_centered)
                         actuator_action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
                     else:
+                        assert not zero_centered, \
+                            f"zero centered not supported without rescale for actuator {actuator.name}"
                         preprocessor = ActionPreprocessorPassThrough(actuator_name)
                         actuator_action_space = gym.spaces.Box(low=bounds_min, high=bounds_max, shape=(1,))
                 elif actuator_config['space'] == 'discrete':
@@ -209,15 +221,25 @@ class ActionPreprocessorPassThrough(ActionPreprocessor):
 
 
 class ActionPreprocessorContinuousRescale(ActionPreprocessor):
-    def __init__(self, name, bounds):
+    def __init__(self, name, bounds, zero_centered=False):
         self.bounds = bounds
+        self.zero_centered = zero_centered
+
+        if self.zero_centered:
+            assert bounds[0] <= 0 and bounds[1] >= 0, f"bounds {bounds} must include 0 to use zero_centered"
         super().__init__(name)
 
     def preprocess(self, action):
         low = self.bounds[0]
         high = self.bounds[1]
 
-        scaled_action = low + (action + 1.0) * (high - low) / 2.0
+        if self.zero_centered:
+            if action < 0:
+                scaled_action = -low * action
+            if action >= 0:
+                scaled_action = high * action
+        else:
+            scaled_action = low + (action + 1.0) * (high - low) / 2.0
 
         return scaled_action
 
