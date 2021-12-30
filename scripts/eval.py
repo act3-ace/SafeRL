@@ -1,7 +1,7 @@
 import os
 import argparse
 # import pickle5 as pickle
-import pickle
+import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
@@ -82,7 +82,7 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
         with jsonlines.open(log_dir, "a") as writer:
             while not done:
                 # progress environment state
-                action = agent.compute_action(obs)
+                action = agent.compute_single_action(obs)
                 obs, reward, done, info = env.step(action)
                 step_num += 1
                 episode_reward += reward
@@ -193,6 +193,15 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
                 ckpt_num_str = file_num
 
     return ckpt_num, ckpt_num_str
+
+
+def parse_jsonlines_log(filepath):
+    log_states = []
+    with jsonlines.open(filepath, 'r') as log:
+        for state in log:
+            log_states.append(state)
+
+    return log_states
 
 
 def main():
