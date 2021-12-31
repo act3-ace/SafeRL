@@ -71,7 +71,7 @@ env_config:
       rejoin_prev_status: in_rejoin_prev
       rejoin_status: in_rejoin
       reward: 0.1
-      refund: False
+      refund: True
   - name: rejoin_first_time_reward
     class: saferl.aerospace.tasks.rejoin.processors.RejoinFirstTimeRewardProcessor
     config:
@@ -129,7 +129,7 @@ env_config:
         aircraft: 100
       time_elapsed: time_elapsed
       timeout: 2000
-      on_leave_rejoin: True
+      on_leave_rejoin: False
   - name: success
     class: saferl.aerospace.tasks.rejoin.processors.DubinsSuccessStatus
     config:
