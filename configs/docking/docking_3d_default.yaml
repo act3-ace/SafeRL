@@ -120,11 +120,13 @@ env_config:
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.1
-        bias: -0.001
+        scale: -0.01
+        bias: -0.01
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
         cond_status_invert: True
+        lower_bound: -5
+        lower_bound_terminal: failure
     - name: failure_reward
       class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
       config:
@@ -133,6 +135,7 @@ env_config:
           crash: -1
           distance: -1
           timeout: -1
+          reward_lower_bound_max_vel_constraint: 0
     - name: success_reward
       class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
       config:
