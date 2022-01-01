@@ -136,8 +136,10 @@ def experiment_setup(args):
     if args.complete_episodes:
         config['batch_mode'] = "complete_episodes"
 
+    failure_codes = get_failure_codes(config)
+
     config['callbacks'] = build_callbacks_caller([EpisodeOutcomeCallback(),
-                                                  FailureCodeCallback(),
+                                                  FailureCodeCallback(failure_codes=failure_codes),
                                                   RewardComponentsCallback(),
                                                   LoggingCallback(num_logging_workers=args.logging_workers,
                                                                   episode_log_interval=args.log_interval,
@@ -186,6 +188,23 @@ def config_fill_with_arg(config, key, arg, arg_default):
             config[key] = arg
         else:
             config[key] = arg_default
+
+
+def get_failure_codes(config):
+    try:
+        reward_config_list = config['env_config']['reward']
+
+        failure_codes = None
+        for reward_config in reward_config_list:
+            if reward_config['name'] == "failure_reward":
+                failure_codes = reward_config['config']['reward'].keys()
+    except KeyError:
+        failure_codes = None
+
+    if failure_codes is None:
+        print("Failed to find failure_reward processor, defaulting to default failure code logging.")
+
+    return failure_codes
 
 
 def build_zoopt_search(search_alg_config, hpo_config, config):

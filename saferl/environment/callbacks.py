@@ -53,7 +53,9 @@ class EpisodeOutcomeCallback:
 
 
 class FailureCodeCallback:
-    def __init__(self, failure_codes=['timeout', 'distance', 'crash']):
+    def __init__(self, failure_codes=None):
+        if failure_codes is None:
+            failure_codes = ['timeout', 'distance', 'crash']
         self.failure_codes = failure_codes
 
     def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
