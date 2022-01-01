@@ -292,11 +292,21 @@ class StatusProcessor(Processor):
 
 
 class RewardProcessor(Processor):
-    def __init__(self, name=None, reward=None):
+    def __init__(self, name=None, reward=None,
+                 lower_bound=-math.inf, upper_bound=math.inf, lower_bound_terminal=None, upper_bound_terminal=None):
         super().__init__(name=name)
         self.step_value = 0
         self.total_value = 0
         self.reward = reward
+
+        assert lower_bound_terminal in [None, 'success', 'failure'], \
+            "lower_bound_terminal must be on of [None, 'success', 'failure']"
+        assert upper_bound_terminal in [None, 'success', 'failure'], \
+            "upper_bound_terminal must be on of [None, 'success', 'failure']"
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.lower_bound_terminal = lower_bound_terminal
+        self.upper_bound_terminal = upper_bound_terminal
 
     def reset(self, sim_state):
         self.step_value = 0
@@ -332,3 +342,24 @@ class RewardProcessor(Processor):
 
     def get_total_value(self):
         return self.total_value
+
+    def _reward_bound_terminal_status(self):
+        status = {}
+        if self.total_value > self.upper_bound and self.upper_bound_terminal:
+            if self.upper_bound_terminal == 'success':
+                status['success'] = True
+            elif self.upper_bound_terminal == 'failure':
+                status['failure'] = f"reward_upper_bound_{self.name}"
+            else:
+                raise ValueError(f"upper_bound_terminal {self.upper_bound_terminal} is an invalid value")
+
+        if self.total_value < self.lower_bound and self.lower_bound_terminal:
+            if self.lower_bound_terminal == 'success':
+                status['success'] = True
+            elif self.lower_bound_terminal == 'failure':
+                status['failure'] = f"reward_lower_bound_{self.name}"
+            else:
+                raise ValueError(f"lower_bound_terminal {self.lower_bound_terminal} is an invalid value")
+
+        return status
+
