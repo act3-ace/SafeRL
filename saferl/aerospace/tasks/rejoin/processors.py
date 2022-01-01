@@ -184,12 +184,13 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 # --------------------- Reward Processors ------------------------
 
 class RejoinRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None):
+    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None, refund=True):
         super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
         self.rejoin_status = rejoin_status
         self.rejoin_prev_status = rejoin_prev_status
+        self.refund = refund
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -218,7 +219,7 @@ class RejoinRewardProcessor(RewardProcessor):
         step_reward = 0
         if self.in_rejoin_for_step:
             step_reward = self.reward * self.step_size
-        elif self.left_rejoin:
+        elif self.left_rejoin and self.refund:
             step_reward = -1 * self.total_value
         return step_reward
 
@@ -391,7 +392,8 @@ class DubinsLeadDistance(StatusProcessor):
 
 class DubinsFailureStatus(StatusProcessor):
     def __init__(self, name=None, lead_distance=None, time_elapsed=None, safety_margin=None,
-                 timeout=None, max_goal_distance=None):
+                 timeout=None, max_goal_distance=None, on_leave_rejoin=False, in_rejoin="in_rejoin",
+                 in_rejoin_prev="in_rejoin_prev"):
         super().__init__(name=name)
         # Initialize member variables from config
         self.lead_distance_key = lead_distance
@@ -399,6 +401,9 @@ class DubinsFailureStatus(StatusProcessor):
         self.safety_margin = safety_margin
         self.timeout = timeout
         self.max_goal_dist = max_goal_distance
+        self.on_leave_rejoin = on_leave_rejoin
+        self.in_rejoin_key = in_rejoin
+        self.in_rejoin_prev_key = in_rejoin_prev
 
     def reset(self, sim_state):
         # reset state
@@ -412,6 +417,9 @@ class DubinsFailureStatus(StatusProcessor):
 
     def _process(self, sim_state):
         # process current state variables and return failure status
+        in_rejoin = sim_state.status[self.in_rejoin_key]
+        in_rejoin_prev = sim_state.status[self.in_rejoin_prev_key]
+
         failure = False
         if self.lead_distance < self.safety_margin['aircraft']:
             failure = 'crash'
@@ -419,6 +427,8 @@ class DubinsFailureStatus(StatusProcessor):
             failure = 'timeout'
         elif self.lead_distance >= self.max_goal_dist:
             failure = 'distance'
+        elif self.on_leave_rejoin and (not in_rejoin) and (in_rejoin_prev):
+            failure = 'leave_rejoin'
 
         return failure
 
