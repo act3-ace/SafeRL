@@ -21,6 +21,8 @@ default). Currently, only DubinsRejoin and DockingEnv are supported.
 Author: John McCarroll
 """
 
+DEFAULT_TRIAL_INDEX = 0
+
 
 class InvalidExperimentDirStructure(Exception):
     pass
@@ -38,6 +40,12 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir', type=str, default="", help="The full path to the experiment directory", required=True)
+    parser.add_argument(
+        '--trial_index',
+        type=int,
+        default=DEFAULT_TRIAL_INDEX,
+        help="The index corresponding to the desired experiment to load. Use when multiple experiments are run by Tune."
+        )
     parser.add_argument('--ckpt_num', type=int, default=None, help="Specify a checkpoint to load")
     parser.add_argument('--seed', type=int, default=None, help="The seed used to initialize evaluation environment")
     parser.add_argument('--explore', default=False, action="store_true", help="True for off-policy evaluation")
@@ -210,9 +218,10 @@ def main():
 
     # assume full path passed in
     expr_dir_path = args.dir
+    trial_index = args.trial_index
 
     # verify experiment run dir
-    expr_dir_path = verify_experiment_dir(expr_dir_path)
+    expr_dir_path = verify_experiment_dir(expr_dir_path, trial_index=trial_index)
 
     # get checkpoint num
     ckpt_num, ckpt_num_str = find_checkpoint_dir(expr_dir_path, args.ckpt_num)
