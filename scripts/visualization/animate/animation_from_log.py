@@ -6,6 +6,7 @@ import matplotlib.animation as animation
 import matplotlib.patches as patches
 import numpy as np
 import argparse
+from tqdm import tqdm
 
 from scripts.eval import parse_jsonlines_log
 
@@ -153,15 +154,18 @@ def main():
     args = get_args()
     log_data = parse_jsonlines_log(args.log)
 
-    log_data = log_data[0:100]
+    # log_data = log_data[0:100]
 
     print(len(log_data))
     animator = animator_docking_oriented_2d(log_data)
 
     anim = animator.animate()
     print("saving animation")
+
+    save_bar = tqdm(total=len(log_data))
     anim.save('anim.mp4', writer="ffmpeg", 
-              progress_callback=lambda i, n: print(f'Saving frame {i} of {n}') if i % 10 == 0 else ...)
+              progress_callback=lambda i, n: save_bar.update(1) )
+    save_bar.close()
     # plt.show()
 
 
