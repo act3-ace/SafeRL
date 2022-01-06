@@ -48,7 +48,7 @@ class ObservationManager(Manager):
         manager_low = np.concatenate(processor_lows)
         manager_high = np.concatenate(processor_highs)
 
-        self.observation_space = gym.spaces.Box(low=manager_low, high=manager_high)
+        self.observation_space = gym.spaces.Box(low=manager_low, high=manager_high, dtype=np.float64)
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -144,6 +144,7 @@ class RewardManager(Manager):
         self.step_value = 0
         for processor in self.processors:
             self.step_value += processor.step(sim_state, step_size)
+            sim_state = self._update_sim_state_with_reward_terminal(sim_state, processor)
         self.total_value += self.step_value
         return self.step_value
 
@@ -152,3 +153,14 @@ class RewardManager(Manager):
         for processor in self.processors:
             step_value += processor.process(sim_state)
         return step_value
+
+    def _update_sim_state_with_reward_terminal(self, sim_state, processor):
+        """
+        Checks if reward processor has reach a terminal cumulative bound and updates sim_state with a terminal
+            success/failure status
+        """
+        if not sim_state.status['success'] and not sim_state.status['failure']:
+            reward_terminal_status = processor._reward_bound_terminal_status()
+            sim_state.status['success'] = reward_terminal_status.get('success', sim_state.status['success'])
+            sim_state.status['failure'] = reward_terminal_status.get('failure', sim_state.status['failure'])
+        return sim_state

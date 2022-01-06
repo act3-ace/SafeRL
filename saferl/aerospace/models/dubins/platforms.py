@@ -89,9 +89,9 @@ class BaseDubinsState(BasePlatformStateVectorized):
 
 class Dubins2dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, name, controller=None, rta=None, v_min=10, v_max=100):
+    def __init__(self, name, controller=None, rta=None, v_min=10, v_max=100, integration_method='Euler'):
 
-        dynamics = Dubins2dDynamics(v_min=v_min, v_max=v_max)
+        dynamics = Dubins2dDynamics(v_min=v_min, v_max=v_max, integration_method=integration_method)
         actuator_set = Dubins2dActuatorSet()
 
         state = Dubins2dState()
@@ -224,9 +224,9 @@ class Dubins2dDynamics(BaseODESolverDynamics):
 
 class Dubins3dPlatform(BaseDubinsPlatform):
 
-    def __init__(self, name, controller=None, v_min=10, v_max=100):
+    def __init__(self, name, controller=None, v_min=10, v_max=100, integration_method='Euler'):
 
-        dynamics = Dubins3dDynamics(v_min=v_min, v_max=v_max)
+        dynamics = Dubins3dDynamics(v_min=v_min, v_max=v_max, integration_method=integration_method)
         actuator_set = Dubins3dActuatorSet()
         state = Dubins3dState()
 
@@ -343,11 +343,17 @@ class Dubins3dActuatorSet(BaseActuatorSet):
 
 class Dubins3dDynamics(BaseODESolverDynamics):
 
-    def __init__(self, v_min=10, v_max=100, roll_min=-math.pi/2, roll_max=math.pi/2, g=32.17, *args, **kwargs):
+    def __init__(
+            self, v_min=10, v_max=100,
+            roll_min=-math.pi/3, roll_max=math.pi/3, gamma_min=-math.pi/9, gamma_max=math.pi/9,
+            g=32.17,
+            *args, **kwargs):
         self.v_min = v_min
         self.v_max = v_max
         self.roll_min = roll_min
         self.roll_max = roll_max
+        self.gamma_min = gamma_min
+        self.gamma_max = gamma_max
         self.g = g
 
         super().__init__(*args, **kwargs)
@@ -362,6 +368,10 @@ class Dubins3dDynamics(BaseODESolverDynamics):
         # enforce roll limits
         if state.roll < self.roll_min or state.roll > self.roll_max:
             state.roll = max(min(state.roll, self.roll_max), self.roll_min)
+
+        # enforce gamma limits
+        if state.gamma < self.gamma_min or state.gamma > self.gamma_max:
+            state.gamma = max(min(state.gamma, self.gamma_max), self.gamma_min)
 
         return state
 
@@ -381,6 +391,11 @@ class Dubins3dDynamics(BaseODESolverDynamics):
             ailerons = 0
         elif roll >= self.roll_max and ailerons > 0:
             ailerons = 0
+
+        if gamma <= self.gamma_min and elevator < 0:
+            elevator = 0
+        elif gamma >= self.gamma_max and elevator > 0:
+            elevator = 0
 
         x_dot = v * math.cos(heading) * math.cos(gamma)
         y_dot = v * math.sin(heading) * math.cos(gamma)

@@ -4,7 +4,7 @@ env_config:
   step_size: 1
   env_objs:
   - name: chief
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -12,37 +12,30 @@ env_config:
         x_dot: 0
         y: 0
         y_dot: 0
-        z: 0
-        z_dot: 0
   - name: deputy
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraftOriented2d
     config:
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
-        - name: thrust_x
+        - name: thrust
           space: continuous
-          bounds: [-1, 1]
-        - name: thrust_y
+        - name: reaction_wheel
           space: continuous
-          bounds: [-1, 1]
-        - name: thrust_z
-          space: continuous
-          bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
-        mode: 3d
+        mode: 2d_oriented
         ref: chief
         radius: [100, 150]
         angle: [0, 6.283185307179586]
-        polar_angle: [0, 3.141592653589793]
+        theta: [-3.141592653589793, 3.141592653589793]
+        theta_dot: [0, 0]
   - name: docking_region
-    class: saferl.environment.models.geometry.RelativeSphere
+    class: saferl.environment.models.geometry.RelativeCircle
     config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      z_offset: 0
       radius: 0.5
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -90,7 +83,7 @@ env_config:
       config:
         docking_distance: docking_distance
         max_goal_distance: 40000
-        timeout: 2000
+        timeout: 3000
         in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
     - name: success
@@ -99,11 +92,51 @@ env_config:
         in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
   observation:
-    - name: observation_processor
-      class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
+    # - name: observation_processor
+    #   class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessorOriented
+    #   config:
+    #     deputy: deputy
+    #     mode: 2d
+    - name: rel_pos
+      class: saferl.environment.tasks.processor.observation.RelativePositionObservationProcessor
       config:
-        deputy: deputy
-        mode: 3d
+        target: deputy
+        reference: chief
+        two_d: True
+        normalization: 100
+    - name: vel
+      class: saferl.environment.tasks.processor.observation.VelocityObservationProcessor
+      config:
+        env_object_name: deputy
+        two_d: True
+        normalization: 0.5
+    - name: angle
+      class: saferl.environment.tasks.processor.observation.AttributeObservationProcessor
+      config:
+        target: deputy
+        attr: theta
+        observation_space_shape: 1
+        post_processors:
+          - class: saferl.environment.tasks.processor.post_processors.Angle2UnitCircleXY
+    - name: angular_velocity
+      class: saferl.environment.tasks.processor.observation.AttributeObservationProcessor
+      config:
+        target: deputy
+        attr: theta_dot
+        observation_space_shape: 1
+        normalization: 0.0349066
+    - name: vel_mag
+      class: saferl.environment.tasks.processor.observation.VelocityObservationProcessor
+      config:
+        env_object_name: deputy
+        two_d: True
+        post_processors:
+          - class: saferl.environment.tasks.processor.post_processors.VectorMagnitude
+    - name: max_vel_limit
+      class: saferl.environment.tasks.processor.observation.StatusObservationProcessor
+      config:
+        status: max_vel_limit
+        observation_space_shape: 1
   reward:
     - name: dist_change_reward
       class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
@@ -120,13 +153,11 @@ env_config:
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.01
-        bias: -0.01
+        scale: -0.1
+        bias: -0.001
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
         cond_status_invert: True
-        lower_bound: -5
-        lower_bound_terminal: failure
     - name: failure_reward
       class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
       config:
@@ -135,13 +166,13 @@ env_config:
           crash: -1
           distance: -1
           timeout: -1
-          reward_lower_bound_max_vel_constraint: 0
     - name: success_reward
       class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
       config:
         reward: 1
         success_status: success
-        timeout: 2000
+        timeout: 3000
   verbose: false
-gamma: 0.968559
-lambda: 0.928544
+gamma: 0.962283
+lambda: 0.944518
+seed: "!tune:grid_search([910953884, 233390842, 490505108, 436728173, 698489089, 841154584, 354590148, 250752590, 831449822, 852666319])"

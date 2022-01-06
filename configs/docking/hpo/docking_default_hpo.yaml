@@ -4,7 +4,7 @@ env_config:
   step_size: 1
   env_objs:
   - name: chief
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -12,10 +12,8 @@ env_config:
         x_dot: 0
         y: 0
         y_dot: 0
-        z: 0
-        z_dot: 0
   - name: deputy
-    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
+    class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft2d
     config:
       controller:
         class: saferl.environment.models.platforms.AgentController
@@ -26,23 +24,17 @@ env_config:
         - name: thrust_y
           space: continuous
           bounds: [-1, 1]
-        - name: thrust_z
-          space: continuous
-          bounds: [-1, 1]
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
-        mode: 3d
         ref: chief
         radius: [100, 150]
         angle: [0, 6.283185307179586]
-        polar_angle: [0, 3.141592653589793]
   - name: docking_region
-    class: saferl.environment.models.geometry.RelativeSphere
+    class: saferl.environment.models.geometry.RelativeCircle
     config:
       ref: chief
       x_offset: 0
       y_offset: 0
-      z_offset: 0
       radius: 0.5
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
@@ -103,7 +95,7 @@ env_config:
       class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
       config:
         deputy: deputy
-        mode: 3d
+        mode: 2d
   reward:
     - name: dist_change_reward
       class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
@@ -120,13 +112,11 @@ env_config:
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
-        scale: -0.01
-        bias: -0.01
+        scale: -0.1
+        bias: -0.001
         proportion_status: max_vel_violation
         cond_status: max_vel_constraint
         cond_status_invert: True
-        lower_bound: -5
-        lower_bound_terminal: failure
     - name: failure_reward
       class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
       config:
@@ -135,7 +125,6 @@ env_config:
           crash: -1
           distance: -1
           timeout: -1
-          reward_lower_bound_max_vel_constraint: 0
     - name: success_reward
       class: saferl.aerospace.tasks.docking.processors.SuccessRewardProcessor
       config:
@@ -143,5 +132,6 @@ env_config:
         success_status: success
         timeout: 2000
   verbose: false
-gamma: 0.968559
-lambda: 0.928544
+# gamma: "!tune:uniform(0.8, 1)"
+# lambda: "!tune:uniform(0.8, 1)"
+# seed: "!tune:grid_search([910953884, 233390842, 490505108, 436728173, 698489089, 841154584, 354590148, 250752590, 831449822, 852666319])"

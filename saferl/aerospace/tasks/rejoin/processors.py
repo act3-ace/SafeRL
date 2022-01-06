@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation
 
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
+from saferl.environment.utils import vec2magnorm
 
 
 # --------------------- Observation Processors ------------------------
@@ -21,9 +22,6 @@ class DubinsObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None):
 
-        # Invoke parent's constructor
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -31,25 +29,30 @@ class DubinsObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
-        if self.mode == 'rect':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([10000, 10000, 10000, 10000, 100, 100, 100, 100])
-        elif self.mode == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([10000, 1, 1, 10000, 1, 1, 100, 1, 1, 100, 1, 1])
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        # Add default normalization + clipping
+        if not self.has_normalization:
+            # if no custom normalization defined
+            if self.mode == 'rect':
+                self._add_normalization([1000, 1000, 1000, 1000, 400, 400, 400, 400])
+            elif self.mode == 'magnorm':
+                self._add_normalization([1000, 1, 1, 1000, 1, 1, 400, 1, 1, 400, 1, 1])
 
         if not self.has_clipping:
             # if no custom clipping defined
             self._add_clipping([-1, 1])
 
-    def vec2magnorm(self, vec):
-        norm = np.linalg.norm(vec)
-        mag_norm_vec = np.concatenate(([norm], vec / norm))
-        return mag_norm_vec
+    def define_observation_space(self) -> gym.spaces.Box:
+        if self.mode == 'rect':
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(8,))
+        elif self.mode == 'magnorm':
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(12,))
+        else:
+            raise ValueError("Invalid observation mode {}. Should be 'rect' or 'magnorm'.".format(self.mode))
+
+        return observation_space
 
     def _process(self, sim_state):
 
@@ -76,11 +79,11 @@ class DubinsObservationProcessor(ObservationProcessor):
         lead_vel = lead_vel[0:2]
 
         if self.mode == 'magnorm':
-            wingman_lead_r = self.vec2magnorm(wingman_lead_r)
-            wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
+            wingman_lead_r = vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 
-            wingman_vel = self.vec2magnorm(wingman_vel)
-            lead_vel = self.vec2magnorm(lead_vel)
+            wingman_vel = vec2magnorm(wingman_vel)
+            lead_vel = vec2magnorm(lead_vel)
 
         obs = np.concatenate([
             wingman_lead_r,
@@ -104,9 +107,6 @@ class Dubins3dObservationProcessor(ObservationProcessor):
                  clip=None,
                  post_processors=None):
 
-        # Invoke parent's constructor
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
         self.lead = lead
         self.wingman = wingman
@@ -114,26 +114,32 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         self.reference = reference
         self.mode = mode
 
-        if self.mode == 'rect':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
-            if not self.has_normalization:
-                # if no custom normalization defined
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        # Add default normalization + clipping
+        if not self.has_normalization:
+            # if no custom normalization defined
+            if self.mode == 'rect':
                 self._add_normalization(
-                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi, math.pi])
-        elif self.mode == 'magnorm':
-            self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([10000, 1, 1, 1, 10000, 1, 1, 1, 100, 1, 1, 1, 100, 1, 1, 1, math.pi, math.pi])
+                    [10000, 10000, 10000, 10000, 10000, 10000, 100, 100, 100, 100, 100, 100, math.pi/3, math.pi/9])
+            elif self.mode == 'magnorm':
+                self._add_normalization(
+                    [1000, 1, 1, 1, 1000, 1, 1, 1, 400, 1, 1, 1, 400, 1, 1, 1, math.pi/3, math.pi/9])
 
         if not self.has_clipping:
             # if no custom clipping defined
             self._add_clipping([-1, 1])
 
-    def vec2magnorm(self, vec):
-        norm = np.linalg.norm(vec)
-        mag_norm_vec = np.concatenate(([norm], vec / norm))
-        return mag_norm_vec
+    def define_observation_space(self) -> gym.spaces.Box:
+        if self.mode == 'rect':
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(14,))
+        elif self.mode == 'magnorm':
+            observation_space = gym.spaces.Box(low=-1, high=1, shape=(18,))
+        else:
+            raise ValueError("Invalid observation mode {}. Should be 'rect' or 'magnorm'.".format(self.mode))
+
+        return observation_space
 
     def _process(self, sim_state):
         wingman_lead_r = sim_state.env_objs[self.lead].position - sim_state.env_objs[self.wingman].position
@@ -153,11 +159,11 @@ class Dubins3dObservationProcessor(ObservationProcessor):
         lead_vel = reference_rotation.apply(lead_vel)
 
         if self.mode == 'magnorm':
-            wingman_lead_r = self.vec2magnorm(wingman_lead_r)
-            wingman_rejoin_r = self.vec2magnorm(wingman_rejoin_r)
+            wingman_lead_r = vec2magnorm(wingman_lead_r)
+            wingman_rejoin_r = vec2magnorm(wingman_rejoin_r)
 
-            wingman_vel = self.vec2magnorm(wingman_vel)
-            lead_vel = self.vec2magnorm(lead_vel)
+            wingman_vel = vec2magnorm(wingman_vel)
+            lead_vel = vec2magnorm(lead_vel)
 
         # gamma and roll for 3d orientation info
         roll = np.array([sim_state.env_objs[self.wingman].roll], dtype=np.float64)
@@ -178,12 +184,13 @@ class Dubins3dObservationProcessor(ObservationProcessor):
 # --------------------- Reward Processors ------------------------
 
 class RejoinRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None):
+    def __init__(self, name=None, rejoin_status=None, rejoin_prev_status=None, reward=None, refund=True):
         super().__init__(name=name, reward=reward)
 
         # Initialize member variables from config
         self.rejoin_status = rejoin_status
         self.rejoin_prev_status = rejoin_prev_status
+        self.refund = refund
 
     def reset(self, sim_state):
         super().reset(sim_state)
@@ -212,7 +219,7 @@ class RejoinRewardProcessor(RewardProcessor):
         step_reward = 0
         if self.in_rejoin_for_step:
             step_reward = self.reward * self.step_size
-        elif self.left_rejoin:
+        elif self.left_rejoin and self.refund:
             step_reward = -1 * self.total_value
         return step_reward
 
@@ -385,7 +392,8 @@ class DubinsLeadDistance(StatusProcessor):
 
 class DubinsFailureStatus(StatusProcessor):
     def __init__(self, name=None, lead_distance=None, time_elapsed=None, safety_margin=None,
-                 timeout=None, max_goal_distance=None):
+                 timeout=None, max_goal_distance=None, on_leave_rejoin=False, in_rejoin="in_rejoin",
+                 in_rejoin_prev="in_rejoin_prev"):
         super().__init__(name=name)
         # Initialize member variables from config
         self.lead_distance_key = lead_distance
@@ -393,6 +401,9 @@ class DubinsFailureStatus(StatusProcessor):
         self.safety_margin = safety_margin
         self.timeout = timeout
         self.max_goal_dist = max_goal_distance
+        self.on_leave_rejoin = on_leave_rejoin
+        self.in_rejoin_key = in_rejoin
+        self.in_rejoin_prev_key = in_rejoin_prev
 
     def reset(self, sim_state):
         # reset state
@@ -406,6 +417,9 @@ class DubinsFailureStatus(StatusProcessor):
 
     def _process(self, sim_state):
         # process current state variables and return failure status
+        in_rejoin = sim_state.status[self.in_rejoin_key]
+        in_rejoin_prev = sim_state.status[self.in_rejoin_prev_key]
+
         failure = False
         if self.lead_distance < self.safety_margin['aircraft']:
             failure = 'crash'
@@ -413,6 +427,8 @@ class DubinsFailureStatus(StatusProcessor):
             failure = 'timeout'
         elif self.lead_distance >= self.max_goal_dist:
             failure = 'distance'
+        elif self.on_leave_rejoin and (not in_rejoin) and (in_rejoin_prev):
+            failure = 'leave_rejoin'
 
         return failure
 

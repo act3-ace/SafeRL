@@ -31,9 +31,9 @@ class BaseCWHSpacecraft(BasePlatform):
 
 class CWHSpacecraft2d(BaseCWHSpacecraft):
 
-    def __init__(self, name, controller=None):
+    def __init__(self, name, controller=None, integration_method='Euler'):
 
-        dynamics = CWH2dDynamics()
+        dynamics = CWH2dDynamics(integration_method=integration_method)
         actuator_set = CWH2dActuatorSet()
         state = CWH2dState()
 
@@ -42,8 +42,8 @@ class CWHSpacecraft2d(BaseCWHSpacecraft):
 
 class CWHSpacecraft3d(BaseCWHSpacecraft):
 
-    def __init__(self, name, controller=None):
-        dynamics = CWH3dDynamics()
+    def __init__(self, name, controller=None, integration_method='Euler'):
+        dynamics = CWH3dDynamics(integration_method=integration_method)
         actuator_set = CWH3dActuatorSet()
         state = CWH3dState()
 

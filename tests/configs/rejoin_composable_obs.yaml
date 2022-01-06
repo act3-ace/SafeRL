@@ -4,65 +4,95 @@ env_config:
   step_size: 1
   env_objs:
   - name: lead
-    class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
+    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
-      v_min: 200
-      v_max: 400
+      v_min: 10
+      v_max: 100
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         heading: [0, 6.283185307179586]
-        v: [250, 300]
-        x: [5000, 10000]
-        y: [5000, 10000]
-        z: [12000, 14000]
+        v: [40, 60]
+        x: [-4000, 4000]
+        y: [-4000, 4000]
   - name: wingman
-    class: saferl.aerospace.models.dubins.platforms.Dubins3dPlatform
+    class: saferl.aerospace.models.dubins.platforms.Dubins2dPlatform
     config:
-      v_min: 200
-      v_max: 400
+      v_min: 10
+      v_max: 100
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
-        - name: ailerons
+        - name: rudder
           space: discrete
           points: 5
-          bounds: [-0.17, 0.17]
-        - name: elevator
-          space: discrete
-          points: 5
-          bounds: [-0.09, 0.09]
         - name: throttle
           space: discrete
-          bounds: [-96.5, 96.5]
           points: 5
       init:
         initializer: saferl.aerospace.tasks.rejoin.initializers.WingmanPolarInitializer
-        ref: lead
         heading: [0, 6.283185307179586]
-        v: [200, 400]
-        radius: [5000, 10000]
+        v: [10, 100]
+        ref: lead
+        radius: [1000, 10000]
         angle: [0, 6.283185307179586]
-        z: [10000, 16000]
   - name: rejoin_region
-    class: saferl.environment.models.geometry.RelativeCylinder
+    class: saferl.environment.models.geometry.RelativeCircle
     config:
       ref: lead
       aspect_angle: 60
       r_offset: 500
-      radius: 100
-      height: 100
+      radius: 150
       track_orientation: true
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   observation:
-  - name: observation_processor
-    class: saferl.aerospace.tasks.rejoin.processors.Dubins3dObservationProcessor
+  # compose rect obs space
+  - name: wingman_lead_r
+    class: saferl.environment.tasks.processor.observation.RelativePositionObservationProcessor
     config:
-      lead: lead
-      mode: magnorm
+      normalization: [10000, 10000]
+      clip: [-1, 1]
       reference: wingman
-      rejoin_region: rejoin_region
-      wingman: wingman
+      target: lead
+      two_d: True
+      post_processors:
+        - class: saferl.environment.tasks.processor.post_processors.Rotate
+          config:
+            reference: wingman
+  - name: wingman_rejoin_r
+    class: saferl.environment.tasks.processor.observation.RelativePositionObservationProcessor
+    config:
+      normalization: [ 10000, 10000 ]
+      clip: [ -1, 1 ]
+      reference: wingman
+      target: rejoin_region
+      two_d: True
+      post_processors:
+        - class: saferl.environment.tasks.processor.post_processors.Rotate
+          config:
+            reference: wingman
+  - name: wingman_vel
+    class: saferl.environment.tasks.processor.observation.VelocityObservationProcessor
+    config:
+      normalization: [ 100, 100 ]
+      clip: [ -1, 1 ]
+      env_object_name: wingman
+      two_d: True
+      post_processors:
+        - class: saferl.environment.tasks.processor.post_processors.Rotate
+          config:
+            reference: wingman
+  - name: lead_vel
+    class: saferl.environment.tasks.processor.observation.VelocityObservationProcessor
+    config:
+      normalization: [ 100, 100 ]
+      clip: [ -1, 1 ]
+      env_object_name: lead
+      two_d: True
+      post_processors:
+        - class: saferl.environment.tasks.processor.post_processors.Rotate
+          config:
+            reference: wingman
   reward:
   - name: rejoin_reward
     class: saferl.aerospace.tasks.rejoin.processors.RejoinRewardProcessor
@@ -125,7 +155,7 @@ env_config:
     class: saferl.aerospace.tasks.rejoin.processors.DubinsFailureStatus
     config:
       lead_distance: lead_distance
-      max_goal_distance: 100000
+      max_goal_distance: 40000
       safety_margin:
         aircraft: 100
       time_elapsed: time_elapsed
