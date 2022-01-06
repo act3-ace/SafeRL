@@ -1,14 +1,13 @@
-import abc
 import io
 import os
 import copy
 import inspect
-
+import ast
 import yaml
 import jsonlines
 import numpy as np
 import json
-
+from ray import tune
 import saferl
 
 
@@ -123,7 +122,8 @@ class YAMLParser:
 
     def __init__(self, yaml_file, lookup):
         self.commands = {
-            "file": self.file_command
+            "file": self.file_command,
+            "tune": self.tune_command,
         }
         self.yaml_path = os.path.abspath(yaml_file)
         self.working_dir = os.path.dirname(self.yaml_path)
@@ -131,7 +131,7 @@ class YAMLParser:
 
     def parse_env(self):
         with open(self.yaml_path, 'r') as f:
-            config = yaml.load(f)
+            config = yaml.safe_load(f)
         config = self.process_yaml_items(config)
         return config
 
@@ -163,10 +163,33 @@ class YAMLParser:
         old_working_dir = self.working_dir
         self.working_dir = os.path.dirname(path)
         with open(path, 'r') as f:
-            contents = yaml.load(f)
+            contents = yaml.safe_load(f)
         target = self.process_yaml_items(contents)
         self.working_dir = old_working_dir
         return target
+
+    def tune_search_space(self, method, arg_str):
+        arg_str = '['+arg_str+']'
+        arg_values = ast.literal_eval(arg_str)
+        return getattr(tune, method)(*arg_values)
+
+    def tune_command(self, value):
+        search_space_api_funcs = [
+                                 'uniform', 'quniform', 'loguniform',
+                                 'qloguniform', 'randn', 'qrandn',
+                                 'randint', 'qrandint',
+                                 'choice', 'grid_search']
+        method_value_arg = value
+        left_paren = method_value_arg.find('(')
+        right_paren = method_value_arg.rfind(')')
+        method = method_value_arg[0:left_paren]
+        argument_str = method_value_arg[left_paren+1:right_paren]
+
+        if method in search_space_api_funcs:
+            return self.tune_search_space(method, argument_str)
+        else:
+            arg_values = ast.literal_eval(argument_str)
+            return getattr(tune, method)(*arg_values)
 
 
 def log_to_jsonlines(contents, output_dir, jsonline_filename):
@@ -258,86 +281,7 @@ def is_jsonable(object):
         return ValueError
 
 
-class PostProcessor:
-    @abc.abstractmethod
-    def __call__(self, input_array):
-        """
-        Subclasses should implement this method to apply post-processing to processor's return values.
-
-        Parameters
-        ----------
-        input_array : numpy.ndarray
-            The value passed to a given post processor for modification.
-
-        Returns
-        -------
-        input_array
-            The modified (processed) input value
-        """
-        raise NotImplementedError
-
-
-class Normalize(PostProcessor):
-    def __init__(self, mu=0, sigma=1):
-        # ensure mu and sigma compatible types
-        acceptable_types = [float, int, list, np.ndarray]
-        assert type(mu) in acceptable_types, \
-            "Expected kwarg \'mu\' to be type int, float, list, or numpy.ndarray, but received {}" \
-            .format(type(mu))
-        assert type(sigma) in acceptable_types, \
-            "Expected kwarg \'sigma\' to be type int, float, list, or numpy.ndarray, but received {}" \
-            .format(type(sigma))
-
-        # convert lists to numpy arrays
-        if type(mu) == list:
-            mu = np.array(mu)
-        if type(sigma) == list:
-            sigma = np.array(sigma)
-
-        # store values
-        self.mu = mu
-        self.sigma = sigma
-
-    def __call__(self, input_array):
-        # ensure input_array is numpy array
-        assert type(input_array) == np.ndarray, \
-            "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
-
-        # check that dims line up for mu and sigma (or that they're scalars)
-        if type(self.mu) == np.ndarray:
-            assert input_array.shape == self.mu.shape, \
-                "Incompatible shapes for \'input_array\' and \'mu\': {} vs {}".format(input_array, self.mu)
-        if type(self.sigma) == np.ndarray:
-            assert input_array.shape == self.sigma.shape, \
-                "Incompatible shapes for \'input_array\' and \'sigma\': {} vs {}".format(input_array, self.sigma)
-
-        # apply normalization
-        input_array = np.subtract(input_array, self.mu)
-        input_array = np.divide(input_array, self.sigma)
-
-        return input_array
-
-
-class Clip(PostProcessor):
-    def __init__(self, low=-1, high=1):
-        # ensure bounds correct types
-        assert type(low) in [int, float], \
-            "Expected kwarg \'low\' to be type int or float, but instead received {}".format(type(low))
-        assert type(high) in [int, float], \
-            "Expected kwarg \'high\' to be type int or float, but instead received {}".format(type(high))
-        # ensure correct relation
-        assert low < high, "Expected value of variable \'low\' to be less than variable \'high\'"
-
-        # store values
-        self.low = low
-        self.high = high
-
-    def __call__(self, input_array):
-        # ensure input_array is numpy array
-        assert type(input_array) == np.ndarray, \
-            "Expected \'input_array\' to be type numpy.ndarray, but instead received {}.".format(type(input_array))
-
-        # apply clipping in specified range
-        input_array = np.clip(input_array, self.low, self.high)
-
-        return input_array
+def vec2magnorm(vec):
+    norm = np.linalg.norm(vec)
+    mag_norm_vec = np.concatenate(([norm], vec / norm))
+    return mag_norm_vec

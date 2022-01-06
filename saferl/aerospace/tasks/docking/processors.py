@@ -1,7 +1,7 @@
 import gym.spaces
 import numpy as np
 
-from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d
+from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
 
@@ -10,59 +10,77 @@ from saferl.environment.models.geometry import distance
 
 class DockingObservationProcessor(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
         # Initialize member variables from config
-
         # 2d or 3d
         self.mode = mode
         # not platform ref, string for name of deputy
         self.deputy = deputy
 
+        # add default normalization
+        if normalization is None:
+            if self.mode == '2d':
+                normalization = [100, 100, .5, .5, 1, 1]
+            elif self.mode == '3d':
+                normalization = [100, 100, 100, .5, .5, .5, 1, 1]
+
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+    def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
-            self.norm_const = np.array([1000, 1000, 10, 10])
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         elif self.mode == '3d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
-            self.norm_const = np.array([1000, 1000, 1000, 10, 10, 10])
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
+
+        return observation_space
 
     def _process(self, sim_state):
-        obs = sim_state.env_objs[self.deputy].state.vector
-        obs = obs / self.norm_const
+        obs = np.copy(sim_state.env_objs[self.deputy].state.vector)
+        obs = np.append(obs, np.linalg.norm(sim_state.env_objs[self.deputy].velocity))
+        obs = np.append(obs, sim_state.status['max_vel_limit'])
         return obs
 
 
 class DockingObservationProcessorOriented(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
-        # Invoke parent's constructor
-        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
-
         # Initialize member variables from config
         self.mode = mode
         self.deputy = deputy
 
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+        if not self.has_normalization:
+            if self.mode == '2d':
+                # if no custom normalization defined
+                self._add_normalization([100, 100, np.pi, 0.5, 0.5, np.deg2rad(2), 1, 1])
+
+    def define_observation_space(self) -> gym.spaces.Box:
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
         if self.mode == '2d':
-            self.observation_space = gym.spaces.Box(low=low, high=high, shape=(7,))
-            if not self.has_normalization:
-                # if no custom normalization defined
-                self._add_normalization([1000, 1000, np.pi, 100, 100, 0.4, 500])
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
         elif self.mode == '3d':
             raise NotImplementedError
         else:
-            raise ValueError("Invalid observation mode {}. Should be one of ".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
+
+        return observation_space
 
     def _process(self, sim_state):
         obs = sim_state.env_objs[self.deputy].state.vector
 
         # if self.config['mode'] == '2d':
         #     obs[2]
+
+        obs = np.append(obs, np.linalg.norm(sim_state.env_objs[self.deputy].velocity))
+        obs = np.append(obs, sim_state.status['max_vel_limit'])
 
         return obs
 
@@ -130,9 +148,10 @@ class DistanceChangeZRewardProcessor(RewardProcessor):
 
 
 class SuccessRewardProcessor(RewardProcessor):
-    def __init__(self, name=None, success_status=None, reward=None):
+    def __init__(self, name=None, success_status=None, reward=None, timeout=None):
         super().__init__(name=name, reward=reward)
         self.success_status = success_status
+        self.timeout = timeout
 
     def _increment(self, sim_state, step_size):
         # reward derived straight from status dict, therefore no state machine necessary
@@ -142,6 +161,8 @@ class SuccessRewardProcessor(RewardProcessor):
         step_reward = 0
         if sim_state.status[self.success_status]:
             step_reward = self.reward
+            if self.timeout is not None:
+                step_reward += 1 - (sim_state.time_elapsed / self.timeout)
         return step_reward
 
 
@@ -317,8 +338,13 @@ class DockingThrustDeltaVStatusProcessor(StatusProcessor):
     def _increment(self, sim_state, step_size):
         # status derived directly from simulation state. No state machine necessary
         target_platform = sim_state.env_objs[self.target]
-        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d)
+        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d) or \
+            isinstance(target_platform, CWHSpacecraftOriented2d)
         control_vec = target_platform.current_control
+        
+        if isinstance(target_platform, CWHSpacecraftOriented2d):
+            control_vec = control_vec[:-1]
+
         mass = target_platform.dynamics.m
 
         self.step_delta_v = np.sum(np.abs(control_vec)) / mass * step_size

@@ -95,8 +95,12 @@ class BaseEnv(gym.Env):
 
         self._step_sim(action)
 
-        self.sim_state.status = self._generate_status()
+        # update time metrics - timesteps and time_elapsed
+        self.time_elapsed += self.step_size
+        self.timesteps_elapsed += 1
 
+        # update status and generate logs
+        self.sim_state.status = self._generate_status()
         reward = self._generate_reward()
         obs = self._generate_obs()
         info = self.generate_info()
@@ -114,6 +118,7 @@ class BaseEnv(gym.Env):
         self._initialize()
 
         # reset processor objects and status
+        self.sim_state.reset()
         self.sim_state.status = self.status_manager.reset(self.sim_state)
         self.reward_manager.reset(self.sim_state)
         self.observation_manager.reset(self.sim_state)
@@ -175,7 +180,9 @@ class BaseEnv(gym.Env):
             'success': self.status['success'],
             'status': self.status,
             'reward': self.reward_manager.generate_info(),
-            'timestep_size': self.step_size
+            'timestep_size': self.step_size,
+            'timesteps_elapsed': self.timesteps_elapsed,
+            'time_elapsed': self.time_elapsed
         }
 
         for obj_name in self.env_objs:
@@ -207,10 +214,32 @@ class BaseEnv(gym.Env):
     def agent(self, val):
         self.sim_state.agent = val
 
+    @property
+    def time_elapsed(self):
+        return self.sim_state.time_elapsed
+
+    @time_elapsed.setter
+    def time_elapsed(self, val):
+        self.sim_state.time_elapsed = val
+
+    @property
+    def timesteps_elapsed(self):
+        return self.sim_state.timesteps_elapsed
+
+    @timesteps_elapsed.setter
+    def timesteps_elapsed(self, val):
+        self.sim_state.timesteps_elapsed = val
+
 
 class SimulationState:
-
     def __init__(self, env_objs=None, agent=None, status=None):
         self.env_objs = env_objs
         self.agent = agent
         self.status = status
+        self.time_elapsed = 0
+        self.timesteps_elapsed = 0
+
+    def reset(self):
+        self.status = None
+        self.time_elapsed = 0
+        self.timesteps_elapsed = 0
