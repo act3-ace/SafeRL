@@ -1,54 +1,56 @@
 import os
 import graphing_components
+from tqdm import tqdm
 # this file reproduces paper plots
 
 
-def paper_rejoin_plots(logdir, clip_method, output_dir='./', rename_map=None):
-    success_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'success_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
+def paper_plots(task, logdir, clip_method, output_dir='./', rename_map=None, **kwargs):
+    assert task in ['docking', 'rejoin'], "task must be one of ['docking', 'rejoin']"
 
-    reward_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'episode_reward_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
+    q2_labels = ['success_mean', 'episode_reward_mean', 'episode_len_mean']
+    if task == 'docking':
+        q2_labels += ['ratio_mean', 'delta_v_total_mean']
 
-    eps_length_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'episode_len_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
+    plots = []
 
-    return success_plot, reward_plot, eps_length_plot
+    for q2_label in tqdm(q2_labels, position=1, leave=False):
+        plots.append(graphing_components.graph_q1_v_q2(
+            logdir, 'timesteps_total', q2_label, clip_method, output_dir=output_dir, rename_map=rename_map, **kwargs))
 
-
-def paper_docking_plots(logdir, clip_method, output_dir='./', rename_map=None):
-    success_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'success_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
-
-    reward_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'episode_reward_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
-
-    eps_length_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'episode_len_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
-
-    constr_viol_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'ratio_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
-
-    delta_v_plot = graphing_components.graph_q1_v_q2(
-        logdir, 'timesteps_total', 'delta_v_total_mean', clip_method, output_dir=output_dir, rename_map=rename_map)
-
-    return success_plot, reward_plot, eps_length_plot, constr_viol_plot, delta_v_plot
+    return plots
 
 
 if __name__ == '__main__':
-
     experiments = [
         (
             '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/rejoin_2d/rejoin_2d_fixed_nominal_20211014_203850/expr_20211014_203850', # noqa
             'rejoin_2d',
-            paper_rejoin_plots,
-            int(1e6),
+            'rejoin',
+            'shortest',
         ),
         (
-            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_2d/expr_20211014_172912',
+            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/rejoin_3d_tall/expr_20211015_043032', # noqa
+            'rejoin_3d',
+            'rejoin',
+            'shortest',
+        ),
+        (
+            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_2d/expr_20220106_192325',
             'docking_2d',
-            paper_docking_plots,
-            int(1.2e6),
+            'docking',
+            'shortest',
+        ),
+        (
+            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_3d/expr_20220106_201704',
+            'docking_3d',
+            'docking',
+            'shortest',
+        ),
+        (
+            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_oriented_2d/expr_20220102_224631',
+            'docking_oriented_2d',
+            'docking',
+            'shortest',
         ),
     ]
 
@@ -61,6 +63,6 @@ if __name__ == '__main__':
         'delta_v_total_mean': 'Delta-v',
     }
 
-    for log_dir, output_dir, plot_fn, clipping_bound in experiments:
+    for log_dir, output_dir, task, clipping_bound in tqdm(experiments, position=0):
         os.makedirs(output_dir, exist_ok=True)
-        plot_fn(log_dir, clipping_bound, output_dir=output_dir, rename_map=rename_map)
+        paper_plots(task, log_dir, clipping_bound, output_dir=output_dir, rename_map=rename_map, interp_subsample_len=1000)
