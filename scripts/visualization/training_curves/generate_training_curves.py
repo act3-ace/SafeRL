@@ -4,7 +4,7 @@ from tqdm import tqdm
 # this file reproduces paper plots
 
 
-def paper_plots(task, logdir, clip_method, output_dir='./', rename_map=None, **kwargs):
+def generate_training_curves(task, logdir, clip_method, output_dir='./', rename_map=None, **kwargs):
     assert task in ['docking', 'rejoin'], "task must be one of ['docking', 'rejoin']"
 
     q2_labels = ['success_mean', 'episode_reward_mean', 'episode_len_mean']
@@ -65,4 +65,4 @@ if __name__ == '__main__':
 
     for log_dir, output_dir, task, clipping_bound in tqdm(experiments, position=0):
         os.makedirs(output_dir, exist_ok=True)
-        paper_plots(task, log_dir, clipping_bound, output_dir=output_dir, rename_map=rename_map, interp_subsample_len=1000)
+        generate_training_curves(task, log_dir, clipping_bound, output_dir=output_dir, rename_map=rename_map, interp_subsample_len=1000, dpi=300)
