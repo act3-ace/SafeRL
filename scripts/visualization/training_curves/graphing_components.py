@@ -143,7 +143,7 @@ def clip_array(arr, bounds):
 
     return arr[clip_idx], clip_idx
 
-def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x_label=None, y_label=None, interp=True, interp_subsample_len=None):
+def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x_label=None, y_label=None, interp=True, interp_subsample_len=None, dpi=300):
     if x_label is None:
         x_label = q1
     if y_label is None:
@@ -196,7 +196,7 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
 
     # save figure here itself
     save_file = os.path.join(output_dir, q1 + '_v_' + q2 + '.png')
-    plot.savefig(save_file, dpi=150)
+    plot.savefig(save_file, dpi=dpi)
 
     return plot
 
