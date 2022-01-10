@@ -157,7 +157,7 @@ def plot_data(data,
     fig, ax = plt.subplots()
 
     # create color map + set scale
-    cmap = plt.cm.get_cmap('plasma')        # cool, spring
+    cmap = plt.cm.get_cmap('rainbow')        # cool, spring, plasma
 
     # plot each trajectory onto figure
     longest_episode = None
