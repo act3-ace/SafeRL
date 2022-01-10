@@ -100,8 +100,8 @@ def plot_data(data,
 
     # plot each eval
     line_num = 0
-    longest_episode_len = 0
-    longest_episode = None
+    largest_distance_span = 0
+    largest_distance_span_episode = None
     for iter_num in sorted(list(data.keys())):
         # get color
         line_num += 1
@@ -109,13 +109,14 @@ def plot_data(data,
 
         ax.plot(data[iter_num]['distance'], data[iter_num]['velocity'], color=color)
 
-        # record longest episode
-        if len(data[iter_num]['distance']) > longest_episode_len:
-            longest_episode = iter_num
-            longest_episode_len = len(data[iter_num]["distance"])
+        # record largest distance span episode
+        distance_span = max(data[iter_num]['distance']) - min(data[iter_num]['distance'])
+        if distance_span > largest_distance_span:
+            largest_distance_span_episode = iter_num
+            largest_distance_span = distance_span
 
     # plot vel limit
-    ax.plot(data[longest_episode]['distance'], data[longest_episode]['vel_limit'], color="black", linestyle='--')
+    ax.plot(data[largest_distance_span_episode]['distance'], data[largest_distance_span_episode]['vel_limit'], color="black", linestyle='--')
 
     axes_font_dict = {
         'fontstyle': 'italic',
@@ -216,6 +217,7 @@ def main():
 
     ## plot data in matplotlib
     # output_filename = output_path + "/figure1"
+    os.makedirs('./figs', exist_ok=True)
     output_filename = "./figs/vel_constr.png"
     plot_data(data, output_filename=output_filename, legend=iters)
 
