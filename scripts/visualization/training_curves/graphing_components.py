@@ -143,7 +143,7 @@ def clip_array(arr, bounds):
 
     return arr[clip_idx], clip_idx
 
-def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x_label=None, y_label=None, interp=True, interp_subsample_len=None, dpi=300):
+def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x_label=None, y_label=None, interp=True, interp_subsample_len=None, rc_params={}):
     if x_label is None:
         x_label = q1
     if y_label is None:
@@ -189,14 +189,17 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
         q1_track += [q1_clipped]
         q2_track += [q2_clipped]
 
-    sns.set_theme()
+    sns.set_theme(rc=rc_params)
 
     plot = sns.relplot(x=np.concatenate(q1_track), y=np.concatenate(q2_track), kind='line')
-    plot.set_axis_labels(x_label, y_label)
+    plot.ax.set_xlabel(x_label, fontstyle='italic')
+    plot.ax.set_ylabel(y_label, fontstyle='italic')
+
+    plot.fig.set_size_inches(rc_params['figure.figsize'][0], rc_params['figure.figsize'][1])
 
     # save figure here itself
     save_file = os.path.join(output_dir, q1 + '_v_' + q2 + '.png')
-    plot.savefig(save_file, dpi=dpi)
+    plot.savefig(save_file)
 
     return plot
 
