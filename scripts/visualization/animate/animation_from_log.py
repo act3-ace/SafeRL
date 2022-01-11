@@ -57,7 +57,7 @@ class animator_docking_oriented_2d:
         self.ui_scale_mat = np.array([[max(xlim_span, ylim_span), 0], [0, max(xlim_span, ylim_span)]], dtype=float)
 
         anim = animation.FuncAnimation(
-            self.fig, self.frame_change, frames=len(self.log_data), init_func=self.frame_init, blit=True, interval=33.3)
+            self.fig, self.frame_change, frames=len(self.log_data), init_func=self.frame_init, blit=True, interval=16.7)
 
         return anim
 
@@ -163,7 +163,7 @@ def main():
     print("saving animation")
 
     save_bar = tqdm(total=len(log_data))
-    anim.save('anim.mp4', writer="ffmpeg", 
+    anim.save('anim.mp4', writer="ffmpeg", dpi=200,
               progress_callback=lambda i, n: save_bar.update(1) )
     save_bar.close()
     # plt.show()
