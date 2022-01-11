@@ -22,36 +22,36 @@ def generate_training_curves(task, logdir, clip_method, output_dir='./', rename_
 
 if __name__ == '__main__':
     experiments = [
-        (
-            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/rejoin_2d/rejoin_2d_fixed_nominal_20211014_203850/expr_20211014_203850', # noqa
-            'rejoin_2d',
-            'rejoin',
-            'shortest',
-        ),
-        (
-            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/rejoin_3d_tall/expr_20211015_043032', # noqa
-            'rejoin_3d',
-            'rejoin',
-            'shortest',
-        ),
+        # (
+        #     '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/rejoin_2d/rejoin_2d_fixed_nominal_20211014_203850/expr_20211014_203850', # noqa
+        #     'rejoin_2d',
+        #     'rejoin',
+        #     'shortest',
+        # ),
+        # (
+        #     '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/rejoin_3d_tall/expr_20211015_043032', # noqa
+        #     'rejoin_3d',
+        #     'rejoin',
+        #     'shortest',
+        # ),
         (
             '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_2d/expr_20220106_192325',
             'docking_2d',
             'docking',
             'shortest',
         ),
-        (
-            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_3d/expr_20220106_201704',
-            'docking_3d',
-            'docking',
-            'shortest',
-        ),
-        (
-            '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_oriented_2d/expr_20220102_224631',
-            'docking_oriented_2d',
-            'docking',
-            'shortest',
-        ),
+        # (
+        #     '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_3d/expr_20220106_201704',
+        #     'docking_3d',
+        #     'docking',
+        #     'shortest',
+        # ),
+        # (
+        #     '/data/petabyte/safe_autonomy/ieee_aero_2022/experiments/docking_oriented_2d/expr_20220102_224631',
+        #     'docking_oriented_2d',
+        #     'docking',
+        #     'shortest',
+        # ),
     ]
 
     rename_map = {
@@ -63,6 +63,27 @@ if __name__ == '__main__':
         'delta_v_total_mean': 'Delta-v',
     }
 
+    rc_params = {
+        'figure.figsize': (0.65*3.375, 0.65*3.375*4.8/6.4),
+        'figure.dpi': 300,
+        'font.size': 10,
+        'xtick.major.pad': 0,
+        'xtick.minor.pad': 0,
+        'xtick.labelsize': 10,
+        'ytick.major.pad': 0,
+        'ytick.minor.pad': 0,
+        'ytick.labelsize': 10,
+        'lines.linewidth': 0.75,
+        'lines.markersize': 2.5,
+        'legend.fontsize': 10,
+        'legend.borderpad': 0.2,
+        'legend.labelspacing': 0.3,
+        'legend.markerscale': 20,
+        'legend.handlelength': 1,
+        'legend.handletextpad': 0.3,
+        'axes.labelsize': 10,
+    }
+
     for log_dir, output_dir, task, clipping_bound in tqdm(experiments, position=0):
         os.makedirs(output_dir, exist_ok=True)
-        generate_training_curves(task, log_dir, clipping_bound, output_dir=output_dir, rename_map=rename_map, interp_subsample_len=1000, dpi=300)
+        generate_training_curves(task, log_dir, clipping_bound, output_dir=output_dir, rename_map=rename_map, interp_subsample_len=1000, rc_params=rc_params)
