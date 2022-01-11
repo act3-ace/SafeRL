@@ -150,11 +150,11 @@ def plot_data(data,
               target=None,
               markers=None):
 
-    # set seaborn theme
-    sns.set_theme()
-
     # create figure
     fig, ax = plt.subplots()
+
+    # scientitifc notation limits
+    ax.ticklabel_format(scilimits=[-3,3])
 
     # create color map + set scale
     cmap = plt.cm.get_cmap('rainbow')        # cool, spring, plasma
@@ -211,15 +211,17 @@ def plot_data(data,
     # titles
     axes_font_dict = {
         'fontstyle': 'italic',
-        'fontsize': 10
     }
-    # title_font_dict = {
-    #     'fontweight': 'bold',
-    #     'fontsize': 10
-    # }
 
-    plt.xlabel("X", fontdict=axes_font_dict)
-    plt.ylabel("Y", fontdict=axes_font_dict)
+    if task == "docking":
+        unit = 'm'
+    elif task == "rejoin":
+        unit = 'ft'
+    else:
+        raise ValueError(f"No such task {task}")
+
+    plt.xlabel(f"X ({unit})", fontdict=axes_font_dict)
+    plt.ylabel(f"Y ({unit})", fontdict=axes_font_dict)
     # plt.title(title, fontdict=title_font_dict)
 
     # legend
@@ -233,7 +235,9 @@ def plot_data(data,
     if task == "rejoin":
         legend_list.append('lead')
 
-    ax.legend(legend_list)
+    leg = ax.legend(legend_list)
+    for line in leg.get_lines():
+        line.set_linewidth(2)
 
     plt.tight_layout(pad=0.5)
 
@@ -359,9 +363,38 @@ def main():
     # parse trajectories for extra info
     markers = parse_log_markers(trajectories, environment_objs, args.marker_freq)
 
+    rc_params = {
+        'figure.figsize': (3.375, 3.375*4.8/6.4),
+        'figure.dpi': 300,
+        'font.size': 10,
+        'xtick.major.pad': 0,
+        'xtick.minor.pad': 0,
+        'xtick.labelsize': 10,
+        'ytick.major.pad': 0,
+        'ytick.minor.pad': 0,
+        'ytick.labelsize': 10,
+        'lines.linewidth': 1,
+        'lines.markersize': 2.5,
+        'legend.fontsize': 10,
+        'legend.borderpad': 0.2,
+        'legend.labelspacing': 0.3,
+        'legend.markerscale': 20,
+        'legend.handlelength': 1,
+        'legend.handletextpad': 0.3,
+        'axes.labelsize': 10,
+    }
+
+    # set seaborn theme
+    sns.set_theme(rc=rc_params)
+
     # create plot
     #output_filename = output_path + "/../figure1"
-    output_filename = "./figs/figure1.png"
+    if args.task == "docking":
+        output_filename = "./figs/docking_traj.png"
+    elif args.task == "rejoin":
+        output_filename = "./figs/rejoin_traj.png"
+    else:
+        output_filename = "./figs/figure1.png"
     plot_data(trajectories,
               output_filename=output_filename,
               # title=title,

@@ -8,6 +8,7 @@ Author: John McCarroll
 
 import math
 import seaborn as sns
+import matplotlib
 import matplotlib.pyplot as plt
 import jsonlines
 import os
@@ -89,9 +90,6 @@ def plot_data(data,
               legend=None
               ):
 
-    # set seaborn theme
-    sns.set_theme()
-
     # create figure
     fig, ax = plt.subplots()
 
@@ -117,19 +115,13 @@ def plot_data(data,
 
     # plot vel limit
     ax.plot(data[largest_distance_span_episode]['distance'], data[largest_distance_span_episode]['vel_limit'], color="black", linestyle='--')
+    ylim = list(ax.get_ylim())
+    ylim[1] += 0.1
+    ax.set_ylim(ylim)
 
-    axes_font_dict = {
-        'fontstyle': 'italic',
-        'fontsize': 10
-    }
-    # title_font_dict = {
-    #     'fontweight': 'bold',
-    #     'fontsize': 10
-    # }
-
-    plt.xlabel("Distance from Chief (m)", fontdict=axes_font_dict)
-    plt.ylabel("Velocity (m/s)", fontdict=axes_font_dict)
-    # plt.title(title, fontdict=title_font_dict)
+    plt.xlabel("Distance from Chief (m)", fontstyle='italic')
+    plt.ylabel("Velocity (m/s)", fontstyle='italic')
+    # plt.title(title)
 
     # legend
     legend_list = [iter_num for iter_num in sorted(list(legend.values()))]
@@ -139,9 +131,11 @@ def plot_data(data,
         elif legend_list[i] > 1000000:
             legend_list[i] = str(legend_list[i] / 1000000)[0:4] + 'M'
 
-    ax.legend(legend_list)
+    leg = ax.legend(legend_list)
+    for line in leg.get_lines():
+        line.set_linewidth(2)
 
-    plt.tight_layout(pad=0.5)
+    plt.tight_layout(pad=0.1)
 
     # save figure
     if output_filename:
@@ -219,6 +213,30 @@ def main():
     # output_filename = output_path + "/figure1"
     os.makedirs('./figs', exist_ok=True)
     output_filename = "./figs/vel_constr.png"
+
+    rc_params = {
+        'figure.figsize': (3.375, 3.375*4.8/6.4),
+        'figure.dpi': 300,
+        'font.size': 10,
+        'xtick.major.pad': 0,
+        'xtick.minor.pad': 0,
+        'xtick.labelsize': 10,
+        'ytick.major.pad': 0,
+        'ytick.minor.pad': 0,
+        'ytick.labelsize': 10,
+        'lines.linewidth': 0.75,
+        'legend.fontsize': 10,
+        'legend.borderpad': 0.2,
+        'legend.labelspacing': 0.3,
+        'legend.markerscale': 20,
+        'legend.handlelength': 1,
+        'legend.handletextpad': 0.3,
+        'axes.labelsize': 10,
+    }
+
+    # set seaborn theme
+    sns.set_theme(rc=rc_params)
+    
     plot_data(data, output_filename=output_filename, legend=iters)
 
 
