@@ -1,5 +1,6 @@
 import os
 import argparse
+# import pickle5 as pickle
 import pickle5 as pickle
 import jsonlines
 import tqdm
@@ -20,6 +21,8 @@ default). Currently, only DubinsRejoin and DockingEnv are supported.
 Author: John McCarroll
 """
 
+DEFAULT_TRIAL_INDEX = 0
+
 
 class InvalidExperimentDirStructure(Exception):
     pass
@@ -37,6 +40,12 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir', type=str, default="", help="The full path to the experiment directory", required=True)
+    parser.add_argument(
+        '--trial_index',
+        type=int,
+        default=DEFAULT_TRIAL_INDEX,
+        help="The index corresponding to the desired experiment to load. Use when multiple experiments are run by Tune."
+        )
     parser.add_argument('--ckpt_num', type=int, default=None, help="Specify a checkpoint to load")
     parser.add_argument('--seed', type=int, default=None, help="The seed used to initialize evaluation environment")
     parser.add_argument('--explore', default=False, action="store_true", help="True for off-policy evaluation")
@@ -81,7 +90,7 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
         with jsonlines.open(log_dir, "a") as writer:
             while not done:
                 # progress environment state
-                action = agent.compute_action(obs)
+                action = agent.compute_single_action(obs)
                 obs, reward, done, info = env.step(action)
                 step_num += 1
                 episode_reward += reward
@@ -106,14 +115,17 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
                     env.render()
 
 
-def verify_experiment_dir(expr_dir_path):
+def verify_experiment_dir(expr_dir_path, trial_index=None):
     """
     A function to ensure passed path points to experiment run directory (as opposed to the parent directory).
 
     Parameters
     ----------
     expr_dir_path : str
-        The full path to the experiment directory as received from arguments
+        The full path to the experiment directory as received from arguments.
+    trial_index : int
+        The index of the trial directory to return, given experiment directory was the result of a Tune run with
+        multiple trials.
 
     Returns
     -------
@@ -124,14 +136,27 @@ def verify_experiment_dir(expr_dir_path):
     params_file = "/params.pkl"
     given = glob(expr_dir_path + params_file)
     # look for params in child dirs
-    children = glob(expr_dir_path + "/*" + params_file)
+    children = sorted(glob(expr_dir_path + "/*" + params_file),
+                      key=lambda trial_dir_path: int(trial_dir_path.split("/")[-2].split("_")[4]))
 
     if len(given) == 0:
         # params file not in given dir
         if len(children) == 0:
             raise InvalidExperimentDirStructure("No params.pkl file found!")
         elif len(children) > 1:
-            raise InvalidExperimentDirStructure("More than one params.pkl file found!")
+            # handle multiple episodes
+            if trial_index:
+                if trial_index < len(children) and trial_index >= -len(children):
+                    file_name = children[trial_index]
+                    expr_dir_path = file_name[:len(file_name) - len(params_file)]
+                    return expr_dir_path
+                else:
+                    raise ValueError("No trial directory corresponding to index {} was found!"
+                                     .format(trial_index))
+            else:
+                # take first trial in children
+                size = len(children[0])
+                expr_dir_path = children[0][:size - len(params_file)]
         else:
             # params file found in child dir
             size = len(children[0])
@@ -178,15 +203,25 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
     return ckpt_num, ckpt_num_str
 
 
+def parse_jsonlines_log(filepath):
+    log_states = []
+    with jsonlines.open(filepath, 'r') as log:
+        for state in log:
+            log_states.append(state)
+
+    return log_states
+
+
 def main():
     # process args
     args = get_args()
 
     # assume full path passed in
     expr_dir_path = args.dir
+    trial_index = args.trial_index
 
     # verify experiment run dir
-    expr_dir_path = verify_experiment_dir(expr_dir_path)
+    expr_dir_path = verify_experiment_dir(expr_dir_path, trial_index=trial_index)
 
     # get checkpoint num
     ckpt_num, ckpt_num_str = find_checkpoint_dir(expr_dir_path, args.ckpt_num)
