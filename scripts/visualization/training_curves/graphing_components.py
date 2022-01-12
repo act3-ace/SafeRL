@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
 import numbers
 
@@ -191,15 +192,16 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
 
     sns.set_theme(rc=rc_params)
 
-    plot = sns.relplot(x=np.concatenate(q1_track), y=np.concatenate(q2_track), kind='line')
+    plot = sns.relplot(x=np.concatenate(q1_track), y=np.concatenate(q2_track), kind='line', height=rc_params['figure.figsize'][1])
     plot.ax.set_xlabel(x_label, fontstyle='italic')
     plot.ax.set_ylabel(y_label, fontstyle='italic')
-
+    
     plot.fig.set_size_inches(rc_params['figure.figsize'][0], rc_params['figure.figsize'][1])
+    
 
     # save figure here itself
     save_file = os.path.join(output_dir, q1 + '_v_' + q2 + '.png')
-    plot.savefig(save_file)
+    plot.savefig(save_file, bbox_inches="tight", pad_inches=0.04)
 
     return plot
 
