@@ -135,7 +135,7 @@ def plot_data(data,
     for line in leg.get_lines():
         line.set_linewidth(2)
 
-    plt.tight_layout(pad=0.1)
+    plt.tight_layout(pad=0.5)
 
     # save figure
     if output_filename:
@@ -214,24 +214,28 @@ def main():
     os.makedirs('./figs', exist_ok=True)
     output_filename = "./figs/vel_constr.png"
 
+    font_size = 8
+    tick_font_size = font_size - 2
+
     rc_params = {
         'figure.figsize': (3.375, 3.375*4.8/6.4),
         'figure.dpi': 300,
-        'font.size': 10,
+        'font.size': font_size,
         'xtick.major.pad': 0,
         'xtick.minor.pad': 0,
-        'xtick.labelsize': 10,
+        'xtick.labelsize': tick_font_size,
         'ytick.major.pad': 0,
         'ytick.minor.pad': 0,
-        'ytick.labelsize': 10,
+        'ytick.labelsize': tick_font_size,
         'lines.linewidth': 0.75,
-        'legend.fontsize': 10,
+        'legend.fontsize': font_size - 2,
         'legend.borderpad': 0.2,
         'legend.labelspacing': 0.3,
         'legend.markerscale': 20,
         'legend.handlelength': 1,
         'legend.handletextpad': 0.3,
-        'axes.labelsize': 10,
+        'axes.labelsize': font_size,
+        'axes.labelpad': 2,
     }
 
     # set seaborn theme

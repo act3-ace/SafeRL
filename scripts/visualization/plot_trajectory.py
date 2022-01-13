@@ -154,7 +154,7 @@ def plot_data(data,
     fig, ax = plt.subplots()
 
     # scientitifc notation limits
-    ax.ticklabel_format(scilimits=[-3,3])
+    # ax.ticklabel_format(scilimits=[-3,3])
 
     # create color map + set scale
     cmap = plt.cm.get_cmap('rainbow')        # cool, spring, plasma
@@ -363,25 +363,29 @@ def main():
     # parse trajectories for extra info
     markers = parse_log_markers(trajectories, environment_objs, args.marker_freq)
 
+    font_size = 8
+    tick_font_size = font_size - 2
+
     rc_params = {
         'figure.figsize': (3.375, 3.375*4.8/6.4),
         'figure.dpi': 300,
-        'font.size': 10,
+        'font.size': font_size,
         'xtick.major.pad': 0,
         'xtick.minor.pad': 0,
-        'xtick.labelsize': 10,
+        'xtick.labelsize': tick_font_size,
         'ytick.major.pad': 0,
         'ytick.minor.pad': 0,
-        'ytick.labelsize': 10,
+        'ytick.labelsize': tick_font_size,
         'lines.linewidth': 1,
         'lines.markersize': 2.5,
-        'legend.fontsize': 10,
+        'legend.fontsize': font_size - 2,
         'legend.borderpad': 0.2,
         'legend.labelspacing': 0.3,
         'legend.markerscale': 20,
         'legend.handlelength': 1,
         'legend.handletextpad': 0.3,
-        'axes.labelsize': 10,
+        'axes.labelsize': font_size,
+        'axes.labelpad': 2,
     }
 
     # set seaborn theme
