@@ -244,6 +244,14 @@ class ObservationProcessor(Processor):
         obs = self._process(sim_state)
         # post-process observations
         obs = self._post_process(obs, sim_state)
+        # ensure that the output is a numpy array
+        obs = self._make_array(obs)
+
+        return obs
+
+    def _make_array(self, obs):
+        if not isinstance(obs, np.ndarray):
+            return np.array(obs, dtype=float, ndmin=1)
         return obs
 
     def _increment(self, sim_state, step_size):

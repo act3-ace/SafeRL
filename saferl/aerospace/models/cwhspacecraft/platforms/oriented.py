@@ -9,7 +9,7 @@ from saferl.aerospace.models.cwhspacecraft.platforms.cwh import CWH2dDynamics
 
 class CWHSpacecraftOriented2d(BasePlatform):
 
-    def __init__(self, name, controller=None, integration_method='RK45', m = 12, n = 0.001027, **kwargs):
+    def __init__(self, name, controller=None, integration_method='RK45', m=12, n=0.001027, **kwargs):
         self.m = m  # kg
         self.moment = 0.056  # kg*m^2
         self.react_wheel_moment = 4.1e-5  # kg*m^2

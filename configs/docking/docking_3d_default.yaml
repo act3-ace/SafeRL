@@ -17,6 +17,7 @@ env_config:
   - name: deputy
     class: saferl.aerospace.models.cwhspacecraft.platforms.CWHSpacecraft3d
     config:
+      integration_method: RK45
       controller:
         class: saferl.environment.models.platforms.AgentController
         actuators:
