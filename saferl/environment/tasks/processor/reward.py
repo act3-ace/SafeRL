@@ -27,14 +27,14 @@ class ConditionalRewardProcessor(RewardProcessor):
 
 
 class ProportionalRewardProcessor(RewardProcessor):
-    def __init__(self, name, scale, bias, proportion_status, cond_status=None, cond_status_invert=False):
+    def __init__(self, name, scale, bias, proportion_status, cond_status=None, cond_status_invert=False, **kwargs):
         self.scale = scale
         self.bias = bias
         self.proportion_status = proportion_status
         self.cond_status = cond_status
         self.cond_status_invert = cond_status_invert
         self.last_step_size = 0
-        super().__init__(name, reward=0)
+        super().__init__(name, reward=0, **kwargs)
 
     def reset(self, sim_state):
         super().reset(sim_state)
