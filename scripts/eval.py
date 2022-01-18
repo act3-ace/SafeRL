@@ -50,6 +50,7 @@ def get_args():
     parser.add_argument('--explore', default=False, action="store_true", help="True for off-policy evaluation")
     parser.add_argument('--output_dir', type=str, default=None,
                         help="The full path to the directory to write evaluation logs in")
+    parser.add_argument('--output_name', type=str, default=None, help="name of output log file")
     parser.add_argument('--num_rollouts', type=int, default=10,
                         help="Number of randomly initialized episodes to evaluate")
     parser.add_argument('--render', default=False, action="store_true", help="attempt to render evaluation episodes")
@@ -280,7 +281,11 @@ def main():
     agent.get_policy().config['explore'] = args.explore
 
     # run inference episodes and log results
-    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts, render=args.render)
+    output_filename = args.output_name
+    if output_filename is None:
+        output_filename = "eval.log"
+
+    run_rollouts(agent, env, os.path.join(ckpt_eval_dir_path, output_filename), num_rollouts=args.num_rollouts, render=args.render)
 
 
 if __name__ == "__main__":
