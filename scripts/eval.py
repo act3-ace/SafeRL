@@ -202,11 +202,21 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
     return ckpt_num, ckpt_num_str
 
 
-def parse_jsonlines_log(filepath):
+def parse_jsonlines_log(filepath, separate_episodes=False):
     log_states = []
+    episode_log = []
     with jsonlines.open(filepath, 'r') as log:
         for state in log:
-            log_states.append(state)
+            if separate_episodes and episode_log:
+                if state['step_number'] == 1:
+                    log_states.append(episode_log)
+                    episode_log = []
+            episode_log.append(state)
+
+    if separate_episodes:
+        log_states.append(episode_log)
+    else:
+        log_states = episode_log
 
     return log_states
 
