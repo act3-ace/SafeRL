@@ -80,14 +80,14 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
     render : bool
         Flag to render the environment in a separate window during rollouts.
     """
-    for i in tqdm.tqdm(range(num_rollouts)):
-        # run until episode ends
-        episode_reward = 0
-        done = False
-        obs = env.reset()
-        step_num = 0
-
-        with jsonlines.open(log_dir, "a") as writer:
+    with jsonlines.open(log_dir, "w") as writer:
+        for i in tqdm.tqdm(range(num_rollouts)):
+            # run until episode ends
+            episode_reward = 0
+            done = False
+            obs = env.reset()
+            step_num = 0
+            
             while not done:
                 # progress environment state
                 action = agent.compute_single_action(obs)
@@ -267,7 +267,13 @@ def main():
     ray.init()
 
     # load policy and env
-    env_config = args.alt_env_config if args.alt_env_config else ray_config['env_config']
+    if args.alt_env_config:
+        parser = YAMLParser(yaml_file=args.alt_env_config, lookup=build_lookup())
+        config = parser.parse_env()
+        env_config = config["env_config"]
+    else:
+        env_config = ray_config['env_config']
+
     if render_config is not None:
         env_config[RENDER] = render_config
     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
