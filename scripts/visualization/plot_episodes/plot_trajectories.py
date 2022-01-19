@@ -30,7 +30,7 @@ def get_args():
 
 def plot_trajectories(episode_logs, subject, mode="2d"):
     fig, ax = plt.subplots()
-    # ax.set_aspect(aspect='equal', adjustable="datalim")
+    ax.set_aspect(aspect='equal', adjustable="datalim")
 
     for log in episode_logs:
         positions = [[step_log['info'][subject]["x"], step_log['info'][subject]["y"], step_log['info'][subject]["z"]]
@@ -43,7 +43,8 @@ def plot_trajectories(episode_logs, subject, mode="2d"):
         else:
             raise ValueError(f"mode {mode} not supported. Must be ['2d']")
 
-    plt.show()
+    # plt.show()
+    plt.savefig("trajectories.png", dpi=200)
 
 
 def main():
