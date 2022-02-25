@@ -30,7 +30,9 @@ class DockingObservationProcessor(ObservationProcessor):
         low = np.finfo(np.float32).min
         high = np.finfo(np.float32).max
 
-        if self.mode == '2d':
+        if self.mode == '1d':
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))
+        elif self.mode == '2d':
             observation_space = gym.spaces.Box(low=low, high=high, shape=(6,))
         elif self.mode == '3d':
             observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
