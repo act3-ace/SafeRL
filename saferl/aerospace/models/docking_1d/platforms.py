@@ -51,7 +51,7 @@ class State1D(BasePlatformStateVectorized):
 
     @property
     def position(self):
-        position = np.zeros((1,))
+        position = np.zeros((3,))
         position[0] = self._vector[0]
         return position
 
@@ -80,7 +80,7 @@ class ActuatorSet1D(BaseActuatorSet):
         actuators = [
             ContinuousActuator(
                 'thrust_x',
-                [-100, 100],
+                [-1, 1],
                 0
             ),
         ]
@@ -90,9 +90,8 @@ class ActuatorSet1D(BaseActuatorSet):
 
 
 class Dynamics1D(BaseLinearODESolverDynamics):
-    def __init__(self, m=12, n=0.001027, integration_method='Euler'):
+    def __init__(self, m=12, integration_method='Euler'):
         self.m = m  # kg
-        self.n = n  # rads/s
 
         super().__init__(integration_method=integration_method)
 
@@ -107,7 +106,7 @@ class Dynamics1D(BaseLinearODESolverDynamics):
 
         B = np.array([
             [0],
-            [1],
+            [1 / self.m],
         ], dtype=np.float64)
 
         return A, B
