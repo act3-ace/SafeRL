@@ -46,14 +46,14 @@ env_config:
       config:
         deputy: deputy
         docking_region: docking_region
-#    - name: delta_v
-#      class: saferl.aerospace.tasks.docking.processors.DockingThrustDeltaVStatusProcessor
-#      config:
-#        target: deputy
-#    - name: custom_metrics.delta_v_total
-#      class: saferl.aerospace.tasks.docking.processors.AccumulatorStatusProcessor
-#      config:
-#        status: delta_v
+    - name: delta_v
+      class: saferl.aerospace.tasks.docking.processors.DockingThrustDeltaVStatusProcessor
+      config:
+        target: deputy
+    - name: custom_metrics.delta_v_total
+      class: saferl.aerospace.tasks.docking.processors.AccumulatorStatusProcessor
+      config:
+        status: delta_v
     - name: max_vel_limit
       class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimit
       config:
@@ -100,12 +100,12 @@ env_config:
         agent: deputy
         target: docking_region
         pivot: 100
-#    - name: delta_v
-#      class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
-#      config:
-#        scale: -0.01
-#        bias: 0
-#        proportion_status: delta_v
+    - name: delta_v
+      class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
+      config:
+        scale: -0.01
+        bias: 0
+        proportion_status: delta_v
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
