@@ -7,7 +7,7 @@ env_config:
     class: saferl.aerospace.models.docking_1d.platforms.Spacecraft1D
     config:
       init:
-#        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         x: 0
         x_dot: 0
   - name: deputy
@@ -21,7 +21,7 @@ env_config:
           space: continuous
           bounds: [-1, 1]
       init:
-#        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         x: 100
         x_dot: 0
   - name: docking_region
@@ -31,8 +31,8 @@ env_config:
       x_offset: 0
       y_offset: 0
       radius: 0.5
-#      init:
-#        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
+      init:
+        initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
   status:
     - name: in_docking
       class: saferl.aerospace.tasks.docking.processors.InDockingStatusProcessor
