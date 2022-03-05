@@ -1,3 +1,4 @@
+import abc
 import math
 # import matplotlib
 # matplotlib.use('Agg')
@@ -27,10 +28,27 @@ def get_args():
     return parser.parse_args()
 
 
-class animator_docking_oriented_2d:
-
+class animator(abc.ABC):
     def __init__(self, log_data):
         self.log_data = log_data
+
+    @abc.abstractmethod
+    def animate(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def frame_init(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def frame_change(self, frame):
+        raise NotImplementedError
+
+
+class animator_docking_oriented_2d(animator):
+
+    def __init__(self, log_data):
+        super().__init__(log_data)
 
         deputy_xs = [d['info']['deputy']['x'] for d in self.log_data]
         deputy_ys = [d['info']['deputy']['y'] for d in self.log_data]
@@ -164,7 +182,7 @@ def main():
 
     save_bar = tqdm(total=len(log_data))
     anim.save('anim.mp4', writer="ffmpeg", dpi=200,
-              progress_callback=lambda i, n: save_bar.update(1) )
+              progress_callback=lambda i, n: save_bar.update(1))
     save_bar.close()
     # plt.show()
 
