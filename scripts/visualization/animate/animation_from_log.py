@@ -29,8 +29,25 @@ def get_args():
 
 
 class animator(abc.ABC):
-    def __init__(self, log_data):
+    def __init__(self, log_data, concurrent=False):
         self.log_data = log_data
+        self.concurrent = concurrent
+
+        if self.concurrent:
+            self.num_frames = max([len(d) for d in self.log_data])
+        else:
+            self.num_frames = sum([len(d) for d in self.log_data])
+
+    def get_sequential_index(self, frame):
+
+        for i in range(len(self.log_data)):
+            ep_len = len(self.log_data[i])
+            if frame < ep_len:
+                break
+            else:
+                frame -= ep_len
+
+        return i, frame
 
     @abc.abstractmethod
     def animate(self):
@@ -48,13 +65,13 @@ class animator(abc.ABC):
 class animator_docking_oriented_2d(animator):
 
     def __init__(self, log_data):
-        super().__init__(log_data)
+        super().__init__(log_data, concurrent=False)
 
-        deputy_xs = [d['info']['deputy']['x'] for d in self.log_data]
-        deputy_ys = [d['info']['deputy']['y'] for d in self.log_data]
+        deputy_xs = [d['info']['deputy']['x'] for ep_log in self.log_data for d in ep_log]
+        deputy_ys = [d['info']['deputy']['y'] for ep_log in self.log_data for d in ep_log]
 
-        self.xlim = (min(deputy_xs), max(deputy_xs))
-        self.ylim = (min(deputy_ys), max(deputy_ys))
+        self.xlim = (min(deputy_xs+[0]), max(deputy_xs+[0]))
+        self.ylim = (min(deputy_ys+[0]), max(deputy_ys+[0]))
 
         xlim_buffer = 0.1 * (self.xlim[1] - self.xlim[0])
         ylim_buffer = 0.1 * (self.ylim[1] - self.ylim[0])
@@ -75,7 +92,7 @@ class animator_docking_oriented_2d(animator):
         self.ui_scale_mat = np.array([[max(xlim_span, ylim_span), 0], [0, max(xlim_span, ylim_span)]], dtype=float)
 
         anim = animation.FuncAnimation(
-            self.fig, self.frame_change, frames=len(self.log_data), init_func=self.frame_init, blit=True, interval=16.7)
+            self.fig, self.frame_change, frames=self.num_frames, init_func=self.frame_init, blit=True, interval=16.7)
 
         return anim
 
@@ -96,7 +113,12 @@ class animator_docking_oriented_2d(animator):
         # return self._frame_change(self.log_data[frame])
         artists = []
 
-        data = self.log_data[frame]
+        if not self.concurrent:
+            ep_idx, ts_idx = self.get_sequential_index(frame)
+            data = self.log_data[ep_idx][ts_idx]
+        else:
+            data = None
+
         x = data['info']['deputy']['x']
         y = data['info']['deputy']['y']
         theta = data['info']['deputy']['theta']
@@ -170,7 +192,7 @@ def get_rot_mat_2d(theta):
 def main():
     # process args
     args = get_args()
-    log_data = parse_jsonlines_log(args.log)
+    log_data = parse_jsonlines_log(args.log, separate_episodes=True)
 
     # log_data = log_data[0:100]
 
@@ -180,7 +202,7 @@ def main():
     anim = animator.animate()
     print("saving animation")
 
-    save_bar = tqdm(total=len(log_data))
+    save_bar = tqdm(total=animator.num_frames)
     anim.save('anim.mp4', writer="ffmpeg", dpi=200,
               progress_callback=lambda i, n: save_bar.update(1))
     save_bar.close()
