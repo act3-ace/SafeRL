@@ -120,7 +120,6 @@ class Dynamics1D(BaseLinearODESolverDynamics):
 
     def __init__(self, m=12, n=1, integration_method='Euler'):
         self.m = m  # kg
-        self.n = n  # mean motion const - set to 1
 
         super().__init__(integration_method=integration_method)
 
