@@ -22,7 +22,7 @@ env_config:
           bounds: [-1, 1]
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: 100
+        x: 10
         x_dot: 0
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
