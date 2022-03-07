@@ -117,8 +117,9 @@ class Dynamics1D(BaseLinearODESolverDynamics):
     This class implements a simplified dynamics model for our 1 dimensional environment.
     """
 
-    def __init__(self, m=12, integration_method='Euler'):
+    def __init__(self, m=12, n=1, integration_method='Euler'):
         self.m = m  # kg
+        self.n = n  # mean motion const - set to 1
 
         super().__init__(integration_method=integration_method)
 
@@ -167,63 +168,3 @@ class Docking1dObservationProcessor(ObservationProcessor):
     def _process(self, sim_state):
         obs = np.copy(sim_state.env_objs[self.deputy].state.vector)
         return obs
-
-
-class Docking1dFailureStatusProcessor(StatusProcessor):
-    """
-    This class defines criteria that determines when an agent has failed during an episode. Failure can result
-    from episode timeout or exceedance of maximum distance from docking region.
-    """
-
-    def __init__(self,
-                 name,
-                 docking_distance,
-                 max_goal_distance,
-                 in_docking_status,
-                 timeout):
-        super().__init__(name=name)
-        self.timeout = timeout
-        self.docking_distance = docking_distance
-        self.max_goal_distance = max_goal_distance
-        self.in_docking_status = in_docking_status
-
-    def reset(self, sim_state):
-        self.time_elapsed = 0
-
-    def _increment(self, sim_state, step_size):
-        # increment internal state
-        self.time_elapsed += step_size
-
-    def _process(self, sim_state):
-        # process state and return status
-        if self.time_elapsed > self.timeout:
-            failure = 'timeout'
-        elif sim_state.status[self.docking_distance] >= self.max_goal_distance:
-            failure = 'distance'
-        # TODO: add crashing / velocity limit?
-        else:
-            failure = False
-        return failure
-
-
-class Docking1dSuccessStatusProcessor(StatusProcessor):
-    """
-    This class defines criteria that determines when an agent has succeeded during an episode. Successful completion of
-    the 1D Docking task requires the agent to navigate to the docking region.
-    """
-
-    def __init__(self, name, in_docking_status):
-        super().__init__(name=name)
-        self.in_docking_status = in_docking_status
-
-    def reset(self, sim_state):
-        pass
-
-    def _increment(self, sim_state, step_size):
-        # status derived directly from simulation state, therefore no state machine needed
-        pass
-
-    def _process(self, sim_state):
-        # process stare and return status
-        success = sim_state.status[self.in_docking_status]
-        return success
