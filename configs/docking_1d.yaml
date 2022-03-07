@@ -44,17 +44,39 @@ env_config:
       config:
         deputy: deputy
         docking_region: docking_region
+    - name: max_vel_limit
+      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimit
+      config:
+        target: deputy
+        dist_status: docking_distance
+        vel_threshold: 0.2
+        threshold_dist: 0.5
+        slope: 2
+    - name: max_vel_violation
+      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
+      config:
+        target: deputy
+        ref: chief
+        vel_limit_status: max_vel_limit
+    - name: max_vel_constraint
+      class: saferl.aerospace.tasks.docking.processors.RelativeVelocityConstraint
+      config:
+        target: deputy
+        ref: chief
+        vel_limit_status: max_vel_limit
     - name: failure
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dFailureStatusProcessor
+      class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
       config:
         docking_distance: docking_distance
         max_goal_distance: 40000
         timeout: 2000
         in_docking_status: in_docking
+        max_vel_constraint_status: max_vel_constraint
     - name: success
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dSuccessStatusProcessor
+      class: saferl.aerospace.tasks.docking.processors.SuccessStatusProcessor
       config:
         in_docking_status: in_docking
+        max_vel_constraint_status: max_vel_constraint
   observation:
     - name: observation_processor
       class: saferl.aerospace.models.docking_1d.platforms.Docking1dObservationProcessor
@@ -67,6 +89,16 @@ env_config:
         agent: deputy
         target: docking_region
         pivot: 100
+    - name: max_vel_constraint
+      class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
+      config:
+        scale: -0.01
+        bias: -0.01
+        proportion_status: max_vel_violation
+        cond_status: max_vel_constraint
+        cond_status_invert: True
+        lower_bound: -5
+        lower_bound_terminal: failure
     - name: failure_reward
       class: saferl.aerospace.tasks.docking.processors.FailureRewardProcessor
       config:
