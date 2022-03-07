@@ -45,13 +45,9 @@ env_config:
         deputy: deputy
         docking_region: docking_region
     - name: max_vel_limit
-      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimit
+      class: saferl.aerospace.models.docking_1d.platforms.Docking1dVelocityLimit
       config:
-        target: deputy
         dist_status: docking_distance
-        vel_threshold: 0.2
-        threshold_dist: 0.5
-        slope: 2
     - name: max_vel_violation
       class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
       config:

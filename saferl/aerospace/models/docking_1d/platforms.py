@@ -3,6 +3,7 @@ This module defines the Platform, State, Dynamics, and Processors needed to simu
 
 Author: John McCarroll
 """
+import math
 
 import gym.spaces
 import numpy as np
@@ -168,3 +169,22 @@ class Docking1dObservationProcessor(ObservationProcessor):
     def _process(self, sim_state):
         obs = np.copy(sim_state.env_objs[self.deputy].state.vector)
         return obs
+
+
+class Docking1dVelocityLimit(StatusProcessor):
+    def __init__(self, name, dist_status):
+        self.dist_status = dist_status
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        pass
+
+    def _process(self, sim_state):
+        dist = sim_state.status[self.dist_status]           # TODO: get dist from deputy state?
+
+        vel_limit = math.sqrt(2 * dist)
+
+        return vel_limit
