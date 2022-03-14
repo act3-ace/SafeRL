@@ -156,9 +156,34 @@ class animator_docking_2d_oriented(animator):
         self.xlim = (self.xlim[0] - xlim_buffer, self.xlim[1] + xlim_buffer)
         self.ylim = (self.ylim[0] - ylim_buffer, self.ylim[1] + ylim_buffer)
 
+    def animate(self):
+        self.fig, self.axes = plt.subplots(nrows=1, ncols=2, figsize=[6.4*2, 4.8])
+        
+        self.ax = self.axes[0]
+
+        self.ax.set_aspect(adjustable='box', aspect='equal')
+
+        self.ax.set_xlim(left=self.xlim[0], right=self.xlim[1])
+        self.ax.set_ylim(bottom=self.ylim[0], top=self.ylim[1])
+
+        self.ax.set_xlabel('x (m)')
+        self.ax.set_ylabel('y (m)')
+
+        xlim_span = self.xlim[1] - self.xlim[0]
+        ylim_span = self.ylim[1] - self.ylim[0]
+
+        self.ui_scale_mat = np.array([[max(xlim_span, ylim_span), 0], [0, max(xlim_span, ylim_span)]], dtype=float)
+
+        self.setup_artists()
+
+        anim = animation.FuncAnimation(
+            self.fig, self.frame_change, frames=self.num_frames, init_func=self.frame_init, blit=True, interval=16.7)
+
+        return anim
+
     def setup_artists(self):
         artists = []
-        self.origin_patch = patches.Circle((0, 0), radius=10, ec='g', fc='palegreen')
+        self.origin_patch = patches.Circle((0, 0), radius=10, fc='palegreen')
         self.ax.add_patch(self.origin_patch)
         artists.append(self.origin_patch)
 
@@ -174,6 +199,8 @@ class animator_docking_2d_oriented(animator):
         self.ax.add_patch(self.chief_patch)
         artists.append(self.chief_patch)
 
+        self.draw_constraint_setup(self.axes[1])
+
         return artists
 
     def frame_change(self, frame):
@@ -182,7 +209,11 @@ class animator_docking_2d_oriented(animator):
 
         if not self.concurrent:
             ep_idx, ts_idx = self.get_sequential_index(frame)
-            data = self.log_data[ep_idx][ts_idx]
+            ep_data = self.log_data[ep_idx]
+            data = ep_data[ts_idx]
+
+            if ts_idx == 0:
+                artists += self.draw_constraint(ep_data, self.axes[1])
         else:
             data = None
 
@@ -201,7 +232,65 @@ class animator_docking_2d_oriented(animator):
         self.deputy_thruster.set_xy(thruster_verts.T)
         artists.append(self.deputy_thruster)
 
+        artists += self.draw_constraint_current(data, self.axes[1])
+
         return artists
+
+    def draw_constraint_setup(self, ax):
+        self.dist_vel_artist, = ax.plot([], [], color='tab:blue')
+        self.dist_vel_current_artist, = ax.plot([], [], color='tab:blue', marker='o')
+
+        n = 0.001027
+        v0 = 0.2
+        constraint_dist = 1000
+        constraint_val = 2*n*constraint_dist + v0
+        self.constraint_limit_artist, = ax.plot([0, constraint_dist], [v0, constraint_val], 'k--')
+
+        # compute max distance
+        max_dist = 150
+        for data in self.log_data:
+            dist, _ = self.compute_dists_vels(data)
+            max_dist = max(max_dist, np.max(dist))
+
+        ax.set_xlim([0, max_dist])
+        ax.set_ylim([0, 0.8])
+
+        ax.set_xlabel('Relative Distance (m)')
+        ax.set_ylabel('Relative Velocity (m/s)')
+        ax.set_title('Distance Dependent Velocity Constraint')
+
+        return [self.dist_vel_artist]
+
+    def draw_constraint(self, ep_data, ax):
+        dists, vels = self.compute_dists_vels(ep_data)
+        self.dist_vel_artist.set_data(dists, vels)
+
+        return [self.dist_vel_artist]
+
+    def draw_constraint_current(self, data, ax):
+        x = data['info']['deputy']['x']
+        y = data['info']['deputy']['y']
+        x_dot = data['info']['deputy']['x_dot']
+        y_dot = data['info']['deputy']['y_dot']
+
+        dist = math.sqrt(x**2 + y**2)
+        vel = math.sqrt(x_dot**2 + y_dot**2)
+
+        self.dist_vel_current_artist.set_data(dist, vel)
+
+        return [self.dist_vel_current_artist]
+
+    def compute_dists_vels(self, ep_data):
+        x_s = np.array([data['info']['deputy']['x'] for data in ep_data], dtype=float)
+        y_s = np.array([data['info']['deputy']['y'] for data in ep_data], dtype=float)
+
+        x_dot_s = np.array([data['info']['deputy']['x_dot'] for data in ep_data], dtype=float)
+        y_dot_s = np.array([data['info']['deputy']['y_dot'] for data in ep_data], dtype=float)
+
+        dists = np.sqrt(x_s**2 + y_s**2)
+        vels = np.sqrt(x_dot_s**2 + y_dot_s**2)
+
+        return dists, vels
 
     def _frame_change(self, data):
         ...
@@ -279,7 +368,7 @@ def main():
     args = get_args()
     log_data = parse_jsonlines_log(args.log, separate_episodes=True)
 
-    # log_data = [log_data[0][0:100]]
+    # log_data = [data for data in log_data[0:3]]
 
     print(len(log_data))
     animator = animator_map[args.animator](log_data)
