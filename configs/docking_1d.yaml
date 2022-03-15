@@ -64,8 +64,8 @@ env_config:
       class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
       config:
         docking_distance: docking_distance
-        max_goal_distance: 40000
-        timeout: 2000
+        max_goal_distance: 100
+        timeout: 100
         in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
     - name: success
@@ -84,7 +84,7 @@ env_config:
       config:
         agent: deputy
         target: docking_region
-        pivot: 100
+        pivot: 10
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
@@ -109,7 +109,7 @@ env_config:
       config:
         reward: 1
         success_status: success
-        timeout: 2000
+        timeout: 100
   verbose: false
 gamma: 0.968559
 lambda: 0.928544
