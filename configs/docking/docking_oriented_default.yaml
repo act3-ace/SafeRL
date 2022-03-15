@@ -23,10 +23,8 @@ env_config:
           bounds: [-1, 2]
           rescale: True
           zero_centered: True
-          pre_activation: tanh
         - name: reaction_wheel
           space: continuous
-          pre_activation: tanh
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         mode: 2d_oriented
