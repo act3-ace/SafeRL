@@ -20,6 +20,7 @@ env_config:
         - name: thrust_x
           space: continuous
           bounds: [-1, 1]
+          post_activation: tanh
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         x: 10
