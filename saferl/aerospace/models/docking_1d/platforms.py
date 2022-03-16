@@ -35,6 +35,13 @@ class BaseSpacecraft(BasePlatform):
     def x_dot(self):
         return self.state.x_dot
 
+    @property
+    def x(self):
+        return self.state.x
+
+    @property
+    def m(self):
+        return self.dynamics.m
 
 class Spacecraft1D(BaseSpacecraft):
     """
@@ -118,8 +125,8 @@ class Dynamics1D(BaseLinearODESolverDynamics):
     This class implements a simplified dynamics model for our 1 dimensional environment.
     """
 
-    def __init__(self, m=12, n=1, integration_method='Euler'):
-        self.m = m  # kg
+    def __init__(self, integration_method='RK45'):
+        self.m = 1  # kg
 
         super().__init__(integration_method=integration_method)
 
@@ -226,3 +233,45 @@ class Docking1dFailureStatusProcessor(StatusProcessor):
             failure = False
         return failure
 
+
+class Docking1dVelocityLimitCompliance(StatusProcessor):
+    def __init__(self, name, target, ref, vel_limit_status):
+        self.target = target
+        self.ref = ref
+        self.vel_limit_status = vel_limit_status
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        pass
+
+    def _process(self, sim_state):
+        target_obj = sim_state.env_objs[self.target]
+        ref_obj = sim_state.env_objs[self.ref]
+
+        target_vel = target_obj.x_dot
+        ref_vel = ref_obj.x_dot
+
+        vel_limit = sim_state.status[self.vel_limit_status]
+
+        rel_vel = target_vel - ref_vel
+
+        compliance = vel_limit - rel_vel
+        return compliance
+
+
+class Docking1dRelativeVelocityConstraint(StatusProcessor):
+    def __init__(self, name, vel_limit_compliance_status):
+        self.vel_limit_compliance_status = vel_limit_compliance_status
+        super().__init__(name)
+
+    def reset(self, sim_state):
+        pass
+
+    def _increment(self, sim_state, step_size):
+        pass
+
+    def _process(self, sim_state):
+        return 0 <=  sim_state.status[self.vel_limit_compliance_status]

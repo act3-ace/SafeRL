@@ -49,18 +49,16 @@ env_config:
       class: saferl.aerospace.models.docking_1d.platforms.Docking1dVelocityLimit
       config:
         dist_status: docking_distance
-    - name: max_vel_violation
-      class: saferl.aerospace.tasks.docking.processors.DockingVelocityLimitViolation
+    - name: max_vel_compliance
+      class: saferl.aerospace.models.docking_1d.platforms.Docking1dVelocityLimitCompliance
       config:
         target: deputy
         ref: chief
         vel_limit_status: max_vel_limit
     - name: max_vel_constraint
-      class: saferl.aerospace.tasks.docking.processors.RelativeVelocityConstraint
+      class: saferl.aerospace.models.docking_1d.platforms.Docking1dRelativeVelocityConstraint
       config:
-        target: deputy
-        ref: chief
-        vel_limit_status: max_vel_limit
+        vel_limit_compliance_status: max_vel_compliance
     - name: failure
       class: saferl.aerospace.models.docking_1d.platforms.Docking1dFailureStatusProcessor
       config:
@@ -91,7 +89,7 @@ env_config:
       config:
         scale: -0.01
         bias: -0.01
-        proportion_status: max_vel_violation
+        proportion_status: max_vel_compliance
         cond_status: max_vel_constraint
         cond_status_invert: True
         lower_bound: -5
