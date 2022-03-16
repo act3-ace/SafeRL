@@ -62,12 +62,12 @@ env_config:
         ref: chief
         vel_limit_status: max_vel_limit
     - name: failure
-      class: saferl.aerospace.tasks.docking.processors.FailureStatusProcessor
+      class: saferl.aerospace.models.docking_1d.platforms.Docking1dFailureStatusProcessor
       config:
+        deputy: deputy
         docking_distance: docking_distance
         max_goal_distance: 100
         timeout: 100
-        in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
     - name: success
       class: saferl.aerospace.tasks.docking.processors.SuccessStatusProcessor
