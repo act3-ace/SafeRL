@@ -23,7 +23,7 @@ env_config:
           post_activation: tanh
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: 10
+        x: -100
         x_dot: 0
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
@@ -66,7 +66,7 @@ env_config:
       config:
         deputy: deputy
         docking_distance: docking_distance
-        max_goal_distance: 100
+        max_goal_distance: 1000
         timeout: 100
         max_vel_constraint_status: max_vel_constraint
     - name: success
@@ -85,7 +85,7 @@ env_config:
       config:
         agent: deputy
         target: docking_region
-        pivot: 10
+        pivot: 100
     - name: max_vel_constraint
       class: saferl.environment.tasks.processor.reward.ProportionalRewardProcessor
       config:
@@ -110,7 +110,7 @@ env_config:
       config:
         reward: 1
         success_status: success
-        timeout: 100
+        timeout: 1000
   verbose: false
 gamma: 0.968559
 lambda: 0.928544
