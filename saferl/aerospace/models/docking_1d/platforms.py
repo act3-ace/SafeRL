@@ -187,3 +187,42 @@ class Docking1dVelocityLimit(StatusProcessor):
         vel_limit = math.sqrt(2 * dist)
 
         return vel_limit
+
+
+class Docking1dFailureStatusProcessor(StatusProcessor):
+    def __init__(self,
+                 name,
+                 deputy,
+                 docking_distance,
+                 max_goal_distance,
+                 max_vel_constraint_status,
+                 timeout):
+        super().__init__(name=name)
+        self.timeout = timeout
+        self.docking_distance = docking_distance
+        self.max_goal_distance = max_goal_distance
+        self.deputy = deputy
+        # self.in_docking_status = in_docking_status
+        self.max_vel_constraint_status = max_vel_constraint_status
+
+    def reset(self, sim_state):
+        self.time_elapsed = 0
+
+    def _increment(self, sim_state, step_size):
+        # increment internal state
+        self.time_elapsed += step_size
+
+    def _process(self, sim_state):
+        # process state and return status
+        x = sim_state.env_objs[self.deputy].x
+        
+        if self.time_elapsed > self.timeout:
+            failure = 'timeout'
+        elif sim_state.status[self.docking_distance] >= self.max_goal_distance:
+            failure = 'distance'
+        elif not sim_state.status[self.max_vel_constraint_status] or x > 0:
+            failure = 'crash'
+        else:
+            failure = False
+        return failure
+
