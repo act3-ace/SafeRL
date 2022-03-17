@@ -14,8 +14,15 @@ def generate_training_curves(task, logdir, clip_method, output_dir='./', rename_
     plots = []
 
     for q2_label in tqdm(q2_labels, position=1, leave=False):
-        plots.append(graphing_components.graph_q1_v_q2(
-            logdir, 'timesteps_total', q2_label, clip_method, output_dir=output_dir, rename_map=rename_map, **kwargs))
+        plot, q1_tracks, q2_tracks = graphing_components.graph_q1_v_q2(
+            logdir, 'timesteps_total', q2_label, clip_method, output_dir=output_dir, rename_map=rename_map, **kwargs)
+        plots.append(plot)
+
+        if q2_label == 'success_mean':
+            inter_eff = graphing_components.compute_interaction_efficiency(q1_tracks, q2_tracks, threshold=0.8)
+            print(inter_eff)
+            with open(os.path.join(output_dir, 'interaction_efficiency.txt'), 'w') as f:
+                f.write(str(inter_eff))
 
     return plots
 

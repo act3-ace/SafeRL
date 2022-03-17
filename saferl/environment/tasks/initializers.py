@@ -29,3 +29,30 @@ class RandBoundsInitializer(Initializer):
         for k, v in self.init_config.items():
             new_params[k] = v if type(v) != list else np.random.uniform(v[0], v[1])
         return new_params
+
+
+class CaseListInitializer(Initializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # start at -1 to account for initializer call in constructor
+        self.iteration = -1
+        self.sequential = self.init_config.get("sequential", False)
+        self.case_list = self.init_config["case_list"]
+
+        assert isinstance(self.sequential, bool), "sequntial must be a bool"
+        assert isinstance(self.case_list, list), "case_list must be a list of dictionaries"
+
+
+    def get_init_params(self):
+        if self.sequential:
+            case_idx = self.iteration % len(self.case_list)
+        else:
+            case_idx = np.random.randint(0, len(self.case_list))
+
+        self.iteration += 1
+
+        case = self.case_list[case_idx]
+
+        return case
+
