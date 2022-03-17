@@ -23,7 +23,7 @@ env_config:
           post_activation: tanh
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: -100
+        x: [-125, -75]
         x_dot: 0
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
@@ -77,6 +77,7 @@ env_config:
       class: saferl.aerospace.models.docking_1d.platforms.Docking1dObservationProcessor
       config:
         deputy: deputy
+        normalization: [100, 10]
   reward:
     - name: dist_change_reward
       class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
