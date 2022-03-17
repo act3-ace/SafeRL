@@ -4,6 +4,7 @@ import pickle5 as pickle
 import jsonlines
 import tqdm
 from glob import glob
+import re
 
 import ray
 import ray.rllib.agents.ppo as ppo
@@ -50,6 +51,7 @@ def get_args():
     parser.add_argument('--explore', default=False, action="store_true", help="True for off-policy evaluation")
     parser.add_argument('--output_dir', type=str, default=None,
                         help="The full path to the directory to write evaluation logs in")
+    parser.add_argument('--output_name', type=str, default=None, help="name of output log file")
     parser.add_argument('--num_rollouts', type=int, default=10,
                         help="Number of randomly initialized episodes to evaluate")
     parser.add_argument('--render', default=False, action="store_true", help="attempt to render evaluation episodes")
@@ -79,14 +81,14 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
     render : bool
         Flag to render the environment in a separate window during rollouts.
     """
-    for i in tqdm.tqdm(range(num_rollouts)):
-        # run until episode ends
-        episode_reward = 0
-        done = False
-        obs = env.reset()
-        step_num = 0
-
-        with jsonlines.open(log_dir, "a") as writer:
+    with jsonlines.open(log_dir, "w") as writer:
+        for i in tqdm.tqdm(range(num_rollouts)):
+            # run until episode ends
+            episode_reward = 0
+            done = False
+            obs = env.reset()
+            step_num = 0
+            
             while not done:
                 # progress environment state
                 action = agent.compute_single_action(obs)
@@ -185,6 +187,8 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
     # find checkpoint dir
     if ckpt_num is not None:
         ckpt_dirs = glob(expr_dir_path + "/checkpoint_*" + str(ckpt_num))
+        ckpt_dirs = [d for d in ckpt_dirs if 
+                     re.search((expr_dir_path+r"/checkpoint_0*"+str(ckpt_num)+'$').replace('/', r'\/'), d)]
         if len(ckpt_dirs) == 1:
             ckpt_num_str = ckpt_dirs[0].split("_")[-1]
         else:
@@ -202,11 +206,21 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
     return ckpt_num, ckpt_num_str
 
 
-def parse_jsonlines_log(filepath):
+def parse_jsonlines_log(filepath, separate_episodes=False):
     log_states = []
+    episode_log = []
     with jsonlines.open(filepath, 'r') as log:
         for state in log:
-            log_states.append(state)
+            if separate_episodes and episode_log:
+                if state['step_number'] == 1:
+                    log_states.append(episode_log)
+                    episode_log = []
+            episode_log.append(state)
+
+    if separate_episodes:
+        log_states.append(episode_log)
+    else:
+        log_states = episode_log
 
     return log_states
 
@@ -256,7 +270,13 @@ def main():
     ray.init()
 
     # load policy and env
-    env_config = args.alt_env_config if args.alt_env_config else ray_config['env_config']
+    if args.alt_env_config:
+        parser = YAMLParser(yaml_file=args.alt_env_config, lookup=build_lookup())
+        config = parser.parse_env()
+        env_config = config["env_config"]
+    else:
+        env_config = ray_config['env_config']
+
     if render_config is not None:
         env_config[RENDER] = render_config
     agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
@@ -270,7 +290,11 @@ def main():
     agent.get_policy().config['explore'] = args.explore
 
     # run inference episodes and log results
-    run_rollouts(agent, env, ckpt_eval_dir_path + "/eval.log", num_rollouts=args.num_rollouts, render=args.render)
+    output_filename = args.output_name
+    if output_filename is None:
+        output_filename = "eval.log"
+
+    run_rollouts(agent, env, os.path.join(ckpt_eval_dir_path, output_filename), num_rollouts=args.num_rollouts, render=args.render)
 
 
 if __name__ == "__main__":
