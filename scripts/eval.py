@@ -187,8 +187,9 @@ def find_checkpoint_dir(expr_dir_path, ckpt_num):
     # find checkpoint dir
     if ckpt_num is not None:
         ckpt_dirs = glob(expr_dir_path + "/checkpoint_*" + str(ckpt_num))
-        ckpt_dirs = [d for d in ckpt_dirs if 
-                     re.search((expr_dir_path+r"/checkpoint_0*"+str(ckpt_num)+'$').replace('/', r'\/'), d)]
+        regex_path = os.path.join(expr_dir_path, r"/checkpoint_0*"+str(ckpt_num)+'$')
+        ckpt_dirs = [d for d in ckpt_dirs if re.search(regex_path.replace('/', r'\/'), d)]
+
         if len(ckpt_dirs) == 1:
             ckpt_num_str = ckpt_dirs[0].split("_")[-1]
         else:
