@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-import pickle
+import pickle5 as pickle
 
 import tensorflow as tf
 import tensorflow.keras as keras
@@ -12,7 +12,10 @@ import ray
 
 import ray.rllib.agents.ppo as ppo
 
-from saferl.aerospace.tasks.rejoin.task import DubinsRejoin
+#from saferl.aerospace.tasks.rejoin.task import RejoinEnv
+
+from saferl.aerospace.tasks.docking.task import DockingEnv
+
 from saferl.environment.utils import numpy_to_matlab_txt
 
 from contextlib import redirect_stdout
@@ -20,11 +23,8 @@ from collections import OrderedDict
 
 tf.compat.v1.disable_eager_execution()
 
-# expr_dir = 'output/expr_20210210_152136/PPO_DubinsRejoin_b926e_00000_0_2021-02-10_15-21-37'
-# ckpt_num = 400
-
-expr_dir = 'output/expr_20210331_102408/PPO_DubinsRejoin_e7a28_00000_0_2021-03-31_10-24-10'
-ckpt_num = 1325  # 875
+expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"
+ckpt_num = 35
 
 ray_config_path = os.path.join(expr_dir, 'params.pkl')
 ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
@@ -39,7 +39,7 @@ ray.init()
 env_config = ray_config['env_config']
 ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
 
-agent = ppo.PPOTrainer(config=ray_config, env=DubinsRejoin)
+agent = ppo.PPOTrainer(config=ray_config, env=DockingEnv)
 agent.restore(ckpt_path)
 
 policy = agent.get_policy()
@@ -88,7 +88,7 @@ savemat(mat_save_path, weights_formatted)
 # run model through an environment episode and save observations/model output
 model_rollout = tf.keras.models.load_model(keras_save_path)
 
-env = DubinsRejoin(config=env_config)
+env = DockingEnv(env_config=env_config)
 env.seed(ray_config['seed'])
 
 # turn off explore
@@ -106,11 +106,17 @@ for trial_idx in range(100):
     }
     obs = env.reset()
 
-    info = {
-        'wingman': env.env_objs['wingman']._generate_info(),
-        'lead': env.env_objs['lead']._generate_info(),
-        'rejoin_region': env.env_objs['rejoin_region']._generate_info(),
-    }
+
+    info = {}    
+    for obj in env.env_objs.items():
+        info[obj[0]] = obj[1].generate_info()
+
+
+#    info = {
+#        'wingman': env.env_objs['wingman']._generate_info(),
+#        'lead': env.env_objs['lead']._generate_info(),
+#        'rejoin_region': env.env_objs['rejoin_region']._generate_info(),
+#    }
 
     episode_data['obs'].append(obs)
     episode_data['info'].append(info)
@@ -127,13 +133,18 @@ for trial_idx in range(100):
         i += 1
         policy, value = model_rollout.predict(obs[None, :])
         action = agent.compute_action(obs)
+        print("RLLIB:")
+        print(action)
 
         # action_output = np.clip(policy, -1, 1)
-        # action = (action_output[0, 0], action_output[0,2])
+        # action = (action_output[0, 0],)
+        action = (policy[0,0],)
+        print("KERAS:")
+        print(action)
 
         obs, reward, done, info = env.step(action)
 
-        control = np.copy(env.env_objs['wingman'].control_cur)
+        control = np.copy(env.env_objs['deputy'].current_control)
 
         episode_data['obs'].append(obs)
         episode_data['info'].append(info)
@@ -162,7 +173,7 @@ model_test_io_npz_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.n
 model_test_io_pkl_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.pickle'.format(ckpt_num))
 model_test_io_mat_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_test_io.mat'.format(ckpt_num))
 
-# np.savez(model_test_io_npz_path, trials=trials)
-savemat(model_test_io_mat_path, {'trials': trials})
+np.savez(model_test_io_npz_path, trials=trials)
+# savemat(model_test_io_mat_path, {'trials': trials})
 with open(model_test_io_pkl_path, 'wb') as f:
     pickle.dump({'trials': trials}, f)
