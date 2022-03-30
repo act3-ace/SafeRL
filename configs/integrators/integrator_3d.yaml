@@ -4,14 +4,18 @@ env_config:
   step_size: 1
   env_objs:
   - name: chief
-    class: saferl.aerospace.models.docking_1d.platforms.Spacecraft1D
+    class: saferl.aerospace.models.integrators.integrator_3d.Spacecraft3D
     config:
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
         x: 0
+        y: 0
+        z: 0
         x_dot: 0
+        y_dot: 0
+        z_dot: 0
   - name: deputy
-    class: saferl.aerospace.models.docking_1d.platforms.Spacecraft1D
+    class: saferl.aerospace.models.integrators.integrator_3d.Spacecraft3D
     config:
       integration_method: RK45
       controller:
@@ -21,10 +25,24 @@ env_config:
           space: continuous
           bounds: [-1, 1]
           post_activation: tanh
+        - name: thrust_y
+          space: continuous
+          bounds: [ -1, 1 ]
+          post_activation: tanh
+        - name: thrust_z
+          space: continuous
+          bounds: [ -1, 1 ]
+          post_activation: tanh
       init:
         initializer: saferl.environment.tasks.initializers.RandBoundsInitializer
-        x: [-125, -75]
+#        x: [-125, -75]
+#        x_dot: 0
+        x: -100
+        y: -100
+        z: -100
         x_dot: 0
+        y_dot: 0
+        z_dot: 0
   - name: docking_region
     class: saferl.environment.models.geometry.RelativeCircle
     config:
@@ -46,21 +64,21 @@ env_config:
         deputy: deputy
         docking_region: docking_region
     - name: max_vel_limit
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dVelocityLimit
+      class: saferl.aerospace.models.integrators.integrator_3d.Docking3dVelocityLimit
       config:
         dist_status: docking_distance
     - name: max_vel_compliance
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dVelocityLimitCompliance
+      class: saferl.aerospace.models.integrators.integrator_3d.Docking3dVelocityLimitCompliance
       config:
         target: deputy
         ref: chief
         vel_limit_status: max_vel_limit
     - name: max_vel_constraint
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dRelativeVelocityConstraint
+      class: saferl.aerospace.models.integrators.integrator_3d.Docking3dRelativeVelocityConstraint
       config:
         vel_limit_compliance_status: max_vel_compliance
     - name: failure
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dFailureStatusProcessor
+      class: saferl.aerospace.models.integrators.integrator_3d.Docking3dFailureStatusProcessor
       config:
         deputy: deputy
         docking_distance: docking_distance
@@ -74,10 +92,10 @@ env_config:
         max_vel_constraint_status: max_vel_constraint
   observation:
     - name: observation_processor
-      class: saferl.aerospace.models.docking_1d.platforms.Docking1dObservationProcessor
+      class: saferl.aerospace.models.integrators.integrator_3d.Docking3dObservationProcessor
       config:
         deputy: deputy
-        normalization: [100, 10]
+#        normalization: [100, 10]
   reward:
     - name: dist_change_reward
       class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
