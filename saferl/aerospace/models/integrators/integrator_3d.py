@@ -58,10 +58,6 @@ class Spacecraft3D(BaseSpacecraft):
     def z(self):
         return self.state.z
 
-    # @property
-    # def position(self):
-    #     return self.state.position
-
 
 class State3D(BasePlatformStateVectorized):
     """
@@ -157,25 +153,22 @@ class Dynamics3D(BaseLinearODESolverDynamics):
         super().__init__(integration_method=integration_method)
 
     def gen_dynamics_matrices(self):
-        m = self.m
-        n = 0.1
-
         A = np.array([
             [0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 1, 0],
             [0, 0, 0, 0, 0, 1],
-            [3 * n ** 2, 0, 0, 0, 2 * n, 0],
-            [0, 0, 0, -2 * n, 0, 0],
-            [0, 0, -n ** 2, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0],
         ], dtype=np.float64)
 
         B = np.array([
             [0, 0, 0],
             [0, 0, 0],
             [0, 0, 0],
-            [1 / m, 0, 0],
-            [0, 1 / m, 0],
-            [0, 0, 1 / m],
+            [1 / self.m, 0, 0],
+            [0, 1 / self.m, 0],
+            [0, 0, 1 / self.m],
         ], dtype=np.float64)
 
         return A, B
@@ -214,69 +207,12 @@ class Docking3dObservationProcessor(ObservationProcessor):
 
 
 class Docking3dVelocityLimit(StatusProcessor):
-    def __init__(self, name, dist_status):
-        self.dist_status = dist_status
-        super().__init__(name)
-
-    def reset(self, sim_state):
-        pass
-
-    def _increment(self, sim_state, step_size):
-        pass
-
-    def _process(self, sim_state):
-        dist = sim_state.status[self.dist_status]  # TODO: get dist from deputy state?
-
-        vel_limit = math.sqrt(2 * dist)
-
-        return vel_limit
-
-
-class Docking3dFailureStatusProcessor(StatusProcessor):
-    def __init__(self,
-                 name,
-                 deputy,
-                 docking_distance,
-                 max_goal_distance,
-                 max_vel_constraint_status,
-                 timeout):
-        super().__init__(name=name)
-        self.timeout = timeout
-        self.docking_distance = docking_distance
-        self.max_goal_distance = max_goal_distance
-        self.deputy = deputy
-        # self.in_docking_status = in_docking_status
-        self.max_vel_constraint_status = max_vel_constraint_status
-
-    def reset(self, sim_state):
-        self.time_elapsed = 0
-
-    def _increment(self, sim_state, step_size):
-        # increment internal state
-        self.time_elapsed += step_size
-
-    def _process(self, sim_state):
-        # process state and return status
-        x = sim_state.env_objs[self.deputy].x
-        y = sim_state.env_objs[self.deputy].y
-        z = sim_state.env_objs[self.deputy].z
-
-        if self.time_elapsed > self.timeout:
-            failure = 'timeout'
-        elif sim_state.status[self.docking_distance] >= self.max_goal_distance:
-            failure = 'distance'
-        elif not sim_state.status[self.max_vel_constraint_status] or x > 0 or y > 0 or z > 0:
-            failure = 'crash'
-        else:
-            failure = False
-        return failure
-
-
-class Docking3dVelocityLimitCompliance(StatusProcessor):
-    def __init__(self, name, target, ref, vel_limit_status):
+    def __init__(self, name, target, dist_status, vel_threshold, threshold_dist, slope=2):
         self.target = target
-        self.ref = ref
-        self.vel_limit_status = vel_limit_status
+        self.dist_status = dist_status
+        self.vel_threshold = vel_threshold
+        self.threshold_dist = threshold_dist
+        self.slope = slope
         super().__init__(name)
 
     def reset(self, sim_state):
@@ -287,32 +223,11 @@ class Docking3dVelocityLimitCompliance(StatusProcessor):
 
     def _process(self, sim_state):
         target_obj = sim_state.env_objs[self.target]
-        ref_obj = sim_state.env_objs[self.ref]
+        dist = sim_state.status[self.dist_status]
 
-        if isinstance(target_obj, Spacecraft3D) and isinstance(ref_obj, Spacecraft3D):
-            target_vel = target_obj.state.velocity_mag
-            ref_vel = ref_obj.state.velocity_mag
+        vel_limit = self.vel_threshold
 
-            vel_limit = sim_state.status[self.vel_limit_status]
+        if dist > self.threshold_dist:
+            vel_limit += self.slope * (dist - self.threshold_dist)
 
-            rel_vel = target_vel - ref_vel
-
-            compliance = vel_limit - rel_vel
-            return compliance
-        else:
-            raise(ValueError, "chief and deputy environment objects must be of type Spacecraft3D")
-
-
-class Docking3dRelativeVelocityConstraint(StatusProcessor):
-    def __init__(self, name, vel_limit_compliance_status):
-        self.vel_limit_compliance_status = vel_limit_compliance_status
-        super().__init__(name)
-
-    def reset(self, sim_state):
-        pass
-
-    def _increment(self, sim_state, step_size):
-        pass
-
-    def _process(self, sim_state):
-        return 0 <= sim_state.status[self.vel_limit_compliance_status]
+        return vel_limit
