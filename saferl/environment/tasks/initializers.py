@@ -43,7 +43,6 @@ class CaseListInitializer(Initializer):
         assert isinstance(self.sequential, bool), "sequntial must be a bool"
         assert isinstance(self.case_list, list), "case_list must be a list of dictionaries"
 
-
     def get_init_params(self):
         if self.sequential:
             case_idx = self.iteration % len(self.case_list)
@@ -55,4 +54,3 @@ class CaseListInitializer(Initializer):
         case = self.case_list[case_idx]
 
         return case
-
