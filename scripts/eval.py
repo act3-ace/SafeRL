@@ -88,7 +88,7 @@ def run_rollouts(agent, env, log_dir, num_rollouts=1, render=False):
             done = False
             obs = env.reset()
             step_num = 0
-            
+
             while not done:
                 # progress environment state
                 action = agent.compute_single_action(obs)
@@ -295,7 +295,13 @@ def main():
     if output_filename is None:
         output_filename = "eval.log"
 
-    run_rollouts(agent, env, os.path.join(ckpt_eval_dir_path, output_filename), num_rollouts=args.num_rollouts, render=args.render)
+    run_rollouts(
+        agent,
+        env,
+        os.path.join(ckpt_eval_dir_path, output_filename),
+        num_rollouts=args.num_rollouts,
+        render=args.render
+    )
 
 
 if __name__ == "__main__":
