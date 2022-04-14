@@ -246,7 +246,6 @@ class ActionPreprocessorContinuousRescale(ActionPreprocessor):
         low = self.bounds[0]
         high = self.bounds[1]
 
-        old_action = action
         action = self.post_activation(action)
 
         if self.zero_centered:
@@ -256,7 +255,6 @@ class ActionPreprocessorContinuousRescale(ActionPreprocessor):
                 scaled_action = high * action
         else:
             scaled_action = low + (action + 1.0) * (high - low) / 2.0
-
 
         return scaled_action
 
