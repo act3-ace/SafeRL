@@ -3,17 +3,20 @@ This module defines the Platform, State, Dynamics, and Processors needed to simu
 
 Author: John McCarroll
 """
+import math
+
 import gym.spaces
 import numpy as np
 from scipy.spatial.transform import Rotation
+import copy
 
-from saferl.aerospace.models.integrators.integrator_1d import BaseIntegrator
-from saferl.environment.models.platforms import BasePlatformStateVectorized, ContinuousActuator, BaseActuatorSet,\
-                                                BaseLinearODESolverDynamics
+from saferl.aerospace.models.integrators.integrator_1d import BaseSpacecraft
+from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
+    BaseActuatorSet, BaseLinearODESolverDynamics
 from saferl.environment.tasks.processor import ObservationProcessor, StatusProcessor
 
 
-class Integrator3d(BaseIntegrator):
+class Spacecraft3D(BaseSpacecraft):
     """
     This class defines implements the methods and properties necessary for a basic spacecraft object.
 
@@ -22,9 +25,9 @@ class Integrator3d(BaseIntegrator):
     """
 
     def __init__(self, name, controller=None, integration_method='RK45'):
-        dynamics = Integrator3dDynamics(integration_method=integration_method)
-        actuator_set = Integrator3dActuatorSet()
-        state = Integrator3dState()
+        dynamics = Dynamics3D(integration_method=integration_method)
+        actuator_set = ActuatorSet3D()
+        state = State3D()
 
         super().__init__(name, dynamics, actuator_set, state, controller)
 
@@ -56,7 +59,7 @@ class Integrator3d(BaseIntegrator):
         return self.state.z
 
 
-class Integrator3dState(BasePlatformStateVectorized):
+class State3D(BasePlatformStateVectorized):
     """
     This class maintains a 6 element vector, which represents the state of the Spacecraft1D Platform. The two elements
     of the state vector, in order, are: position on the x axis and velocity along the x axis. This class also defines
@@ -112,7 +115,7 @@ class Integrator3dState(BasePlatformStateVectorized):
         return vel_mag
 
 
-class Integrator3dActuatorSet(BaseActuatorSet):
+class ActuatorSet3D(BaseActuatorSet):
     """
     This class defines the sole actuator required to propel a Spacecraft1D Platform in a 1D environment.
     """
@@ -139,7 +142,7 @@ class Integrator3dActuatorSet(BaseActuatorSet):
         super().__init__(actuators)
 
 
-class Integrator3dDynamics(BaseLinearODESolverDynamics):
+class Dynamics3D(BaseLinearODESolverDynamics):
     """
     This class implements a simplified dynamics model for our 1 dimensional environment.
     """
@@ -172,7 +175,7 @@ class Integrator3dDynamics(BaseLinearODESolverDynamics):
 
 
 # Processors
-class Integrator3dObservationProcessor(ObservationProcessor):
+class Docking3dObservationProcessor(ObservationProcessor):
     """
     This class defines our 1 dimensional agent's observation space as a simple two element array (containing one
     position value and one velocity value). These two values are retrieved from the state vector of our deputy's state
@@ -203,7 +206,7 @@ class Integrator3dObservationProcessor(ObservationProcessor):
         return obs
 
 
-class Integrator3dDockingVelocityLimit(StatusProcessor):
+class Docking3dVelocityLimit(StatusProcessor):
     def __init__(self, name, target, dist_status, vel_threshold, threshold_dist, slope=2):
         self.target = target
         self.dist_status = dist_status
