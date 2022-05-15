@@ -8,7 +8,6 @@ import math
 import gym.spaces
 import numpy as np
 from scipy.spatial.transform import Rotation
-import copy
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
     BaseActuatorSet, BaseLinearODESolverDynamics
@@ -43,6 +42,7 @@ class BaseSpacecraft(BasePlatform):
     def m(self):
         return self.dynamics.m
 
+
 class Spacecraft1D(BaseSpacecraft):
     """
     This class overrides the BaseSpacecraft constructor in order to initialize the Dynamics, Actuators, and State
@@ -56,7 +56,6 @@ class Spacecraft1D(BaseSpacecraft):
         state = State1D()
 
         super().__init__(name, dynamics, actuator_set, state, controller)
-
 
 
 class State1D(BasePlatformStateVectorized):
@@ -117,7 +116,6 @@ class ActuatorSet1D(BaseActuatorSet):
         ]
 
         super().__init__(actuators)
-
 
 
 class Dynamics1D(BaseLinearODESolverDynamics):
@@ -222,7 +220,7 @@ class Docking1dFailureStatusProcessor(StatusProcessor):
     def _process(self, sim_state):
         # process state and return status
         x = sim_state.env_objs[self.deputy].x
-        
+
         if self.time_elapsed > self.timeout:
             failure = 'timeout'
         elif sim_state.status[self.docking_distance] >= self.max_goal_distance:
@@ -274,4 +272,4 @@ class Docking1dRelativeVelocityConstraint(StatusProcessor):
         pass
 
     def _process(self, sim_state):
-        return 0 <=  sim_state.status[self.vel_limit_compliance_status]
+        return 0 <= sim_state.status[self.vel_limit_compliance_status]

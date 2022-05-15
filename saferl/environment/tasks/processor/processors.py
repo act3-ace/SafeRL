@@ -362,4 +362,3 @@ class RewardProcessor(Processor):
                 raise ValueError(f"lower_bound_terminal {self.lower_bound_terminal} is an invalid value")
 
         return status
-
