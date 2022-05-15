@@ -344,7 +344,7 @@ class DockingThrustDeltaVStatusProcessor(StatusProcessor):
             target_platform,
             (CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d, Spacecraft1D, Spacecraft3D))
         control_vec = target_platform.current_control
-        
+
         if isinstance(target_platform, CWHSpacecraftOriented2d):
             control_vec = control_vec[:-1]
 
