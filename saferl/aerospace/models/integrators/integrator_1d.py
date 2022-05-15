@@ -10,13 +10,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseLinearODESolverDynamics
+                                                BaseActuatorSet, BaseLinearODESolverDynamics
 from saferl.environment.tasks.processor import ObservationProcessor, StatusProcessor
 
 
-class BaseSpacecraft(BasePlatform):
+class BaseIntegrator(BasePlatform):
     """
-    This class defines implements the methods and properties necessary for a basic spacecraft object.
+    This class defines implements the methods and properties necessary for a basic integrator object.
     """
 
     def generate_info(self):
@@ -43,24 +43,24 @@ class BaseSpacecraft(BasePlatform):
         return self.dynamics.m
 
 
-class Spacecraft1D(BaseSpacecraft):
+class Integrator1d(BaseIntegrator):
     """
-    This class overrides the BaseSpacecraft constructor in order to initialize the Dynamics, Actuators, and State
-    objects required for a 1D Spacecraft platform.
+    This class overrides the BaseIntegrator constructor in order to initialize the Dynamics, Actuators, and State
+    objects required for a 1D Integrator platform.
     """
 
     def __init__(self, name, controller=None, integration_method='Euler'):
 
-        dynamics = Dynamics1D(integration_method=integration_method)
-        actuator_set = ActuatorSet1D()
-        state = State1D()
+        dynamics = Integrator1dDynamics(integration_method=integration_method)
+        actuator_set = Integrator1dActuatorSet()
+        state = Integrator1dState()
 
         super().__init__(name, dynamics, actuator_set, state, controller)
 
 
-class State1D(BasePlatformStateVectorized):
+class Integrator1dState(BasePlatformStateVectorized):
     """
-    This class maintains a 2 element vector, which represents the state of the Spacecraft1D Platform. The two elements
+    This class maintains a 2 element vector, which represents the state of the Integrator1D Platform. The two elements
     of the state vector, in order, are: position on the x axis and velocity along the x axis. This class also defines
     required properties of a BasePlatformStateVectorized child in a form compatible with the rest of the framework.
     """
@@ -101,9 +101,9 @@ class State1D(BasePlatformStateVectorized):
         return 0
 
 
-class ActuatorSet1D(BaseActuatorSet):
+class Integrator1dActuatorSet(BaseActuatorSet):
     """
-    This class defines the sole actuator required to propel a Spacecraft1D Platform in a 1D environment.
+    This class defines the sole actuator required to propel a Integrator1D Platform in a 1D environment.
     """
 
     def __init__(self):
@@ -118,7 +118,7 @@ class ActuatorSet1D(BaseActuatorSet):
         super().__init__(actuators)
 
 
-class Dynamics1D(BaseLinearODESolverDynamics):
+class Integrator1dDynamics(BaseLinearODESolverDynamics):
     """
     This class implements a simplified dynamics model for our 1 dimensional environment.
     """
@@ -144,7 +144,7 @@ class Dynamics1D(BaseLinearODESolverDynamics):
 
 
 # Processors
-class Docking1dObservationProcessor(ObservationProcessor):
+class Integrator1dObservationProcessor(ObservationProcessor):
     """
     This class defines our 1 dimensional agent's observation space as a simple two element array (containing one
     position value and one velocity value). These two values are retrieved from the state vector of our deputy's state
@@ -175,7 +175,7 @@ class Docking1dObservationProcessor(ObservationProcessor):
         return obs
 
 
-class Docking1dVelocityLimit(StatusProcessor):
+class Integrator1dDockingVelocityLimit(StatusProcessor):
     def __init__(self, name, dist_status):
         self.dist_status = dist_status
         super().__init__(name)
@@ -194,7 +194,7 @@ class Docking1dVelocityLimit(StatusProcessor):
         return vel_limit
 
 
-class Docking1dFailureStatusProcessor(StatusProcessor):
+class Integrator1dDockingFailureStatusProcessor(StatusProcessor):
     def __init__(self,
                  name,
                  deputy,
@@ -232,7 +232,7 @@ class Docking1dFailureStatusProcessor(StatusProcessor):
         return failure
 
 
-class Docking1dVelocityLimitCompliance(StatusProcessor):
+class Integrator1dDockingVelocityLimitCompliance(StatusProcessor):
     def __init__(self, name, target, ref, vel_limit_status):
         self.target = target
         self.ref = ref
@@ -260,7 +260,7 @@ class Docking1dVelocityLimitCompliance(StatusProcessor):
         return compliance
 
 
-class Docking1dRelativeVelocityConstraint(StatusProcessor):
+class Integrator1dDockingRelativeVelocityConstraint(StatusProcessor):
     def __init__(self, name, vel_limit_compliance_status):
         self.vel_limit_compliance_status = vel_limit_compliance_status
         super().__init__(name)

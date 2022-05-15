@@ -1,8 +1,8 @@
 import gym.spaces
 import numpy as np
 
-from saferl.aerospace.models.integrators.integrator_1d import Spacecraft1D
-from saferl.aerospace.models.integrators.integrator_3d import Spacecraft3D
+from saferl.aerospace.models.integrators.integrator_1d import Integrator1d
+from saferl.aerospace.models.integrators.integrator_3d import Integrator3d
 from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
@@ -342,7 +342,7 @@ class DockingThrustDeltaVStatusProcessor(StatusProcessor):
         target_platform = sim_state.env_objs[self.target]
         assert isinstance(
             target_platform,
-            (CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d, Spacecraft1D, Spacecraft3D))
+            (CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d, Integrator1d, Integrator3d))
         control_vec = target_platform.current_control
 
         if isinstance(target_platform, CWHSpacecraftOriented2d):

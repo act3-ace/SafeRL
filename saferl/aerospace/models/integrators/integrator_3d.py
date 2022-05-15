@@ -3,31 +3,28 @@ This module defines the Platform, State, Dynamics, and Processors needed to simu
 
 Author: John McCarroll
 """
-import math
-
 import gym.spaces
 import numpy as np
 from scipy.spatial.transform import Rotation
-import copy
 
-from saferl.aerospace.models.integrators.integrator_1d import BaseSpacecraft
-from saferl.environment.models.platforms import BasePlatform, BasePlatformStateVectorized, ContinuousActuator, \
-    BaseActuatorSet, BaseLinearODESolverDynamics
+from saferl.aerospace.models.integrators.integrator_1d import BaseIntegrator
+from saferl.environment.models.platforms import BasePlatformStateVectorized, ContinuousActuator, BaseActuatorSet,\
+                                                BaseLinearODESolverDynamics
 from saferl.environment.tasks.processor import ObservationProcessor, StatusProcessor
 
 
-class Spacecraft3D(BaseSpacecraft):
+class Integrator3d(BaseIntegrator):
     """
-    This class defines implements the methods and properties necessary for a basic spacecraft object.
+    This class defines implements the methods and properties necessary for a basic integrator object.
 
-    This class overrides the BaseSpacecraft constructor in order to initialize the Dynamics, Actuators, and State
-    objects required for a 1D Spacecraft platform.
+    This class overrides the BaseIntegrator constructor in order to initialize the Dynamics, Actuators, and State
+    objects required for a 1D Integrator platform.
     """
 
     def __init__(self, name, controller=None, integration_method='RK45'):
-        dynamics = Dynamics3D(integration_method=integration_method)
-        actuator_set = ActuatorSet3D()
-        state = State3D()
+        dynamics = Integrator3dDynamics(integration_method=integration_method)
+        actuator_set = Integrator3dActuatorSet()
+        state = Integrator3dState()
 
         super().__init__(name, dynamics, actuator_set, state, controller)
 
@@ -59,9 +56,9 @@ class Spacecraft3D(BaseSpacecraft):
         return self.state.z
 
 
-class State3D(BasePlatformStateVectorized):
+class Integrator3dState(BasePlatformStateVectorized):
     """
-    This class maintains a 6 element vector, which represents the state of the Spacecraft1D Platform. The two elements
+    This class maintains a 6 element vector, which represents the state of the Integrator1D Platform. The two elements
     of the state vector, in order, are: position on the x axis and velocity along the x axis. This class also defines
     required properties of a BasePlatformStateVectorized child in a form compatible with the rest of the framework.
     """
@@ -115,9 +112,9 @@ class State3D(BasePlatformStateVectorized):
         return vel_mag
 
 
-class ActuatorSet3D(BaseActuatorSet):
+class Integrator3dActuatorSet(BaseActuatorSet):
     """
-    This class defines the sole actuator required to propel a Spacecraft1D Platform in a 1D environment.
+    This class defines the sole actuator required to propel a Integrator1D Platform in a 1D environment.
     """
 
     def __init__(self):
@@ -142,9 +139,9 @@ class ActuatorSet3D(BaseActuatorSet):
         super().__init__(actuators)
 
 
-class Dynamics3D(BaseLinearODESolverDynamics):
+class Integrator3dDynamics(BaseLinearODESolverDynamics):
     """
-    This class implements a simplified dynamics model for our 1 dimensional environment.
+    This class implements a simplified dynamics model for our 3 dimensional environment.
     """
 
     def __init__(self, integration_method='RK45'):
@@ -175,7 +172,7 @@ class Dynamics3D(BaseLinearODESolverDynamics):
 
 
 # Processors
-class Docking3dObservationProcessor(ObservationProcessor):
+class Integrator3dObservationProcessor(ObservationProcessor):
     """
     This class defines our 1 dimensional agent's observation space as a simple two element array (containing one
     position value and one velocity value). These two values are retrieved from the state vector of our deputy's state
@@ -206,7 +203,7 @@ class Docking3dObservationProcessor(ObservationProcessor):
         return obs
 
 
-class Docking3dVelocityLimit(StatusProcessor):
+class Integrator3dDockingVelocityLimit(StatusProcessor):
     def __init__(self, name, target, dist_status, vel_threshold, threshold_dist, slope=2):
         self.target = target
         self.dist_status = dist_status
@@ -222,7 +219,6 @@ class Docking3dVelocityLimit(StatusProcessor):
         pass
 
     def _process(self, sim_state):
-        target_obj = sim_state.env_objs[self.target]
         dist = sim_state.status[self.dist_status]
 
         vel_limit = self.vel_threshold
