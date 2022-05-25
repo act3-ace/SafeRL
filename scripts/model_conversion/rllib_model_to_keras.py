@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import os
 
@@ -12,10 +13,6 @@ import ray
 
 import ray.rllib.agents.ppo as ppo
 
-#from saferl.aerospace.tasks.rejoin.task import RejoinEnv
-
-from saferl.aerospace.tasks.docking.task import DockingEnv
-
 from saferl.environment.utils import numpy_to_matlab_txt
 
 from contextlib import redirect_stdout
@@ -26,8 +23,18 @@ tf.compat.v1.disable_eager_execution()
 expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"
 ckpt_num = 35
 
+parser = argparse.ArgumentParser()
+
+# Add parser arguments
+parser.add_argument('expr_dir', type=str)
+parser.add_argument('ckpt_num', type=int)
+args = parser.parse_args()
+
+expr_dir = args.expr_dir
+ckpt_num = args.ckpt_num
+
 ray_config_path = os.path.join(expr_dir, 'params.pkl')
-ckpt_dir_name = 'checkpoint_{}'.format(ckpt_num)
+ckpt_dir_name = 'checkpoint_{:06d}'.format(ckpt_num)
 ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
 ckpt_path = os.path.join(expr_dir, ckpt_dir_name, ckpt_filename)
 
@@ -39,7 +46,7 @@ ray.init()
 env_config = ray_config['env_config']
 ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
 
-agent = ppo.PPOTrainer(config=ray_config, env=DockingEnv)
+agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
 agent.restore(ckpt_path)
 
 policy = agent.get_policy()
@@ -88,14 +95,14 @@ savemat(mat_save_path, weights_formatted)
 # run model through an environment episode and save observations/model output
 model_rollout = tf.keras.models.load_model(keras_save_path)
 
-env = DockingEnv(env_config=env_config)
+env = ray_config['env'](env_config)
 env.seed(ray_config['seed'])
 
 # turn off explore
 agent.get_policy().config['explore'] = False
 
 trials = []
-for trial_idx in range(100):
+for trial_idx in range(10):
     episode_data = {
         'obs': [],
         'info': [],
@@ -106,8 +113,7 @@ for trial_idx in range(100):
     }
     obs = env.reset()
 
-
-    info = {}    
+    info = {}
     for obj in env.env_objs.items():
         info[obj[0]] = obj[1].generate_info()
 
@@ -133,14 +139,14 @@ for trial_idx in range(100):
         i += 1
         policy, value = model_rollout.predict(obs[None, :])
         action = agent.compute_action(obs)
-        print("RLLIB:")
-        print(action)
+        # print("RLLIB:")
+        # print(action)
 
         # action_output = np.clip(policy, -1, 1)
         # action = (action_output[0, 0],)
-        action = (policy[0,0],)
-        print("KERAS:")
-        print(action)
+        action = tuple(np.split(policy[0, ::2], policy.shape[1]/2))
+        # print("KERAS:")
+        # print(action)
 
         obs, reward, done, info = env.step(action)
 
