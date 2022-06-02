@@ -300,12 +300,16 @@ def main(args):
 
             hpo_config = build_hpo_config(config, args)
 
+            config['normalize_actions'] = False
+
             tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
                      restore=args.restore, callbacks=[TBXLoggerCallback()], **hpo_config)
     else:
         # Setup experiment
         expr_name, config = experiment_setup(args=args)
+
+        config['normalize_actions'] = False
 
         # Run training in a single process for debugging
         config["num_workers"] = 0

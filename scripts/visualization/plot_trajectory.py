@@ -61,6 +61,7 @@ def get_args():
     parser.add_argument('--trial_index', type=int, default=DEFAULT_TRIAL_INDEX,
                         help="The index corresponding to the desired experiment to load. "
                              "Use when multiple experiments are run by Tune.")
+    parser.add_argument('--explore', action="store_true")
     parser.add_argument('--alt_env_config', type=str, default=None,
                         help="The path to an alternative config from which to run all trajectory episodes.")
 
@@ -257,6 +258,7 @@ def plot_data(data,
 
     # save figure
     if output_filename:
+        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
         fig.savefig(output_filename)
 
     # show figure
@@ -351,6 +353,8 @@ def main():
             if os.path.isfile(log_dir):
                 os.remove(log_dir)
 
+            rl_agent.get_policy().config['explore'] = args.explore
+
             # run rollout episode + store logs
             run_rollouts(rl_agent, env, log_dir)
 
@@ -368,7 +372,7 @@ def main():
 
     rc_params = {
         'figure.figsize': (3.375, 3.375*4.8/6.4),
-        'figure.dpi': 300,
+        'figure.dpi': 600, #300,
         'font.size': font_size,
         'xtick.major.pad': 0,
         'xtick.minor.pad': 0,
@@ -391,12 +395,17 @@ def main():
     # set seaborn theme
     sns.set_theme(rc=rc_params)
 
+    if args.explore:
+        explore_str = "_stochastic"
+    else:
+        explore_str = "_deterministic"
+
     # create plot
     #output_filename = output_path + "/../figure1"
     if args.task == "docking":
-        output_filename = "./figs/docking_traj.png"
+        output_filename = f"./figs/docking_traj{explore_str}.png"
     elif args.task == "rejoin":
-        output_filename = "./figs/rejoin_traj.png"
+        output_filename = f"./figs/rejoin_traj{explore_str}.png"
     else:
         output_filename = "./figs/figure1.png"
     plot_data(trajectories,

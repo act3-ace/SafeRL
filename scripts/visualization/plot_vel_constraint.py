@@ -53,6 +53,7 @@ def get_args():
                         help="A list of checkpoint indices, from the experiment directory, to plot.")
     parser.add_argument('--alt_env_config', type=str, default=None,
                         help="The path to an alternative config from which to run all trajectory episodes.")
+    parser.add_argument('--explore', action="store_true")
     parser.add_argument('--trial_index', type=int, default=DEFAULT_TRIAL_INDEX,
                         help="The index corresponding to the desired experiment to load. "
                              "Use when multiple trials are run by Tune.")
@@ -199,6 +200,8 @@ def main():
             if os.path.isfile(log_dir):
                 os.remove(log_dir)
 
+            rl_agent.get_policy().config['explore'] = args.explore
+
             # run rollout episode + store logs
             run_rollouts(rl_agent, env, log_dir)
 
@@ -212,14 +215,14 @@ def main():
     ## plot data in matplotlib
     # output_filename = output_path + "/figure1"
     os.makedirs('./figs', exist_ok=True)
-    output_filename = "./figs/vel_constr.png"
+    output_filename = f"./figs/vel_constr_{'stochasatic' if args.explore else 'deterministic'}.png"
 
     font_size = 8
     tick_font_size = font_size - 2
 
     rc_params = {
         'figure.figsize': (3.375, 3.375*4.8/6.4),
-        'figure.dpi': 300,
+        'figure.dpi': 600, #300,
         'font.size': font_size,
         'xtick.major.pad': 0,
         'xtick.minor.pad': 0,

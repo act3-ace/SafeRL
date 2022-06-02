@@ -145,6 +145,7 @@ def clip_array(arr, bounds):
     return arr[clip_idx], clip_idx
 
 def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x_label=None, y_label=None, interp=True, interp_subsample_len=None, rc_params={}):
+    assert interp, "Not currently implemented without interp parameter"
     if x_label is None:
         x_label = q1
     if y_label is None:
@@ -155,9 +156,6 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
     q2_handle = find_quantity_handle(q2, data_dfs)
 
     clip_bounds = get_clip_bounds(q1_handle, data_dfs, clip_method)
-
-    q1_track = []
-    q2_track = []
 
     q1_tracks = []
     q2_tracks = []
@@ -187,12 +185,12 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
             q1_clipped = q1_value[clipped_idx]
             q2_clipped = q2_value[clipped_idx]
 
-        q1_track += [q1_clipped]
-        q2_track += [q2_clipped]
+        q1_tracks += [q1_clipped]
+        q2_tracks += [q2_clipped]
 
     sns.set_theme(rc=rc_params)
 
-    plot = sns.relplot(x=np.concatenate(q1_track), y=np.concatenate(q2_track), kind='line', height=rc_params['figure.figsize'][1])
+    plot = sns.relplot(x=np.concatenate(q1_tracks), y=np.concatenate(q2_tracks), kind='line', height=rc_params['figure.figsize'][1])
     plot.ax.set_xlabel(x_label, fontstyle='italic')
     plot.ax.set_ylabel(y_label, fontstyle='italic')
     
@@ -203,7 +201,7 @@ def plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, output_dir='./', x
     save_file = os.path.join(output_dir, q1 + '_v_' + q2 + '.png')
     plot.savefig(save_file, bbox_inches="tight", pad_inches=0.04)
 
-    return plot
+    return plot, q1_tracks, q2_tracks
 
 
 # graph wrapper function
@@ -211,3 +209,15 @@ def graph_q1_v_q2(logdir, q1, q2, clip_method, rename_map=None, **kwargs):
     data_dfs = data_frame_processing(logdir)
     plot_handle = plot_quantity1_v_quantity2(data_dfs, q1, q2, clip_method, x_label=rename_map.get(q1, q1), y_label=rename_map.get(q2, q2), **kwargs)
     return plot_handle
+
+def compute_interaction_efficiency(timesteps_list, success_list, threshold=0.8):
+    timesteps = np.stack(timesteps_list,axis=0)
+    success = np.stack(success_list,axis=0)
+
+    assert np.all(timesteps == timesteps_list[0]), "all trajectories must have their timesteps interpolated to equal values. Please use interp option when composing data"
+
+    success_avg = np.mean(success, axis=0)
+    
+    inter_eff = timesteps[0, success_avg >= threshold][0]
+
+    return inter_eff

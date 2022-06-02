@@ -1,6 +1,8 @@
 import gym.spaces
 import numpy as np
 
+from saferl.aerospace.models.integrators.integrator_1d import Integrator1d
+from saferl.aerospace.models.integrators.integrator_3d import Integrator3d
 from saferl.aerospace.models.cwhspacecraft.platforms import CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d
 from saferl.environment.tasks.processor import ObservationProcessor, RewardProcessor, StatusProcessor
 from saferl.environment.models.geometry import distance
@@ -35,7 +37,7 @@ class DockingObservationProcessor(ObservationProcessor):
         elif self.mode == '3d':
             observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
         else:
-            raise ValueError("Invalid observation mode {}. Should be '2d' or '3d'.".format(self.mode))
+            raise ValueError("Invalid observation mode {}. Should be '1d', '2d', or '3d'.".format(self.mode))
 
         return observation_space
 
@@ -338,10 +340,11 @@ class DockingThrustDeltaVStatusProcessor(StatusProcessor):
     def _increment(self, sim_state, step_size):
         # status derived directly from simulation state. No state machine necessary
         target_platform = sim_state.env_objs[self.target]
-        assert isinstance(target_platform, CWHSpacecraft2d) or isinstance(target_platform, CWHSpacecraft3d) or \
-            isinstance(target_platform, CWHSpacecraftOriented2d)
+        assert isinstance(
+            target_platform,
+            (CWHSpacecraft2d, CWHSpacecraft3d, CWHSpacecraftOriented2d, Integrator1d, Integrator3d))
         control_vec = target_platform.current_control
-        
+
         if isinstance(target_platform, CWHSpacecraftOriented2d):
             control_vec = control_vec[:-1]
 
