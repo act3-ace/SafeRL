@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import os
 
-import pickle5 as pickle
+import pickle
 
 import tensorflow as tf
 import tensorflow.keras as keras
@@ -138,7 +138,7 @@ for trial_idx in range(10):
         # print(i)
         i += 1
         policy, value = model_rollout.predict(obs[None, :])
-        action = agent.compute_action(obs)
+        action = agent.compute_single_action(obs)
         # print("RLLIB:")
         # print(action)
 

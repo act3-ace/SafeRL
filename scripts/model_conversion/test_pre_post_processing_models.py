@@ -7,15 +7,13 @@ import pickle
 
 from tensorflow import keras
 
-import onnx
 import onnxruntime as ort
-import tf2onnx
 
 parser = argparse.ArgumentParser()
 
 # Add parser arguments
 parser.add_argument('ckpt', type=str)
-parser.add_argument('trail_io_data_path', type=str)
+parser.add_argument('trial_io_data_path', type=str)
 args = parser.parse_args()
 
 ckpt_ext = os.path.splitext(args.ckpt)[1]
@@ -29,7 +27,7 @@ elif ckpt_ext == '.onnx':
 else:
     raise ValueError("unrecognized ckpt format")
 
-with open(args.trail_io_data_path, 'rb') as f:
+with open(args.trial_io_data_path, 'rb') as f:
     io_data = pickle.load(f)
 
 trials = io_data['trials']
