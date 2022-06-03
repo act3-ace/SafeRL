@@ -1,5 +1,15 @@
 import setuptools
 
+
+def parse_requirements(filename: str):
+    """ load requirements from a pip requirements file """
+    lineiter = (line.strip() for line in open(filename))
+    return [line for line in lineiter if line and not line.startswith("#")]
+
+
+reqs = parse_requirements("requirements.txt")
+
+
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
@@ -18,17 +28,6 @@ setuptools.setup(
         # "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6, <3.9',
-    install_requires=[
-        "tensorflow==2.4",
-        "ray[rllib]==1.5.2",
-        "tqdm==4.59.0",
-        "jsonlines==2.0.0",
-        "matplotlib==3.3.4",
-        "pytest==6.2.4",
-        "flatten_json==0.1.13",
-        "aioredis==1.3.1",
-        "pyglet==1.5.19",
-        "aiohttp==3.7.4",
-    ]
+    python_requires='>=3.7, <3.9',
+    install_requires=reqs,
 )
