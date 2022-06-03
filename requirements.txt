@@ -58,13 +58,14 @@ nodeenv==1.6.0
 numpy==1.19.5
 nvidia-ml-py3==7.352.0
 oauthlib==3.1.1
+onnx==1.11.0
+onnxruntime==1.10.0
 opencensus==0.7.13
 opencensus-context==0.1.2
 opencv-python-headless==4.3.0.36
 opt-einsum==3.3.0
 packaging==21.0
 pandas==1.3.3
-pickle5==0.0.11
 Pillow==8.0.1
 platformdirs==2.5.2
 pluggy==0.13.1
@@ -108,6 +109,7 @@ tensorflow-estimator==2.4.0
 termcolor==1.1.0
 toml==0.10.2
 tqdm==4.59.0
+tf2onnx==1.10.1
 typing-extensions==3.7.4.3
 urllib3==1.26.7
 virtualenv==20.14.1
