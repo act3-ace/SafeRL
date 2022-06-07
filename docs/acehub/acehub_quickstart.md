@@ -106,7 +106,7 @@ environment type:
 ```bash
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 export GIT_ASKPASS="/ace/hub/envfile/GIT_ASKPASS" 
-conda create -y -n saferl_env python=3.7 pip
+conda create -y -n saferl_env python=3.8 pip
 conda activate saferl_env
 git clone https://git.act3-ace.com/rta/have-deepsky.git
 cd have-deepsky/
@@ -120,7 +120,7 @@ conda init bash && exec bash
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 sudo apt update && sudo apt install -y libglib2.0-0
 sudo apt update && sudo apt install -y git
-conda create -y -n saferl_env python=3.7 pip
+conda create -y -n saferl_env python=3.8 pip
 conda activate saferl_env
 git clone https://git.act3-ace.com/rta/have-deepsky.git
 cd have-deepsky/
