@@ -24,8 +24,8 @@ model_orig = keras.models.load_model(args.ckpt)
 # !!! Make sure these values match the model you are trying to convert
 input_size = 4
 action_size = 2
-action_activation = "tanh"
-norm_const = 1.0 / np.array([100, 100, 0.5, 0.5], dtype=float)
+action_activation = None
+norm_const = 1.0 / np.array([100, 180, 0.5, 0.5], dtype=float)
 
 input_layer = keras.Input(shape=(input_size,))
 
