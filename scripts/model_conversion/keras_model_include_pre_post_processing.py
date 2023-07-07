@@ -21,8 +21,11 @@ model_weights_set_dict = {}
 
 model_orig = keras.models.load_model(args.ckpt)
 
+# !!! Make sure these values match the model you are trying to convert
 input_size = 4
 action_size = 2
+action_activation = "tanh"
+norm_const = 1.0 / np.array([100, 100, 0.5, 0.5], dtype=float)
 
 input_layer = keras.Input(shape=(input_size,))
 
@@ -35,10 +38,14 @@ model_weights_set_dict['preprocess_norm_scale'] = [
 orig_policy_output, _ = model_orig(normalized_output)
 
 # ouput post processing
-policy_means_clipped = keras.layers.Dense(action_size, name="postprocess_filter_std_clip", activation="tanh"
+policy_means_clipped = keras.layers.Dense(action_size, name="postprocess_filter_std_clip", activation=action_activation
                                           )(orig_policy_output)
+diag_values = []
+for i in range(action_size):
+    diag_values += [1, 0]
+
 model_weights_set_dict['postprocess_filter_std_clip'] = [
-    np.diag([1, 0, 1, 0])[::2, :].T,
+    np.diag(diag_values)[::2, :].T,
     np.zeros(action_size),
 ]
 
