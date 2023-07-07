@@ -22,11 +22,9 @@ env_config:
         - name: thrust_x
           space: continuous
           bounds: [-1, 1]
-          post_activation: tanh
         - name: thrust_y
           space: continuous
           bounds: [-1, 1]
-          post_activation: tanh
       init:
         initializer: saferl.aerospace.tasks.docking.initializers.ConstrainedDeputyPolarInitializer
         ref: chief
@@ -140,3 +138,5 @@ env_config:
   verbose: false
 gamma: 0.968559
 lambda: 0.928544
+model:
+  fcnet_activation: relu
