@@ -47,6 +47,55 @@ class DockingObservationProcessor(ObservationProcessor):
         obs = np.append(obs, sim_state.status['max_vel_limit'])
         return obs
 
+class DockingObservationPolarPositionRectVelProcessor(ObservationProcessor):
+    def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
+        # Initialize member variables from config
+        # 2d or 3d
+        self.mode = mode
+        # not platform ref, string for name of deputy
+        self.deputy = deputy
+
+        # add default normalization
+        if normalization is None:
+            if self.mode == '2d':
+                normalization = [100, 180, .5, .5] #r, theta, xvel, yvel; pi
+            elif self.mode == '3d':
+                raise NotImplementedError
+
+        # Invoke parent's constructor
+        super().__init__(name=name, normalization=normalization, clip=clip, post_processors=post_processors)
+
+    def define_observation_space(self) -> gym.spaces.Box:
+        low = np.finfo(np.float32).min
+        high = np.finfo(np.float32).max
+
+        if self.mode == '2d':
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(4,))#shape=(6,))
+        elif self.mode == '3d':
+            observation_space = gym.spaces.Box(low=low, high=high, shape=(8,))
+        else:
+            raise ValueError("Invalid observation mode {}. Should be '1d', '2d', or '3d'.".format(self.mode))
+
+        return observation_space
+    
+    # polar
+    def _process(self, sim_state):
+        x_coordinate = sim_state.env_objs[self.deputy].x
+        y_coordinate = sim_state.env_objs[self.deputy].y
+        x_dot = sim_state.env_objs[self.deputy].x_dot
+        y_dot = sim_state.env_objs[self.deputy].y_dot
+
+        # Computing the radius (based on the Pythagorean theorem)
+        radius = np.sqrt(x_coordinate**2 + y_coordinate**2)
+
+        # Computing the angle (based on the arctangent function)
+        angle = np.arctan2(y_coordinate, x_coordinate)
+        angle_degrees = np.degrees(angle)
+
+        #alternatives for theta: (cos(theta), sin(theta)); or (theta, theta % 360 - 180) 
+        obs = np.array([radius, angle_degrees, x_dot, y_dot], dtype=float)
+        return obs
+
 
 class DockingObservationProcessorOriented(ObservationProcessor):
     def __init__(self, name=None, deputy=None, mode='2d', normalization=None, clip=None, post_processors=None):
