@@ -31,7 +31,7 @@ input_layer = keras.Input(shape=(input_size,))
 
 normalized_output = keras.layers.Dense(input_size, name="preprocess_norm_scale")(input_layer)
 model_weights_set_dict['preprocess_norm_scale'] = [
-    np.diag([1/100, 1/100, 2, 2]),
+    np.diag(norm_const),
     np.zeros(input_size),
 ]
 
