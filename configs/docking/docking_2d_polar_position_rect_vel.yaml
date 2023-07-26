@@ -138,5 +138,6 @@ env_config:
   verbose: false
 gamma: 0.968559
 lambda: 0.928544
+lr: 0.01
 model:
   fcnet_activation: relu

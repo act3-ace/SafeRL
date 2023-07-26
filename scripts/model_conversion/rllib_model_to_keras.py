@@ -20,7 +20,8 @@ from collections import OrderedDict
 
 tf.compat.v1.disable_eager_execution()
 
-expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"
+#expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"i
+expr_dir = "output/expr_20230720_124921/PPO_DockingEnv_884c9_00000_0_2023-07-20_12-49-26"
 ckpt_num = 35
 
 parser = argparse.ArgumentParser()
