@@ -28,7 +28,11 @@ from collections import OrderedDict
 
 tf.compat.v1.disable_eager_execution()
 
+<<<<<<< HEAD
 #expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"
+=======
+#expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"i
+>>>>>>> 5f00c09693ef5b9a62bec3789c57ba657ab9a749
 expr_dir = "output/expr_20230720_124921/PPO_DockingEnv_884c9_00000_0_2023-07-20_12-49-26"
 ckpt_num = 35
 
