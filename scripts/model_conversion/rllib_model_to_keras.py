@@ -11,7 +11,15 @@ from scipy.io import savemat
 
 import ray
 
-import ray.rllib.agents.ppo as ppo
+# deprecated,  see https://discuss.ray.io/t/ray-rllib-agents-ppo-missing/9904
+#import ray.rllib.agents.ppo as ppo
+
+from ray import rllib
+from ray.rllib import algorithms
+from ray.rllib.algorithms import ppo
+from ray.rllib.algorithms.ppo import PPO as ppo
+
+
 
 from saferl.environment.utils import numpy_to_matlab_txt
 
@@ -20,7 +28,8 @@ from collections import OrderedDict
 
 tf.compat.v1.disable_eager_execution()
 
-expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"
+#expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"
+expr_dir = "output/expr_20230720_124921/PPO_DockingEnv_884c9_00000_0_2023-07-20_12-49-26"
 ckpt_num = 35
 
 parser = argparse.ArgumentParser()

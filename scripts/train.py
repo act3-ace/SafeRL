@@ -8,7 +8,14 @@ import ray
 from ray import tune
 from ray.tune.logger import TBXLoggerCallback
 
+# deprecated,  see https://discuss.ray.io/t/ray-rllib-agents-ppo-missing/9904
 import ray.rllib.agents.ppo as ppo
+'''
+from ray import rllib
+from ray.rllib import algorithms
+from ray.rllib.algorithms import ppo
+from ray.rllib.algorithms.ppo import PPO as ppo
+'''
 
 from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
@@ -17,7 +24,8 @@ from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeC
 
 
 # Training defaults
-CONFIG = '../configs/docking/docking_default.yaml'
+#CONFIG = '../configs/docking/docking_default.yaml'
+CONFIG = '../configs/docking/docking_2d_polar_position_rect_vel.yaml'
 OUTPUT_DIR = './output'
 NUM_LOGGING_WORKERS = 1
 LOGGING_INTERVAL = 10  # log every 10th episode
