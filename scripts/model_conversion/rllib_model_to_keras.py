@@ -12,12 +12,12 @@ from scipy.io import savemat
 import ray
 
 # deprecated,  see https://discuss.ray.io/t/ray-rllib-agents-ppo-missing/9904
-#import ray.rllib.agents.ppo as ppo
+import ray.rllib.agents.ppo as ppo
 
 #from ray import rllib
 #from ray.rllib.algorithms.ppo import PPO as ppo
 
-from ray.rllib.algorithms.ppo import PPO
+#from ray.rllib.algorithms.ppo import PPO
 
 #from ray.rllib import algorithms
 #from ray.rllib.algorithms import ppo
@@ -38,7 +38,8 @@ tf.compat.v1.disable_eager_execution()
 #expr_dir = "output/expr_20220316_102941/PPO_DockingEnv_8625c_00000_0_2022-03-16_10-29-44"i
 #>>>>>>> 5f00c09693ef5b9a62bec3789c57ba657ab9a749
 #expr_dir = "output/expr_20230720_124921/PPO_DockingEnv_884c9_00000_0_2023-07-20_12-49-26"
-expr_dir = "output/expr_20230731_110254/PPO_DockingEnv_80031_00000_0_2023-07-31_11-03-07"
+expr_dir = "checkpoints/expr_20230731_110254/PPO_DockingEnv_80031_00000_0_2023-07-31_11-03-07"
+#expr_dir = "output/expr_20230731_141420/PPO_DockingEnv_80031_00000_0_2023-07-31_11-03-07"
 
 #ckpt_num = 35
 ckpt_num = 200
@@ -84,6 +85,8 @@ converted_ckpt_dir = os.path.join(expr_dir, 'converted_ckpt')
 os.makedirs(converted_ckpt_dir, exist_ok=True)
 keras_save_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}.h5'.format(ckpt_num))
 model.save(keras_save_path)
+
+exit(0)
 
 # save model summary
 model_summary_save_path = os.path.join(converted_ckpt_dir, 'ckpt_{:03d}_model_summary.txt'.format(ckpt_num))
@@ -154,6 +157,7 @@ for trial_idx in range(10):
     done = False
 
     i = 0
+'''
     while not done:
         # print(i)
         i += 1
@@ -203,3 +207,4 @@ np.savez(model_test_io_npz_path, trials=trials)
 # savemat(model_test_io_mat_path, {'trials': trials})
 with open(model_test_io_pkl_path, 'wb') as f:
     pickle.dump({'trials': trials}, f)
+'''
