@@ -7,7 +7,7 @@ Author: John McCarroll
 import math
 import abc
 import numpy as np
-import gym
+import gymnasium as gym
 
 from saferl.environment.utils import vec2magnorm
 

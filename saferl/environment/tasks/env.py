@@ -1,10 +1,12 @@
 import random
 import numpy as np
-import gym
+import gymnasium as gym
+from typing import Any
+import copy
 
 from saferl.environment.tasks.manager import RewardManager, ObservationManager, StatusManager
 from saferl.environment.tasks.processor.status import TimeoutStatusProcessor, NeverSuccessStatusProcessor
-from saferl.environment.utils import setup_env_objs_from_config
+from saferl.environment.utils import setup_env_objs_from_config, recursive_np_copy
 from saferl.environment.constants import STATUS, REWARD, OBSERVATION, VERBOSE, RENDER
 from saferl.environment.tasks.initializers import RandBoundsInitializer
 from saferl.environment.models.platforms import BasePlatform
@@ -64,6 +66,10 @@ class BaseEnv(gym.Env):
             config=env_config,
             default_initializer=RandBoundsInitializer)
 
+        self.last_info: dict
+        self.last_obs: np.ndarray
+        self.last_action: Any
+
         # Setup action and observation space
         self._setup_action_space()
         self._setup_obs_space()
@@ -105,15 +111,19 @@ class BaseEnv(gym.Env):
         obs = self._generate_obs()
         info = self.generate_info()
 
+        terminated = False
+        truncated = False  # todo set truncated if timeout
         # determine if done
         if self.status['success'] or self.status['failure']:
-            done = True
-        else:
-            done = False
+            terminated = True
 
-        return obs, reward, done, info
+        self.last_info = recursive_np_copy(info)
+        self.last_obs = recursive_np_copy(obs)
+        self.last_action = recursive_np_copy(action)
 
-    def reset(self):
+        return obs, reward, terminated, truncated, {}
+
+    def reset(self, *, seed=None, options=None):
         # Reinitialize env_objs
         self._initialize()
 
@@ -123,8 +133,13 @@ class BaseEnv(gym.Env):
         self.reward_manager.reset(self.sim_state)
         self.observation_manager.reset(self.sim_state)
 
+        info = self.generate_info()
+
         # generate reset state observations
         obs = self._generate_obs()
+        self.last_info = recursive_np_copy(info)
+        self.last_obs = recursive_np_copy(obs)
+        self.last_action = None
 
         # Reset render viewer
         if self.renderer is not None:
@@ -133,7 +148,7 @@ class BaseEnv(gym.Env):
         if self.verbose:
             print("env reset with params {}".format(self.generate_info()))
 
-        return obs
+        return obs, {}
 
     def render(self, mode='human'):
         if self.renderer is not None:

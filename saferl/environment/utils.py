@@ -210,50 +210,42 @@ def log_to_jsonlines(contents, output_dir, jsonline_filename):
         writer.write(contents)
 
 
-def jsonify(map):
+def jsonify(input):
     """
     A function to convert non-JSON serializable objects (numpy arrays and data types) within a dictionary to JSON
     friendly data types.
 
     Parameters
     ----------
-    map : dict
+    input : dict, iterable, np.array, bool, int, float
         The dictionary which may or may not contain non-JSON serializable values
 
     Returns
     -------
-    map : dict
-        The same dictionary passed in from parameters, but with converted values
+    dict, iterable, np.array, bool, int, float
+        Copy of the input, but with converted to jsonifiable types
     """
 
-    for key in map.keys():
-        # iterate through dictionary, converting objects as needed
-        suspicious_object = map[key]
-        is_json_ready = is_jsonable(suspicious_object)
+    try:
+        json.dump(input)
+    except TypeError:
+        if isinstance(input, np.ndarray):
+            return input.tolist()
+        elif isinstance(input, np.bool_):
+            return bool(input)
+        elif isinstance(input, (np.int64, np.int32)):
+            return int(input)
+        elif isinstance(input, (list, tuple)):
+            output = [jsonify(elem) for elem in input]
+            if isinstance(input, tuple):
+                output = tuple(output)
+            return output
+        elif isinstance(input, dict):
+            return {k:jsonify(v) for k, v in input.items()}
+        else:
+            return input
 
-        if is_json_ready is True:
-            # move along sir
-            continue
-        elif is_json_ready == TypeError:
-            if type(suspicious_object) is dict:
-                # recurse if we find sub-dictionaries
-                map[key] = jsonify(suspicious_object)
-            if type(suspicious_object) is np.ndarray:
-                # handle numpy array conversion
-                map[key] = suspicious_object.tolist()
-            elif type(suspicious_object) is np.bool_:
-                # handle numpy bool conversion
-                map[key] = bool(suspicious_object)
-            elif type(suspicious_object) is np.int64:
-                # handle int64 conversion
-                map[key] = int(suspicious_object)
-
-        elif is_json_ready == OverflowError:
-            raise OverflowError
-        elif is_json_ready == ValueError:
-            raise ValueError
-
-    return map
+    return input
 
 
 def is_jsonable(object):
@@ -285,3 +277,24 @@ def vec2magnorm(vec):
     norm = np.linalg.norm(vec)
     mag_norm_vec = np.concatenate(([norm], vec / norm))
     return mag_norm_vec
+
+
+def recursive_np_copy(input):
+    """
+    Recursively iterates over input tree structure and returns a deep copy of it.
+
+    np.copy() is used for numpy arrays for faster performance
+    """
+
+    if isinstance(input, np.ndarray):
+        return np.copy(input)
+    elif isinstance(input, list):
+        return [recursive_np_copy(elem) for elem in input]
+    elif isinstance(input, tuple):
+        return tuple(recursive_np_copy(elem) for elem in input)
+    elif isinstance(input, dict):
+        return {k:recursive_np_copy(v) for k,v in input.items()}
+    elif isinstance(input, (int, float, str, bool)):
+        return input
+    else:
+        return copy.deepcopy(input)

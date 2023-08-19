@@ -1,6 +1,6 @@
 import abc
 import copy
-import gym
+import gymnasium as gym
 import scipy.spatial
 import scipy.integrate
 import numpy as np

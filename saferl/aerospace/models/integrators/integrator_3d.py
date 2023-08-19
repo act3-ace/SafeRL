@@ -3,7 +3,7 @@ This module defines the Platform, State, Dynamics, and Processors needed to simu
 
 Author: John McCarroll
 """
-import gym.spaces
+import gymnasium as gym
 import numpy as np
 from scipy.spatial.transform import Rotation
 

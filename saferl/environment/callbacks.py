@@ -1,17 +1,21 @@
 # pylint: disable=no-member
 
-from typing import Dict, Optional
-from ray.rllib.agents.callbacks import DefaultCallbacks
+from typing import Dict, Optional, Union, List
+from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
-from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
+from ray.rllib.evaluation import RolloutWorker
+from ray.rllib.evaluation.episode import Episode
+from ray.rllib.evaluation.episode_v2 import EpisodeV2
 from ray.rllib.policy import Policy
+from ray.rllib.utils.typing import PolicyID
 from saferl.environment.utils import jsonify, is_jsonable, log_to_jsonlines
+from saferl.environment.tasks.env import BaseEnv
 
 import time
 from enum import Enum
 
 
-def build_callbacks_caller(callbacks: []):  # noqa C901
+def build_callbacks_caller(callbacks: List):  # noqa C901
     class CallbacksCaller(DefaultCallbacks):
         def __init__(self, legacy_callbacks_dict: Dict[str, callable] = None):
             self.callbacks = callbacks
@@ -45,11 +49,19 @@ def build_callbacks_caller(callbacks: []):  # noqa C901
 
 
 class EpisodeOutcomeCallback:
-    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
-                       env_index: int, **kwargs):
-        episode.custom_metrics["outcome/success"] = int(episode.last_info_for()['success'])
-        episode.custom_metrics["outcome/failure"] = int(bool(episode.last_info_for()['failure']))
+    def on_episode_end(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Dict[PolicyID, Policy],
+        episode: Union[Episode, EpisodeV2, Exception],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
+        env: BaseEnv = base_env.get_sub_environments()[env_index]
+        episode.custom_metrics["outcome/success"] = int(env.last_info['success'])
+        episode.custom_metrics["outcome/failure"] = int(bool(env.last_info['failure']))
 
 
 class FailureCodeCallback:
@@ -58,30 +70,53 @@ class FailureCodeCallback:
             failure_codes = ['timeout', 'distance', 'crash']
         self.failure_codes = failure_codes
 
-    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
-                       env_index: int, **kwargs):
-
-        if episode.last_info_for()['failure']:
+    def on_episode_end(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Dict[PolicyID, Policy],
+        episode: Union[Episode, EpisodeV2, Exception],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
+        env: BaseEnv = base_env.get_sub_environments()[env_index]
+        if env.last_info['failure']:
             for failure_code in self.failure_codes:
                 episode.custom_metrics["failure_code_ratio/{}".format(failure_code)] = int(
-                    episode.last_info_for()['failure'] == failure_code)
+                    env.last_info['failure'] == failure_code)
 
 
 class RewardComponentsCallback:
-    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
-                       env_index: int, **kwargs):
-        ep_info = episode.last_info_for()
+    def on_episode_end(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Dict[PolicyID, Policy],
+        episode: Union[Episode, EpisodeV2, Exception],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
+        env: BaseEnv = base_env.get_sub_environments()[env_index]
+        ep_info = env.last_info
         for reward_comp_name, reward_comp_val in ep_info['reward']['components']['total'].items():
             episode.custom_metrics['reward_component_totals/{}'.format(reward_comp_name)] = reward_comp_val
 
 
 class StatusCustomMetricsCallback:
-    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
-                       env_index: int, **kwargs):
-        status = episode.last_info_for()['status']
+    def on_episode_end(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Dict[PolicyID, Policy],
+        episode: Union[Episode, EpisodeV2, Exception],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
+        env: BaseEnv = base_env.get_sub_environments()[env_index]
+        status = env.last_info['status']
         custom_metric_keys = [k for k in status.keys() if 'custom_metrics.' in k]
         for k in custom_metric_keys:
             metric_name = k.split('.', 1)[1]
@@ -93,17 +128,33 @@ class ConstraintViolationMetricsCallback:
     def __init__(self):
         self.constraint_keys = None
 
-    def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                         policies: Dict[str, Policy],
-                         episode: MultiAgentEpisode, env_index: int, **kwargs):
+    def on_episode_start(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Dict[PolicyID, Policy],
+        episode: Union[Episode, EpisodeV2],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
         self.constraint_keys = None
         episode.user_data["constr_violation_counts"] = {}
 
-    def on_episode_step(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                        episode: MultiAgentEpisode, env_index: int, **kwargs):
+    def on_episode_step(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Optional[Dict[PolicyID, Policy]] = None,
+        episode: Union[Episode, EpisodeV2],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
         if episode.length == 0:
             return
-        status = episode.last_info_for()['status']
+        env: BaseEnv = base_env.get_sub_environments()[env_index]
+        status = env.last_info['status']
         if self.constraint_keys is None:
             self.constraint_keys = [k for k in status.keys() if 'constraint' in k]
 
@@ -112,9 +163,16 @@ class ConstraintViolationMetricsCallback:
             episode.user_data["constr_violation_counts"][k] = episode.user_data["constr_violation_counts"].get(k, 0) \
                 + step_violation_value
 
-    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
-                       env_index: int, **kwargs):
+    def on_episode_end(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Dict[PolicyID, Policy],
+        episode: Union[Episode, EpisodeV2, Exception],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
         for k in self.constraint_keys:
             violation_count = episode.user_data['constr_violation_counts'].get(k, 0)
             violation_ratio = float(violation_count) / episode.length
@@ -167,8 +225,16 @@ class LoggingCallback:
             if content == LogContents.ACTIONS:
                 self.log_actions = True
 
-    def on_episode_step(self, *, worker: "RolloutWorker", base_env: BaseEnv, episode: MultiAgentEpisode,
-                        env_index: Optional[int] = None, **kwargs) -> None:
+    def on_episode_step(
+        self,
+        *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Optional[Dict[PolicyID, Policy]] = None,
+        episode: Union[Episode, EpisodeV2],
+        env_index: Optional[int] = None,
+        **kwargs,
+    ) -> None:
 
         if episode.episode_id not in self.worker_episode_numbers:
             self.worker_episode_numbers[episode.episode_id] = self.episode_count
@@ -179,7 +245,7 @@ class LoggingCallback:
         worker_index = worker.worker_index
 
         # determine output location
-        if worker.policy_config["in_evaluation"]:
+        if worker.config.in_evaluation:
             output_dir = worker._original_kwargs["log_dir"] + "../evaluation_logs/"
         else:
             output_dir = worker._original_kwargs["log_dir"] + "../training_logs/"
@@ -191,24 +257,24 @@ class LoggingCallback:
         if worker_index <= self.num_logging_workers \
                 and self.worker_episode_numbers[episode_id] % self.episode_log_interval == 0 \
                 and step_num:
+            env: BaseEnv = base_env.get_sub_environments()[env_index]
             state = {}
             if self.log_actions:
-                state["actions"] = episode.last_action_for('agent0').tolist()  # TODO: 'agent0' should not be hardcoded
+                state["actions"] = env.last_action
             if self.log_obs:
-                state["obs"] = episode.last_raw_obs_for('agent0').tolist()
+                state["obs"] = env.last_obs
             if self.log_info:
                 # check if jsonable and convert if necessary
-                info = episode.last_info_for('agent0')
+                info = env.last_info
 
-                if is_jsonable(info) is True:
-                    state["info"] = info
-                else:
-                    state["info"] = jsonify(info)
+                state["info"] = info
 
             state["episode_ID"] = episode_id
             state["step_number"] = step_num
             state["worker_episode_number"] = self.worker_episode_numbers[episode_id]
             state["time"] = time.time()
+
+            state = jsonify(state)
 
             # save environment state to file
             log_to_jsonlines(state, output_dir, worker_file)

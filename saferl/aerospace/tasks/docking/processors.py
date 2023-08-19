@@ -1,4 +1,4 @@
-import gym.spaces
+import gymnasium as gym
 import numpy as np
 
 from saferl.aerospace.models.integrators.integrator_1d import Integrator1d

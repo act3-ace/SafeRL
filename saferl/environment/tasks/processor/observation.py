@@ -8,7 +8,7 @@ Author: John McCarroll
 import abc
 
 import numpy as np
-import gym
+import gymnasium as gym
 import math
 from collections.abc import Iterable
 

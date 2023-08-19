@@ -1,6 +1,6 @@
 import abc
 
-import gym.spaces
+import gymnasium as gym
 import numpy as np
 import math
 from collections.abc import Iterable

@@ -1,4 +1,4 @@
-import gym.spaces
+import gymnasium as gym
 import math
 import numpy as np
 from scipy.spatial.transform import Rotation

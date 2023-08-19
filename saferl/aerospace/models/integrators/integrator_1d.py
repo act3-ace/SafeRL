@@ -5,7 +5,7 @@ Author: John McCarroll
 """
 import math
 
-import gym.spaces
+import gymnasium as gym
 import numpy as np
 from scipy.spatial.transform import Rotation
 

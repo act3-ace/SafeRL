@@ -1,3 +1,4 @@
+auto_wrap_old_gym_envs: false
 env: saferl.aerospace.tasks.docking.task.DockingEnv
 env_config:
   agent: deputy

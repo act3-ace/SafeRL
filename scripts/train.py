@@ -8,7 +8,7 @@ import ray
 from ray import tune
 from ray.tune.logger import TBXLoggerCallback
 
-import ray.rllib.agents.ppo as ppo
+import ray.rllib.algorithms.ppo as ppo
 
 from saferl.environment.utils import YAMLParser, build_lookup, dict_merge
 from saferl.environment.callbacks import build_callbacks_caller, EpisodeOutcomeCallback, FailureCodeCallback, \
@@ -36,7 +36,7 @@ EVALUATION_NUM_WORKERS = 1
 EVALUATION_SEED = 0
 DEBUG = False
 COMPLETE = False
-ROLLOUT_FRAGMENT_LENGTH = 200
+ROLLOUT_FRAGMENT_LENGTH = 667
 
 
 def get_args():
@@ -120,7 +120,7 @@ def experiment_setup(args):
     ray.init(num_gpus=args.gpus)
 
     # Setup default PPO config
-    default_config = ppo.DEFAULT_CONFIG.copy()
+    default_config = ppo.PPOConfig().to_dict()
 
     # Setup custom config
     parser = YAMLParser(yaml_file=args.config, lookup=build_lookup())
@@ -302,7 +302,7 @@ def main(args):
 
             config['normalize_actions'] = False
 
-            tune.run(ppo.PPOTrainer, config=config, stop=stop_dict, local_dir=args.output_dir,
+            tune.run(ppo.PPO, config=config, stop=stop_dict, local_dir=args.output_dir,
                      checkpoint_freq=args.checkpoint_freq, checkpoint_at_end=True, name=expr_name,
                      restore=args.restore, callbacks=[TBXLoggerCallback()], **hpo_config)
     else:
@@ -313,7 +313,7 @@ def main(args):
 
         # Run training in a single process for debugging
         config["num_workers"] = 0
-        trainer = ppo.PPOTrainer(config=config)
+        trainer = ppo.PPO(config=config)
         for i in range(args.stop_iteration):
             print(trainer.train())
 
