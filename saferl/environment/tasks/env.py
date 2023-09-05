@@ -112,10 +112,13 @@ class BaseEnv(gym.Env):
         info = self.generate_info()
 
         terminated = False
-        truncated = False  # todo set truncated if timeout
+        truncated = False
         # determine if done
         if self.status['success'] or self.status['failure']:
-            terminated = True
+            if self.status['failure'] == 'timeout':
+                truncated = True
+            else:
+                terminated = True
 
         self.last_info = recursive_np_copy(info)
         self.last_obs = recursive_np_copy(obs)
