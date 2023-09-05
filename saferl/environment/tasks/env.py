@@ -124,7 +124,7 @@ class BaseEnv(gym.Env):
         self.last_obs = recursive_np_copy(obs)
         self.last_action = recursive_np_copy(action)
 
-        return obs, reward, terminated, truncated, {}
+        return obs, reward, terminated, truncated, info
 
     def reset(self, *, seed=None, options=None):
         # Reinitialize env_objs
@@ -151,7 +151,7 @@ class BaseEnv(gym.Env):
         if self.verbose:
             print("env reset with params {}".format(self.generate_info()))
 
-        return obs, {}
+        return obs, info
 
     def render(self, mode='human'):
         if self.renderer is not None:
