@@ -11,7 +11,8 @@ from scipy.io import savemat
 
 import ray
 
-import ray.rllib.agents.ppo as ppo
+import ray.rllib.algorithms.ppo as ppo
+from ray.rllib.algorithms.algorithm import Algorithm
 
 from saferl.environment.utils import numpy_to_matlab_txt
 
@@ -36,7 +37,7 @@ ckpt_num = args.ckpt_num
 ray_config_path = os.path.join(expr_dir, 'params.pkl')
 ckpt_dir_name = 'checkpoint_{:06d}'.format(ckpt_num)
 ckpt_filename = 'checkpoint-{}'.format(ckpt_num)
-ckpt_path = os.path.join(expr_dir, ckpt_dir_name, ckpt_filename)
+ckpt_path = os.path.join(expr_dir, ckpt_dir_name)
 
 with open(ray_config_path, 'rb') as ray_config_f:
     ray_config = pickle.load(ray_config_f)
@@ -44,12 +45,13 @@ with open(ray_config_path, 'rb') as ray_config_f:
 ray.init()
 
 env_config = ray_config['env_config']
-ray_config['callbacks'] = ppo.DEFAULT_CONFIG['callbacks']
+ray_config['callbacks'] = ppo.PPO.get_default_config()['callbacks']
 
-agent = ppo.PPOTrainer(config=ray_config, env=ray_config['env'])
-agent.restore(ckpt_path)
+algo = Algorithm.from_checkpoint(ckpt_path)
 
-policy = agent.get_policy()
+import pdb; pdb.set_trace()
+
+policy = algo.get_policy()
 model = policy.model.base_model
 weights = policy.get_weights()
 
