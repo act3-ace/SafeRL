@@ -93,11 +93,39 @@ env_config:
         in_docking_status: in_docking
         max_vel_constraint_status: max_vel_constraint
   observation:
-    - name: observation_processor
-      class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
+    # - name: observation_processor
+    #   class: saferl.aerospace.tasks.docking.processors.DockingObservationProcessor
+    #   config:
+    #     deputy: deputy
+    #     mode: 2d
+    - name: obs_x
+      class: saferl.environment.tasks.processor.observation.AttributeObservationProcessor
       config:
-        deputy: deputy
-        mode: 2d
+        target: deputy
+        attr: x
+        observation_space_shape: 1
+        normalization: 10
+    - name: obs_y
+      class: saferl.environment.tasks.processor.observation.AttributeObservationProcessor
+      config:
+        target: deputy
+        attr: y
+        observation_space_shape: 1
+        normalization: 10
+    - name: obs_x_dot
+      class: saferl.environment.tasks.processor.observation.AttributeObservationProcessor
+      config:
+        target: deputy
+        attr: x_dot
+        observation_space_shape: 1
+        normalization: 0.5
+    - name: obs_y_dot
+      class: saferl.environment.tasks.processor.observation.AttributeObservationProcessor
+      config:
+        target: deputy
+        attr: y_dot
+        observation_space_shape: 1
+        normalization: 0.5
   reward:
     - name: dist_change_5m_reward
       class: saferl.environment.tasks.processor.reward.DistanceExponentialChangeRewardProcessor
