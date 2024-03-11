@@ -49,8 +49,6 @@ ray_config['callbacks'] = ppo.PPO.get_default_config()['callbacks']
 
 algo = Algorithm.from_checkpoint(ckpt_path)
 
-import pdb; pdb.set_trace()
-
 policy = algo.get_policy()
 model = policy.model.base_model
 weights = policy.get_weights()
