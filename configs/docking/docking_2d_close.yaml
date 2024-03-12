@@ -174,3 +174,5 @@ env_config:
 gamma: 0.968559
 lambda: 0.928544
 framework: tf
+model:
+  fcnet_activation: relu
