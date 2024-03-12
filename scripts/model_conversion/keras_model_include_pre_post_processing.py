@@ -13,6 +13,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('ckpt', type=str)
 args = parser.parse_args()
 
+post_process_activation = None # "tanh"
+
 ckpt_path_sans_ext = os.path.splitext(args.ckpt)[0]
 output_path_keras = ckpt_path_sans_ext + "_with_pre_post_processing" + "_keras.h5"
 output_path_onnx = ckpt_path_sans_ext + "_with_pre_post_processing" + ".onnx"
@@ -35,8 +37,11 @@ model_weights_set_dict['preprocess_norm_scale'] = [
 orig_policy_output, _ = model_orig(normalized_output)
 
 # ouput post processing
-policy_means_clipped = keras.layers.Dense(action_size, name="postprocess_filter_std_clip", activation="tanh"
-                                          )(orig_policy_output)
+policy_means_clipped = keras.layers.Dense(
+    action_size,
+    name="postprocess_filter_std_clip",
+    activation=post_process_activation,
+    )(orig_policy_output)
 model_weights_set_dict['postprocess_filter_std_clip'] = [
     np.diag([1, 0, 1, 0])[::2, :].T,
     np.zeros(action_size),
